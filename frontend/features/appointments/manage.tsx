@@ -10,6 +10,7 @@ import type { Appointment } from "@/lib/types";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { useConfig } from "@/components/providers/config";
 import { useToast } from "@/components/providers/toast";
+import { formatDateTime } from "@/lib/format";
 
 type Resp = { appointment: Appointment; timezone: string; cancelNoticeHours: number };
 
@@ -55,7 +56,7 @@ export function ManageAppointment({ id }: { id: string }) {
         </Link>
       </div>
     );
-  const when = new Date(a.startsAt).toLocaleString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: tz });
+  const when = formatDateTime(a.startsAt, tz, true);
   return (
     <div className="container-narrow section-tight stack-lg">
       {booked && a.status === "booked" ? (
@@ -108,7 +109,7 @@ export function ManageAppointment({ id }: { id: string }) {
                   <option value="">Select a time</option>
                   {(slots.data?.slots ?? []).map((s) => (
                     <option key={s} value={s}>
-                      {new Date(s).toLocaleString("en-GB", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: tz })}
+                      {formatDateTime(s, tz)}
                     </option>
                   ))}
                 </select>

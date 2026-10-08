@@ -8,6 +8,9 @@ export type DeliveryZone = { key: string; method: "pickup" | "local_delivery" | 
 export type Business = {
   name: string;
   tagline: string;
+  legalName?: string;
+  registrationNumber?: string;
+  taxId?: string;
   logoUrl: string;
   phone: string;
   whatsapp: string;
@@ -39,7 +42,7 @@ export type Flags = Record<
   boolean
 >;
 
-export type PublicConfig = { business: Business; flags: Flags };
+export type PublicConfig = { business: Business; flags: Flags; demoContent?: boolean };
 
 export type Me = {
   id: string;
@@ -52,7 +55,7 @@ export type Me = {
   csrfToken: string;
 };
 
-export type Media = { id: string; url: string; uploadId: string | null; alt: string; width: number | null; height: number | null };
+export type Media = { id: string; url: string; uploadId: string | null; alt: string; width: number | null; height: number | null; sample?: boolean };
 
 export type Variant = {
   id: string;

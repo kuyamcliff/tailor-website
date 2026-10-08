@@ -4,6 +4,7 @@ import Link from "next/link";
 import { serverApiOr } from "@/lib/server";
 import type { PortfolioProject } from "@/lib/types";
 import styles from "./work.module.css";
+import { SampleTag } from "@/components/ui/sample-tag";
 
 export const metadata: Metadata = {
   title: "Our work",
@@ -56,6 +57,7 @@ export default async function WorkPage({ searchParams }: { searchParams: Promise
             <Link key={p.id} href={`/our-work/${p.slug}`} className={styles.item}>
               <div className={styles.media} style={{ aspectRatio: i % 3 === 0 ? "4 / 5" : "1 / 1" }}>
                 {p.media[0] ? <Image src={p.media[0].url} alt={p.media[0].alt} fill sizes="(max-width: 700px) 100vw, (max-width: 1100px) 50vw, 33vw" style={{ objectFit: "cover" }} /> : null}
+                <SampleTag show={p.media[0]?.sample} />
               </div>
               <span className="eyebrow tiny">{p.category}</span>
               <span className={styles.title}>{p.title}</span>

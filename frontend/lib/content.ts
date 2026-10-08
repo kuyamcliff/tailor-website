@@ -55,4 +55,4 @@ export function policy(content: ContentBlocks, key: string): { title: string; se
   return { title: v.title, sections: v.sections ?? [] };
 }
 
-export const policyKeys = ["privacy", "terms", "delivery", "alterations"] as const;
+export const policyKeys = ["privacy", "terms", "refunds", "delivery", "alterations", "cookies"] as const;

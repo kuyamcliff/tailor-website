@@ -172,7 +172,7 @@ export function AccountOverview() {
                     <span className="small muted">{n.body}</span>
                   </span>
                   <span className="small faint" style={{ whiteSpace: "nowrap" }}>
-                    {formatDate(n.createdAt, "en-GB", { day: "numeric", month: "short" })}
+                    {formatDate(n.createdAt, "short")}
                   </span>
                 </>
               );

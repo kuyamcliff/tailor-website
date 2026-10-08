@@ -2,8 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { RotateCcw } from "lucide-react";
+import { useState } from "react";
 import styles from "./studio-preview.module.css";
 
 // A lightweight preview of the fitting studio on the home page: pre-rendered frames of the studio's
@@ -17,12 +16,6 @@ const views = [
 
 export function StudioPreview() {
   const [view, setView] = useState(0);
-  const [auto, setAuto] = useState(true);
-  useEffect(() => {
-    if (!auto || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const t = setInterval(() => setView((v) => (v + 1) % views.length), 2600);
-    return () => clearInterval(t);
-  }, [auto]);
   return (
     <div className={styles.frame}>
       <div className={styles.stage}>
@@ -45,18 +38,12 @@ export function StudioPreview() {
               key={v.key}
               className={styles.view}
               aria-pressed={i === view}
-              onClick={() => {
-                setAuto(false);
-                setView(i);
-              }}
+              onClick={() => setView(i)}
             >
               {v.label}
             </button>
           ))}
         </div>
-        <button className="icon-btn" aria-label={auto ? "Pause rotation" : "Resume rotation"} aria-pressed={auto} onClick={() => setAuto((a) => !a)}>
-          <RotateCcw size={18} aria-hidden />
-        </button>
       </div>
       <Link href="/studio" className={styles.overlayLink} aria-label="Open the fitting studio" tabIndex={-1} />
     </div>

@@ -1,6 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Clock, MapPin } from "lucide-react";
+import { existsSync } from "node:fs";
+import path from "node:path";
+import { ArrowRight } from "lucide-react";
 import { serverApiOr } from "@/lib/server";
 import { getConfig, getContent } from "@/lib/server-data";
 import { block } from "@/lib/content";
@@ -11,6 +13,7 @@ import { FabricSwatch } from "@/components/ui/fabric-swatch";
 import { StudioPreview } from "@/features/home/studio-preview";
 import { SocialIcon, whatsappLink } from "@/components/brand/brand-icon";
 import styles from "./home.module.css";
+import { SampleTag } from "@/components/ui/sample-tag";
 
 export const revalidate = 60;
 
@@ -26,9 +29,11 @@ export default async function HomePage() {
   const hero = block(content, "home.hero");
   const signature = block(content, "home.signature");
   const studio = block(content, "home.studio");
-  const process = block(content, "home.process");
+  const processBlock = block(content, "home.process");
   const services = block(content, "services");
   const b = config.business;
+  // The preview shows pre-rendered frames of the studio model; skip it until they have been generated.
+  const hasRenders = existsSync(path.join(process.cwd(), "public", "3d", "renders", "suit-front.webp"));
 
   return (
     <>
@@ -113,9 +118,11 @@ export default async function HomePage() {
                 </Link>
               </div>
             </Reveal>
-            <Reveal delay={100}>
-              <StudioPreview />
-            </Reveal>
+            {hasRenders ? (
+              <Reveal delay={100}>
+                <StudioPreview />
+              </Reveal>
+            ) : null}
           </div>
         </section>
       ) : null}
@@ -172,6 +179,7 @@ export default async function HomePage() {
                   {p.media[0] ? (
                     <Image src={p.media[0].url} alt={p.media[0].alt} fill sizes={i === 0 ? "(max-width: 900px) 100vw, 50vw" : "(max-width: 900px) 50vw, 25vw"} style={{ objectFit: "cover" }} />
                   ) : null}
+                  <SampleTag show={p.media[0]?.sample} />
                   <span className={styles.workCaption}>
                     <span className="tiny eyebrow">{p.category}</span>
                     <span className={styles.workTitle}>{p.title}</span>
@@ -184,17 +192,17 @@ export default async function HomePage() {
       ) : null}
 
       {/* 7. Process */}
-      {process.steps.length ? (
+      {processBlock.steps.length ? (
         <section className={`section ${styles.processSection}`}>
           <div className="container">
             <div className="section-head">
               <div>
                 <span className="eyebrow">Process</span>
-                <h2 className="display-2">{process.title}</h2>
+                <h2 className="display-2">{processBlock.title}</h2>
               </div>
             </div>
             <ol className={styles.process}>
-              {process.steps.map((s, i) => (
+              {processBlock.steps.map((s, i) => (
                 <Reveal as="li" key={s.title} delay={i * 50} className={styles.step}>
                   <span className={styles.stepNo}>{String(i + 1).padStart(2, "0")}</span>
                   <h3 className="title">{s.title}</h3>
@@ -283,34 +291,6 @@ export default async function HomePage() {
         </section>
       ) : null}
 
-      {/* 11. Location and contact */}
-      {b.address.line1 || b.phone ? (
-        <section className="section-tight">
-          <div className={`container ${styles.visit}`}>
-            <div>
-              <span className="eyebrow">Visit</span>
-              <h2 className="display-3" style={{ marginTop: 12 }}>
-                {b.name || "The atelier"}
-              </h2>
-            </div>
-            {b.address.line1 ? (
-              <p className={styles.visitLine}>
-                <MapPin size={18} aria-hidden />
-                <span>{[b.address.line1, b.address.line2, b.address.city].filter(Boolean).join(", ")}</span>
-              </p>
-            ) : null}
-            {b.openingHours?.length ? (
-              <p className={styles.visitLine}>
-                <Clock size={18} aria-hidden />
-                <span>{b.openingHours.map((h) => `${h.days} ${h.hours}`).join(" · ")}</span>
-              </p>
-            ) : null}
-            <Link href="/contact" className="text-link">
-              Directions and contact <ArrowRight size={16} aria-hidden />
-            </Link>
-          </div>
-        </section>
-      ) : null}
     </>
   );
 }

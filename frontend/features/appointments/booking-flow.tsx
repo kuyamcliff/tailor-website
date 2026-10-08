@@ -11,6 +11,7 @@ import { Field } from "@/components/ui/field";
 import { useSession } from "@/components/providers/session";
 import { useConfig } from "@/components/providers/config";
 import styles from "./booking.module.css";
+import { formatDay, formatTime, formatDateTime } from "@/lib/format";
 
 export const appointmentTypes = [
   { key: "consultation", label: "Consultation", body: "Talk through a new garment and see fabrics." },
@@ -95,8 +96,8 @@ export function BookingFlow({ initialType, orderId, requestId }: { initialType?:
     }
   }
 
-  const fmtDay = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" });
-  const fmtTime = (s: string) => new Date(s).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: tz });
+  const fmtDay = (d: string) => formatDay(`${d}T12:00:00Z`, "UTC");
+  const fmtTime = (s: string) => formatTime(s, tz);
 
   return (
     <form onSubmit={book} className={styles.layout} noValidate>
@@ -183,7 +184,7 @@ export function BookingFlow({ initialType, orderId, requestId }: { initialType?:
         </Field>
         {slot ? (
           <p className="small">
-            <strong>{appointmentTypes.find((t) => t.key === type)?.label}</strong> on {new Date(slot).toLocaleString("en-GB", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit", timeZone: tz })}
+            <strong>{appointmentTypes.find((t) => t.key === type)?.label}</strong> on {formatDateTime(slot, tz, true)}
           </p>
         ) : null}
         <button className="btn btn-primary btn-block" type="submit" disabled={busy || !slot}>

@@ -26,6 +26,9 @@ import (
 type Business struct {
 	Name              string           `json:"name"`
 	Tagline           string           `json:"tagline"`
+	LegalName         string           `json:"legalName"`          // registered business name shown in the footer and on invoices
+	RegistrationNo    string           `json:"registrationNumber"` // trade register (RCCM) or company number
+	TaxID             string           `json:"taxId"`              // taxpayer number (NIU) when registered
 	LogoURL           string           `json:"logoUrl"`
 	Phone             string           `json:"phone"`
 	WhatsApp          string           `json:"whatsapp"`
@@ -266,10 +269,17 @@ func (h Handler) PublicConfig(w http.ResponseWriter, r *http.Request) error {
 	for _, k := range []string{"studio", "appointments", "customer_accounts", "support_inbox", "guest_checkout", "online_payments", "reference_analysis", "photo_body_estimation"} {
 		public[k] = flags[k]
 	}
+	// demoContent is true while licensed stock photos seeded for development are still in use,
+	// so the storefront can label them instead of implying they show the atelier's own work.
+	var demo bool
+	if err := h.Svc.Pool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM uploads WHERE license->>'usage' = 'development only' AND deleted_at IS NULL)`).Scan(&demo); err != nil {
+		return err
+	}
 	w.Header().Set("Cache-Control", "public, max-age=30, stale-while-revalidate=300")
 	httpx.JSON(w, http.StatusOK, map[string]any{
+		"demoContent": demo,
 		"business": map[string]any{
-			"name": b.Name, "tagline": b.Tagline, "logoUrl": b.LogoURL, "phone": b.Phone, "whatsapp": b.WhatsApp,
+			"name": b.Name, "tagline": b.Tagline, "legalName": b.LegalName, "registrationNumber": b.RegistrationNo, "taxId": b.TaxID, "logoUrl": b.LogoURL, "phone": b.Phone, "whatsapp": b.WhatsApp,
 			"email": b.Email, "address": b.Address, "openingHours": b.OpeningHours, "currency": b.Currency,
 			"locale": b.Locale, "timezone": b.Timezone, "countryCode": b.CountryCode, "social": b.Social,
 			"delivery": activeDelivery(b.Delivery), "quoteValidityDays": b.QuoteValidityDays, "depositPercentBp": b.DepositPercentBP,

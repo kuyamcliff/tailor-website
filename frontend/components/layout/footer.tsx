@@ -103,15 +103,24 @@ export function Footer({ config, content }: { config: PublicConfig; content: Con
         </div>
       </div>
 
+      {config.demoContent ? (
+        <p className={`container small faint ${styles.demo}`}>
+          Photos marked &ldquo;Sample photo&rdquo; are licensed stock images used while this site is being set up. They do not show garments made by {name}.
+        </p>
+      ) : null}
       <div className={`container ${styles.bottom}`}>
         <p className="tiny faint">
-          © {year} {name}
+          © {year} {b.legalName || name}
+          {b.registrationNumber ? ` · RCCM ${b.registrationNumber}` : ""}
+          {b.taxId ? ` · NIU ${b.taxId}` : ""}
         </p>
         <nav aria-label="Legal" className={styles.legal}>
           <Link href="/policies/privacy">Privacy</Link>
           <Link href="/policies/terms">Terms</Link>
+          <Link href="/policies/refunds">Returns and refunds</Link>
           <Link href="/policies/delivery">Delivery</Link>
           <Link href="/policies/alterations">Alterations and remakes</Link>
+          <Link href="/policies/cookies">Cookies</Link>
         </nav>
         {config.flags.online_payments ? (
           <div className={styles.payments} aria-label="Payment methods">

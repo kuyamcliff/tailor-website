@@ -31,6 +31,8 @@ type Media struct {
 	Alt      string     `json:"alt"`
 	Width    *int       `json:"width"`
 	Height   *int       `json:"height"`
+	// Sample marks licensed stock images seeded for development so they are never presented as the atelier's own work.
+	Sample bool `json:"sample"`
 }
 
 type Project struct {
@@ -79,7 +81,9 @@ func list(ctx context.Context, q db.Querier, category string, featured, staff bo
 	if len(ids) == 0 {
 		return []Project{}, nil
 	}
-	mrows, err := q.Query(ctx, `SELECT project_id, id, url, upload_id, alt, width, height FROM portfolio_media WHERE project_id = ANY($1) ORDER BY sort_order`, ids)
+	mrows, err := q.Query(ctx, `SELECT m.project_id, m.id, m.url, m.upload_id, m.alt, m.width, m.height,
+		coalesce(u.license->>'usage' = 'development only', false)
+		FROM portfolio_media m LEFT JOIN uploads u ON u.id = m.upload_id WHERE m.project_id = ANY($1) ORDER BY m.sort_order`, ids)
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +91,7 @@ func list(ctx context.Context, q db.Querier, category string, featured, staff bo
 	for mrows.Next() {
 		var pid uuid.UUID
 		var m Media
-		if err := mrows.Scan(&pid, &m.ID, &m.URL, &m.UploadID, &m.Alt, &m.Width, &m.Height); err != nil {
+		if err := mrows.Scan(&pid, &m.ID, &m.URL, &m.UploadID, &m.Alt, &m.Width, &m.Height, &m.Sample); err != nil {
 			return nil, err
 		}
 		out[idx[pid]].Media = append(out[idx[pid]].Media, m)

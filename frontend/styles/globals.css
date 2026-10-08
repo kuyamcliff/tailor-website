@@ -14,7 +14,7 @@
   --text: #ece2d0;
   --text-soft: #cfc5b4;
   --text-muted: #a69d90;
-  --text-faint: #7d766c;
+  --text-faint: #958d81; /* 4.7:1 or better on every surface (WCAG AA) */
 
   --gold: #c2a165;
   --gold-strong: #d6b878;
@@ -941,4 +941,23 @@ a.list-row:focus-visible {
   .no-print {
     display: none !important;
   }
+}
+
+.sample-tag {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 2;
+  padding: 3px 8px;
+  font-size: 0.6875rem;
+  letter-spacing: 0.04em;
+  color: var(--text);
+  background: rgb(11 11 12 / 0.78);
+  border: 1px solid var(--line-strong);
+  pointer-events: none;
+}
+
+.sample-tag-bottom {
+  top: auto;
+  bottom: 10px;
 }

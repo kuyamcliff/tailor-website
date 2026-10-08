@@ -93,19 +93,41 @@ var defaultContent = map[string]any{
 	"policy.privacy": map[string]any{
 		"title": "Privacy",
 		"sections": []map[string]string{
-			{"heading": "What we collect", "body": "Your name and contact details, your measurements, the designs you save, the reference images you upload, and the details of your orders and appointments."},
-			{"heading": "Why we collect it", "body": "To make, fit and deliver your garments, to contact you about your orders, and to keep accurate records for accounting."},
-			{"heading": "Your images", "body": "Reference images are private. Only you and the atelier staff working on your request can see them. We do not use them for marketing unless you give separate permission. Reference images are deleted automatically after the retention period."},
-			{"heading": "Your choices", "body": "From your account you can download your data, delete saved measurements and designs, and delete your account. Order records are kept for accounting with your contact details removed."},
-			{"heading": "Payments", "body": "Mobile Money payments are processed by the provider you choose. We never see or store your Mobile Money PIN."},
+			{"heading": "What we collect", "body": "Your name and contact details, the measurements you enter or that we take, the designs you save, the reference images you upload, and the details of your orders, payments, appointments and messages. We only ask for what we need to make and deliver your garment."},
+			{"heading": "Why we collect it", "body": "To make, fit and deliver your garments, to contact you about your orders, requests and appointments, and to keep the records the law requires for accounting. We do not sell your data and we do not use it for advertising."},
+			{"heading": "Your images", "body": "Reference images and body photos are private. Only you and the atelier staff working on your request can see them. We never use them for marketing or in our portfolio without your separate written permission. Reference images not attached to a request are deleted automatically after the retention period."},
+			{"heading": "Who else processes your data", "body": "Mobile Money payments are processed by the provider you choose (MTN Mobile Money or Orange Money). They receive your phone number and the amount, and we never see or store your PIN. Order emails and text messages are sent through our email and SMS providers. Files are stored with our hosting provider. If you choose the optional reference image analysis, the image is sent to an analysis provider for that one request and is not used to train their models."},
+			{"heading": "How long we keep it", "body": "Account data is kept while your account is open. Order and payment records are kept for the period required by accounting law, with your contact details removed if you delete your account. Unattached uploads are deleted automatically."},
+			{"heading": "Children", "body": "Our online services are for adults. If you are under 18, a parent or guardian must place the order and enter any measurements on your behalf. We do not knowingly collect data from children without that consent."},
+			{"heading": "Your rights", "body": "You can see, correct, download and delete your data. With an account, use Settings and privacy to download your data or delete your account. Without an account, send us a message through the Help page or contact details below and we will act on your request within 30 days."},
 		},
 	},
 	"policy.terms": map[string]any{
 		"title": "Terms",
 		"sections": []map[string]string{
-			{"heading": "Quotes", "body": "Bespoke work is quoted individually. A quote is valid until the date shown on it. Accepting a quote creates your order."},
-			{"heading": "Deposits", "body": "Production starts once the deposit shown on your quote is received. The balance is due when your garment is ready."},
-			{"heading": "Measurements", "body": "Measurements you provide are checked by your tailor. Where we take your measurements ourselves, we are responsible for their accuracy."},
+			{"heading": "Who we are", "body": "These terms apply to orders placed with the atelier named at the bottom of this page. Our address and contact details are shown on the Contact page."},
+			{"heading": "Prices", "body": "Prices are shown in the currency of the shop and include any tax that applies. Delivery fees are shown before you place your order. There are no other charges. Bespoke work is quoted individually and the quote shows every cost."},
+			{"heading": "Quotes and deposits", "body": "A quote is valid until the date shown on it. Accepting a quote creates your order. Production starts once the deposit shown on your quote is received, and the balance is due when your garment is ready."},
+			{"heading": "Measurements", "body": "Measurements you provide are checked by your tailor before cutting. Where we take your measurements ourselves, we are responsible for their accuracy. The fitting studio shows an estimate to help you choose; it is not a guarantee of fit."},
+			{"heading": "Cancelling", "body": "You can cancel a ready-to-wear order before it is dispatched or collected for a full refund. A bespoke order can be cancelled free of charge until we start cutting your cloth. After that, the deposit covers the cloth and work already done; anything paid above the cost of that work is refunded."},
+			{"heading": "Age", "body": "You must be 18 or older to create an account or place an order. A parent or guardian can order for a child."},
+		},
+	},
+	"policy.refunds": map[string]any{
+		"title": "Returns and refunds",
+		"sections": []map[string]string{
+			{"heading": "Ready-to-wear", "body": "You can return an unworn ready-to-wear item with its labels within 14 days of collection or delivery for a refund or exchange. Items altered to your measurements cannot be returned, but we will correct any fault."},
+			{"heading": "Bespoke garments", "body": "A bespoke garment is made for one person, so it cannot be returned for a change of mind. If it does not match the agreed design or measurements, we will alter or remake it at no cost. See Alterations and remakes."},
+			{"heading": "How refunds are paid", "body": "Refunds go back to the Mobile Money account that paid, or by the method we agree with you for payments made at the studio. We send them within 10 working days of approving the refund and tell you when it is sent."},
+			{"heading": "Faults", "body": "If you find a fault, contact us with a photo through the Help page. Your legal rights as a customer are not affected by this policy."},
+		},
+	},
+	"policy.cookies": map[string]any{
+		"title": "Cookies and storage",
+		"sections": []map[string]string{
+			{"heading": "What we store", "body": "We use one cookie, atelier_session, which keeps you signed in. It is created only when you sign in and is removed when you sign out. Your browser also stores your shopping bag, wishlist, comparison list, a random guest code that keeps your designs and uploads on this device, and private links to orders and requests you made from this device."},
+			{"heading": "What we do not use", "body": "We do not use advertising cookies, tracking pixels or third-party analytics. Nothing we store is shared with advertisers. Because everything we store is needed for the site to work, we do not show a cookie banner."},
+			{"heading": "Removing it", "body": "You can clear this data at any time in your browser settings. Your bag and wishlist on this device will be emptied; anything saved to your account stays in your account."},
 		},
 	},
 	"policy.delivery": map[string]any{

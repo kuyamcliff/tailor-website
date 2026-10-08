@@ -10,6 +10,7 @@ import { useToast } from "@/components/providers/toast";
 import type { Product } from "@/lib/types";
 import { QuickView } from "./quick-view";
 import styles from "./product-card.module.css";
+import { SampleTag } from "@/components/ui/sample-tag";
 
 export const availabilityLabel: Record<Product["availability"], string> = {
   in_stock: "In stock",
@@ -37,6 +38,7 @@ export function ProductCard({ product, priority = false }: { product: Product; p
         ) : (
           <span className={styles.noImage}>{product.name}</span>
         )}
+        <SampleTag show={img?.sample} position="bottom" />
         {alt ? <Image src={alt.url} alt="" fill sizes="25vw" className={`${styles.img} ${styles.alt}`} aria-hidden /> : null}
         {product.availability !== "in_stock" ? (
           <span className={`badge ${product.availability === "out_of_stock" ? "" : "badge-gold"} ${styles.flag}`}>{availabilityLabel[product.availability]}</span>

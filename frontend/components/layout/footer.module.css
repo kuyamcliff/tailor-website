@@ -133,3 +133,9 @@
   display: flex;
   gap: 8px;
 }
+
+.demo {
+  padding-top: 20px;
+  padding-bottom: 4px;
+  max-width: 72ch;
+}

@@ -1,19 +1,50 @@
 // Shared display helpers for dates and statuses. No em dashes in any user-facing string.
 
-export function formatDate(iso: string | null | undefined, locale = "en-GB", opts: Intl.DateTimeFormatOptions = { day: "numeric", month: "long", year: "numeric" }) {
-  if (!iso) return "";
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString(locale, opts);
+// Dates are assembled from Intl parts rather than toLocaleString, because Node and browsers ship
+// different locale data (for example "Thu, 8 Oct" versus "Thu 8 Oct"), which breaks hydration.
+type Parts = Partial<Record<Intl.DateTimeFormatPartTypes, string>>;
+
+function parts(d: Date, opts: Intl.DateTimeFormatOptions): Parts {
+  const out: Parts = {};
+  for (const p of new Intl.DateTimeFormat("en-GB", { ...opts, hourCycle: "h23" }).formatToParts(d)) out[p.type] = p.value;
+  return out;
 }
 
-export function formatDateTime(iso: string | null | undefined, timeZone?: string) {
-  if (!iso) return "";
-  const d = new Date(iso);
-  return d.toLocaleString("en-GB", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone });
+function valid(iso: string | Date | null | undefined): Date | null {
+  if (!iso) return null;
+  const d = iso instanceof Date ? iso : new Date(iso);
+  return Number.isNaN(d.getTime()) ? null : d;
 }
 
-export function formatTime(iso: string, timeZone?: string) {
-  return new Date(iso).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone });
+// formatDate: "8 October 2026" (style "long"), "8 Oct" (style "short").
+export function formatDate(iso: string | Date | null | undefined, style: "long" | "short" = "long", timeZone?: string) {
+  const d = valid(iso);
+  if (!d) return "";
+  const p = parts(d, { day: "numeric", month: style === "long" ? "long" : "short", year: style === "long" ? "numeric" : undefined, timeZone });
+  return [p.day, p.month, p.year].filter(Boolean).join(" ");
+}
+
+// formatDay: "Thu 8 Oct" or, with long, "Thursday 8 October 2026".
+export function formatDay(iso: string | Date | null | undefined, timeZone?: string, long = false) {
+  const d = valid(iso);
+  if (!d) return "";
+  const p = parts(d, { weekday: long ? "long" : "short", day: "numeric", month: long ? "long" : "short", year: long ? "numeric" : undefined, timeZone });
+  return [p.weekday, p.day, p.month, p.year].filter(Boolean).join(" ");
+}
+
+// formatTime: "14:30".
+export function formatTime(iso: string | Date, timeZone?: string) {
+  const d = valid(iso);
+  if (!d) return "";
+  const p = parts(d, { hour: "2-digit", minute: "2-digit", timeZone });
+  return `${p.hour}:${p.minute}`;
+}
+
+// formatDateTime: "Thu 8 Oct, 14:30".
+export function formatDateTime(iso: string | Date | null | undefined, timeZone?: string, long = false) {
+  const d = valid(iso);
+  if (!d) return "";
+  return `${formatDay(d, timeZone, long)}, ${formatTime(d, timeZone)}`;
 }
 
 export function humanize(s: string) {

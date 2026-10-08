@@ -34,6 +34,8 @@ type Media struct {
 	Alt      string     `json:"alt"`
 	Width    *int       `json:"width"`
 	Height   *int       `json:"height"`
+	// Sample marks licensed stock images seeded for development so they are never presented as the atelier's own work.
+	Sample bool `json:"sample"`
 }
 
 type Variant struct {
@@ -281,9 +283,11 @@ func attachMedia(ctx context.Context, q db.Querier, list []Product, perProduct i
 		ids[i] = p.ID
 		idx[p.ID] = i
 	}
-	rows, err := q.Query(ctx, `SELECT product_id, id, url, upload_id, alt, width, height FROM (
+	rows, err := q.Query(ctx, `SELECT m.product_id, m.id, m.url, m.upload_id, m.alt, m.width, m.height,
+			coalesce(u.license->>'usage' = 'development only', false) FROM (
 		SELECT *, row_number() OVER (PARTITION BY product_id ORDER BY sort_order, id) rn FROM product_media WHERE product_id = ANY($1)) m
-		WHERE $2 = 0 OR rn <= $2 ORDER BY product_id, rn`, ids, perProduct)
+		LEFT JOIN uploads u ON u.id = m.upload_id
+		WHERE $2 = 0 OR m.rn <= $2 ORDER BY m.product_id, m.rn`, ids, perProduct)
 	if err != nil {
 		return err
 	}
@@ -291,7 +295,7 @@ func attachMedia(ctx context.Context, q db.Querier, list []Product, perProduct i
 	for rows.Next() {
 		var pid uuid.UUID
 		var m Media
-		if err := rows.Scan(&pid, &m.ID, &m.URL, &m.UploadID, &m.Alt, &m.Width, &m.Height); err != nil {
+		if err := rows.Scan(&pid, &m.ID, &m.URL, &m.UploadID, &m.Alt, &m.Width, &m.Height, &m.Sample); err != nil {
 			return err
 		}
 		list[idx[pid]].Media = append(list[idx[pid]].Media, m)

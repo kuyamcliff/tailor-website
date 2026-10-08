@@ -34,7 +34,7 @@ export function OrderDocument({ id, kind }: { id: string; kind: keyof typeof tit
   if (order.isLoading || token === null) return <div className="container section-tight"><div className="skeleton" style={{ height: 400 }} /></div>;
   if (!order.data) return <div className="container section-tight"><p className="notice notice-danger">This document could not be opened.</p></div>;
   const o = order.data.order;
-  const money = (m: number) => formatMoney(m, o.currency, b.locale);
+  const money = (m: number) => formatMoney(m, o.currency);
   const paid = o.payments.filter((p) => p.status === "succeeded" || p.status === "partially_refunded" || p.status === "refunded");
   return (
     <div className={styles.page}>
@@ -49,6 +49,9 @@ export function OrderDocument({ id, kind }: { id: string; kind: keyof typeof tit
             <p className={styles.brand}>{b.name || "Atelier"}</p>
             <p>{[b.address.line1, b.address.line2, b.address.city, b.address.country].filter(Boolean).join(", ")}</p>
             <p>{[b.phone, b.email].filter(Boolean).join(" · ")}</p>
+            {b.legalName || b.registrationNumber || b.taxId ? (
+              <p>{[b.legalName, b.registrationNumber && `RCCM ${b.registrationNumber}`, b.taxId && `NIU ${b.taxId}`].filter(Boolean).join(" · ")}</p>
+            ) : null}
           </div>
           <div className={styles.meta}>
             <h1>{titles[kind]}</h1>

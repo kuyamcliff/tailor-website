@@ -146,6 +146,9 @@ func (s *Service) DeliverPending(ctx context.Context) error {
 		if j.link != nil {
 			body += "\n\n" + s.SiteURL + *j.link
 		}
+		if j.channel == "email" {
+			body += EmailFooter(s.SiteURL)
+		}
 		var sendErr error
 		var to string
 		var sender Sender
@@ -315,4 +318,12 @@ func (h Handler) MarkRead(w http.ResponseWriter, r *http.Request) error {
 	}
 	w.WriteHeader(http.StatusNoContent)
 	return nil
+}
+
+// EmailFooter explains why the message was sent and how to stop it. The atelier only sends
+// service messages about the customer's own orders, requests, appointments and account.
+func EmailFooter(siteURL string) string {
+	return "\n\n--\nYou are receiving this because of an order, request, appointment or account with us." +
+		"\nChoose which updates you get by email: " + siteURL + "/account/settings" +
+		"\nNo account? Reply to this message or write to us at " + siteURL + "/support and we will stop emailing you."
 }

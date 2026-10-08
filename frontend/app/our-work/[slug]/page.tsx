@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { serverApi, ServerApiError } from "@/lib/server";
 import type { PortfolioProject } from "@/lib/types";
+import { SampleTag } from "@/components/ui/sample-tag";
 
 async function load(slug: string) {
   try {
@@ -37,6 +38,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
         {p.media.map((m, i) => (
           <div key={m.id} style={{ position: "relative", aspectRatio: m.width && m.height ? `${m.width} / ${m.height}` : "4 / 5", background: "var(--surface)" }}>
             <Image src={m.url} alt={m.alt} fill priority={i === 0} sizes="(max-width: 900px) 100vw, 50vw" style={{ objectFit: "cover" }} />
+            <SampleTag show={m.sample} />
           </div>
         ))}
       </div>
