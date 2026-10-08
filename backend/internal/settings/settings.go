@@ -26,9 +26,6 @@ import (
 type Business struct {
 	Name              string           `json:"name"`
 	Tagline           string           `json:"tagline"`
-	LegalName         string           `json:"legalName"`          // registered business name shown in the footer and on invoices
-	RegistrationNo    string           `json:"registrationNumber"` // trade register (RCCM) or company number
-	TaxID             string           `json:"taxId"`              // taxpayer number (NIU) when registered
 	LogoURL           string           `json:"logoUrl"`
 	Phone             string           `json:"phone"`
 	WhatsApp          string           `json:"whatsapp"`
@@ -279,7 +276,7 @@ func (h Handler) PublicConfig(w http.ResponseWriter, r *http.Request) error {
 	httpx.JSON(w, http.StatusOK, map[string]any{
 		"demoContent": demo,
 		"business": map[string]any{
-			"name": b.Name, "tagline": b.Tagline, "legalName": b.LegalName, "registrationNumber": b.RegistrationNo, "taxId": b.TaxID, "logoUrl": b.LogoURL, "phone": b.Phone, "whatsapp": b.WhatsApp,
+			"name": b.Name, "tagline": b.Tagline, "logoUrl": b.LogoURL, "phone": b.Phone, "whatsapp": b.WhatsApp,
 			"email": b.Email, "address": b.Address, "openingHours": b.OpeningHours, "currency": b.Currency,
 			"locale": b.Locale, "timezone": b.Timezone, "countryCode": b.CountryCode, "social": b.Social,
 			"delivery": activeDelivery(b.Delivery), "quoteValidityDays": b.QuoteValidityDays, "depositPercentBp": b.DepositPercentBP,

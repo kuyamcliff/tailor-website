@@ -1,7 +1,5 @@
 import Image from "next/image";
 import Link from "next/link";
-import { existsSync } from "node:fs";
-import path from "node:path";
 import { ArrowRight, Clock, MapPin } from "lucide-react";
 import { serverApiOr } from "@/lib/server";
 import { getConfig, getContent } from "@/lib/server-data";
@@ -32,8 +30,6 @@ export default async function HomePage() {
   const processBlock = block(content, "home.process");
   const services = block(content, "services");
   const b = config.business;
-  // The preview shows pre-rendered frames of the studio model; skip it until they have been generated.
-  const hasRenders = existsSync(path.join(process.cwd(), "public", "3d", "renders", "suit-front.webp"));
 
   return (
     <>
@@ -118,11 +114,9 @@ export default async function HomePage() {
                 </Link>
               </div>
             </Reveal>
-            {hasRenders ? (
-              <Reveal delay={100}>
-                <StudioPreview />
-              </Reveal>
-            ) : null}
+            <Reveal delay={100}>
+              <StudioPreview />
+            </Reveal>
           </div>
         </section>
       ) : null}

@@ -24,10 +24,8 @@ const names: Record<string, string> = {
   "custom.landing": "Custom tailoring page",
   "policy.privacy": "Policy: privacy",
   "policy.terms": "Policy: terms",
-  "policy.refunds": "Policy: returns and refunds",
   "policy.delivery": "Policy: delivery and pickup",
   "policy.alterations": "Policy: alterations and remakes",
-  "policy.cookies": "Policy: cookies",
 };
 
 export function OwnerContent() {

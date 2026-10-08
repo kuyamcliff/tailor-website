@@ -14,9 +14,6 @@ import styles from "./tables.module.css";
 type Business = {
   name: string;
   tagline: string;
-  legalName: string;
-  registrationNumber: string;
-  taxId: string;
   logoUrl: string;
   phone: string;
   whatsapp: string;
@@ -150,15 +147,6 @@ function BusinessForm({ initial }: { initial: Business }) {
         <div className="form-grid cols-2">
           {text("Name shown on the site", b.name, (v) => set("name", v), errors.name)}
           {text("Tagline", b.tagline, (v) => set("tagline", v))}
-          {text(
-            "Registered business name",
-            b.legalName ?? "",
-            (v) => set("legalName", v),
-            undefined,
-            "Shown in the footer and on invoices.",
-          )}
-          {text("Trade register number (RCCM)", b.registrationNumber ?? "", (v) => set("registrationNumber", v))}
-          {text("Taxpayer number (NIU)", b.taxId ?? "", (v) => set("taxId", v))}
           {text(
             "Logo image address",
             b.logoUrl,
