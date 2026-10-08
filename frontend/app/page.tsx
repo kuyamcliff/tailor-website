@@ -137,7 +137,8 @@ export default async function HomePage() {
                 <h2 className="display-2">Fabric collection</h2>
               </div>
               <p className="muted" style={{ maxWidth: 420 }}>
-                Every fabric can be seen and touched at the studio. Choose one in the fitting studio to see it on your garment.
+                Every fabric can be seen and touched at the studio. Choose one in the fitting studio to see it on your
+                garment.
               </p>
             </div>
             <ul className={styles.fabrics}>
@@ -175,9 +176,19 @@ export default async function HomePage() {
             </div>
             <div className={styles.work}>
               {work.slice(0, 5).map((p, i) => (
-                <Link key={p.id} href={`/our-work/${p.slug}`} className={`${styles.workItem} ${i === 0 ? styles.workLead : ""}`}>
+                <Link
+                  key={p.id}
+                  href={`/our-work/${p.slug}`}
+                  className={`${styles.workItem} ${i === 0 ? styles.workLead : ""}`}
+                >
                   {p.media[0] ? (
-                    <Image src={p.media[0].url} alt={p.media[0].alt} fill sizes={i === 0 ? "(max-width: 900px) 100vw, 50vw" : "(max-width: 900px) 50vw, 25vw"} style={{ objectFit: "cover" }} />
+                    <Image
+                      src={p.media[0].url}
+                      alt={p.media[0].alt}
+                      fill
+                      sizes={i === 0 ? "(max-width: 900px) 100vw, 50vw" : "(max-width: 900px) 50vw, 25vw"}
+                      style={{ objectFit: "cover" }}
+                    />
                   ) : null}
                   <SampleTag show={p.media[0]?.sample} />
                   <span className={styles.workCaption}>
@@ -282,7 +293,12 @@ export default async function HomePage() {
                 Book a time
               </Link>
               {b.whatsapp ? (
-                <a href={whatsappLink(b.whatsapp, "Hello, I would like to book a consultation.")} className="btn" target="_blank" rel="noopener noreferrer">
+                <a
+                  href={whatsappLink(b.whatsapp, "Hello, I would like to book a consultation.")}
+                  className="btn"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   <SocialIcon network="whatsapp" size={16} /> WhatsApp
                 </a>
               ) : null}
@@ -290,7 +306,6 @@ export default async function HomePage() {
           </div>
         </section>
       ) : null}
-
     </>
   );
 }

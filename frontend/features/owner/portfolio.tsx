@@ -11,7 +11,17 @@ import { ImageUploader, uploadsPending, type UploadItem } from "@/components/ui/
 import { PageHead } from "./owner-shell";
 import styles from "./tables.module.css";
 
-const categories = ["suits", "shirts", "trousers", "dresses", "gowns", "traditional", "wedding", "alterations", "other"];
+const categories = [
+  "suits",
+  "shirts",
+  "trousers",
+  "dresses",
+  "gowns",
+  "traditional",
+  "wedding",
+  "alterations",
+  "other",
+];
 const permission: [string, string][] = [
   ["not_required", "No customer shown"],
   ["granted", "Customer agreed in writing"],
@@ -42,19 +52,34 @@ export function OwnerPortfolio() {
             <li key={p.id}>
               <button
                 className="list-row"
-                style={{ width: "100%", background: "none", border: 0, color: "inherit", font: "inherit", cursor: "pointer", textAlign: "left" }}
+                style={{
+                  width: "100%",
+                  background: "none",
+                  border: 0,
+                  color: "inherit",
+                  font: "inherit",
+                  cursor: "pointer",
+                  textAlign: "left",
+                }}
                 aria-expanded={open === p.id}
                 onClick={() => setOpen(open === p.id ? null : p.id)}
               >
                 <span className="row">
                   {p.media[0] ? (
                     // eslint-disable-next-line @next/next/no-img-element -- owner thumbnail
-                    <img src={p.media[0].url} alt="" width={48} height={60} style={{ objectFit: "cover", border: "1px solid var(--line)" }} />
+                    <img
+                      src={p.media[0].url}
+                      alt=""
+                      width={48}
+                      height={60}
+                      style={{ objectFit: "cover", border: "1px solid var(--line)" }}
+                    />
                   ) : null}
                   <span className="stack-xs">
                     <strong>{p.title}</strong>
                     <span className="small muted">
-                      {humanize(p.category)} · {p.media.length} photos{p.media.some((m) => m.sample) ? " · sample photos" : ""}
+                      {humanize(p.category)} · {p.media.length} photos
+                      {p.media.some((m) => m.sample) ? " · sample photos" : ""}
                     </span>
                   </span>
                 </span>
@@ -84,13 +109,32 @@ function ProjectForm({ project: p, onDone }: { project: PortfolioProject | null;
     featured: p?.featured ?? false,
     status: p?.status ?? "draft",
   });
-  const [media, setMedia] = useState(p?.media.map((m) => ({ uploadId: m.uploadId, url: m.url, alt: m.alt, width: m.width, height: m.height })) ?? []);
+  const [media, setMedia] = useState(
+    p?.media.map((m) => ({ uploadId: m.uploadId, url: m.url, alt: m.alt, width: m.width, height: m.height })) ?? [],
+  );
   const [uploads, setUploads] = useState<UploadItem[]>([]);
   const [busy, setBusy] = useState(false);
   async function save() {
     setBusy(true);
-    const added = uploads.filter((u) => u.status === "done" && u.result).map((u) => ({ uploadId: u.result!.id, url: u.result!.url, alt: x.title, width: u.result!.width, height: u.result!.height }));
-    const body = { ...x, tags: x.tags.split(",").map((t) => t.trim()).filter(Boolean), videoUrl: null, sortOrder: p?.sortOrder ?? 0, media: [...media, ...added] };
+    const added = uploads
+      .filter((u) => u.status === "done" && u.result)
+      .map((u) => ({
+        uploadId: u.result!.id,
+        url: u.result!.url,
+        alt: x.title,
+        width: u.result!.width,
+        height: u.result!.height,
+      }));
+    const body = {
+      ...x,
+      tags: x.tags
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean),
+      videoUrl: null,
+      sortOrder: p?.sortOrder ?? 0,
+      media: [...media, ...added],
+    };
     try {
       await api(p ? `/owner/portfolio/${p.id}` : "/owner/portfolio", { method: p ? "PUT" : "POST", body });
       toast("Project saved.");
@@ -128,7 +172,12 @@ function ProjectForm({ project: p, onDone }: { project: PortfolioProject | null;
       </div>
       <label className="field">
         <span className="label">About this piece</span>
-        <textarea className="textarea" rows={4} value={x.description} onChange={(e) => setX({ ...x, description: e.target.value })} />
+        <textarea
+          className="textarea"
+          rows={4}
+          value={x.description}
+          onChange={(e) => setX({ ...x, description: e.target.value })}
+        />
       </label>
       <div className="form-grid cols-2">
         <label className="field">
@@ -141,7 +190,11 @@ function ProjectForm({ project: p, onDone }: { project: PortfolioProject | null;
         </label>
         <label className="field">
           <span className="label">Customer permission</span>
-          <select className="select" value={x.customerPermission} onChange={(e) => setX({ ...x, customerPermission: e.target.value })}>
+          <select
+            className="select"
+            value={x.customerPermission}
+            onChange={(e) => setX({ ...x, customerPermission: e.target.value })}
+          >
             {permission.map(([k, l]) => (
               <option key={k} value={k}>
                 {l}
@@ -164,16 +217,39 @@ function ProjectForm({ project: p, onDone }: { project: PortfolioProject | null;
           {media.map((m, i) => (
             <li key={m.url} style={{ position: "relative" }}>
               {/* eslint-disable-next-line @next/next/no-img-element -- owner thumbnail */}
-              <img src={m.url} alt={m.alt} width={96} height={120} style={{ objectFit: "cover", border: "1px solid var(--line)", display: "block" }} />
-              <input className="input" aria-label={`Photo ${i + 1} description`} value={m.alt} onChange={(e) => setMedia((ms) => ms.map((y, j) => (j === i ? { ...y, alt: e.target.value } : y)))} style={{ width: 96, fontSize: 12, padding: 4 }} />
-              <button className="icon-btn" aria-label={`Remove photo ${i + 1}`} style={{ position: "absolute", top: 2, right: 2 }} onClick={() => setMedia((ms) => ms.filter((_, j) => j !== i))}>
+              <img
+                src={m.url}
+                alt={m.alt}
+                width={96}
+                height={120}
+                style={{ objectFit: "cover", border: "1px solid var(--line)", display: "block" }}
+              />
+              <input
+                className="input"
+                aria-label={`Photo ${i + 1} description`}
+                value={m.alt}
+                onChange={(e) => setMedia((ms) => ms.map((y, j) => (j === i ? { ...y, alt: e.target.value } : y)))}
+                style={{ width: 96, fontSize: 12, padding: 4 }}
+              />
+              <button
+                className="icon-btn"
+                aria-label={`Remove photo ${i + 1}`}
+                style={{ position: "absolute", top: 2, right: 2 }}
+                onClick={() => setMedia((ms) => ms.filter((_, j) => j !== i))}
+              >
                 <X size={14} aria-hidden />
               </button>
             </li>
           ))}
         </ul>
       ) : null}
-      <ImageUploader purpose="portfolio" items={uploads} onChange={setUploads} max={12} label="Add photos of the finished piece" />
+      <ImageUploader
+        purpose="portfolio"
+        items={uploads}
+        onChange={setUploads}
+        max={12}
+        label="Add photos of the finished piece"
+      />
       <label className="check">
         <input type="checkbox" checked={x.featured} onChange={(e) => setX({ ...x, featured: e.target.checked })} />
         <span>Show on the home page</span>
@@ -195,7 +271,17 @@ function ProjectForm({ project: p, onDone }: { project: PortfolioProject | null;
   );
 }
 
-type T = { id: string; customerName: string; quote: string; context: string; source: string; consent: boolean; status: string; publishedAt: string | null; createdAt: string };
+type T = {
+  id: string;
+  customerName: string;
+  quote: string;
+  context: string;
+  source: string;
+  consent: boolean;
+  status: string;
+  publishedAt: string | null;
+  createdAt: string;
+};
 
 function Testimonials() {
   const qc = useQueryClient();
@@ -207,7 +293,14 @@ function Testimonials() {
     try {
       await api(form.id ? `/owner/testimonials/${form.id}` : "/owner/testimonials", {
         method: form.id ? "PUT" : "POST",
-        body: { customerName: form.customerName ?? "", quote: form.quote ?? "", context: form.context ?? "", source: form.source ?? "", consent: Boolean(form.consent), status: form.status ?? "draft" },
+        body: {
+          customerName: form.customerName ?? "",
+          quote: form.quote ?? "",
+          context: form.context ?? "",
+          source: form.source ?? "",
+          consent: Boolean(form.consent),
+          status: form.status ?? "draft",
+        },
       });
       toast("Testimonial saved.");
       setForm(null);
@@ -227,35 +320,63 @@ function Testimonials() {
         </button>
       </div>
       <p className="small muted" style={{ margin: 0 }}>
-        Only real words from real customers, with their permission. Testimonials appear on the home page only when at least one is published.
+        Only real words from real customers, with their permission. Testimonials appear on the home page only when at
+        least one is published.
       </p>
       {form ? (
         <div className="panel panel-pad stack-sm">
           <div className="form-grid cols-2">
             <label className="field">
               <span className="label">Name as the customer agreed to be shown</span>
-              <input className="input" value={form.customerName ?? ""} onChange={(e) => setForm({ ...form, customerName: e.target.value })} />
+              <input
+                className="input"
+                value={form.customerName ?? ""}
+                onChange={(e) => setForm({ ...form, customerName: e.target.value })}
+              />
             </label>
             <label className="field">
               <span className="label">What it was for</span>
-              <input className="input" value={form.context ?? ""} onChange={(e) => setForm({ ...form, context: e.target.value })} placeholder="Wedding suit, 2026" />
+              <input
+                className="input"
+                value={form.context ?? ""}
+                onChange={(e) => setForm({ ...form, context: e.target.value })}
+                placeholder="Wedding suit, 2026"
+              />
             </label>
           </div>
           <label className="field">
             <span className="label">Their words</span>
-            <textarea className="textarea" rows={3} value={form.quote ?? ""} onChange={(e) => setForm({ ...form, quote: e.target.value })} />
+            <textarea
+              className="textarea"
+              rows={3}
+              value={form.quote ?? ""}
+              onChange={(e) => setForm({ ...form, quote: e.target.value })}
+            />
           </label>
           <label className="field">
             <span className="label">Where they said it</span>
-            <input className="input" value={form.source ?? ""} onChange={(e) => setForm({ ...form, source: e.target.value })} placeholder="WhatsApp message, 12 March" />
+            <input
+              className="input"
+              value={form.source ?? ""}
+              onChange={(e) => setForm({ ...form, source: e.target.value })}
+              placeholder="WhatsApp message, 12 March"
+            />
           </label>
           <label className="check">
-            <input type="checkbox" checked={Boolean(form.consent)} onChange={(e) => setForm({ ...form, consent: e.target.checked })} />
+            <input
+              type="checkbox"
+              checked={Boolean(form.consent)}
+              onChange={(e) => setForm({ ...form, consent: e.target.checked })}
+            />
             <span>The customer agreed to have this published</span>
           </label>
           <label className="field">
             <span className="label">Status</span>
-            <select className="select" value={form.status ?? "draft"} onChange={(e) => setForm({ ...form, status: e.target.value })}>
+            <select
+              className="select"
+              value={form.status ?? "draft"}
+              onChange={(e) => setForm({ ...form, status: e.target.value })}
+            >
               <option value="draft">Draft</option>
               <option value="published" disabled={!form.consent}>
                 Published
@@ -280,7 +401,8 @@ function Testimonials() {
                 <span>&ldquo;{t.quote}&rdquo;</span>
                 <span className="small muted">
                   {t.customerName}
-                  {t.context ? `, ${t.context}` : ""} · {t.publishedAt ? `published ${formatDate(t.publishedAt, "short")}` : humanize(t.status)}
+                  {t.context ? `, ${t.context}` : ""} ·{" "}
+                  {t.publishedAt ? `published ${formatDate(t.publishedAt, "short")}` : humanize(t.status)}
                 </span>
               </span>
               <button className="btn btn-ghost btn-sm" onClick={() => setForm(t)}>

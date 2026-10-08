@@ -22,9 +22,11 @@ export function fieldError(raw: string, unit: Unit, minMm: number, maxMm: number
   if (!raw.trim()) return required ? "Required for this garment." : "";
   const v = Number(raw.replace(",", "."));
   if (!Number.isFinite(v) || v <= 0) return "Enter a positive number.";
-  if (!validPrecision(v, unit)) return unit === "cm" ? "Use at most one decimal place." : "Use quarter-inch steps, for example 15.25.";
+  if (!validPrecision(v, unit))
+    return unit === "cm" ? "Use at most one decimal place." : "Use quarter-inch steps, for example 15.25.";
   const mm = toMM(v, unit);
-  if (mm < minMm || mm > maxMm) return `Expected between ${fromMM(minMm, unit)} and ${fromMM(maxMm, unit)} ${unit}. Please measure again.`;
+  if (mm < minMm || mm > maxMm)
+    return `Expected between ${fromMM(minMm, unit)} and ${fromMM(maxMm, unit)} ${unit}. Please measure again.`;
   return "";
 }
 
@@ -54,7 +56,14 @@ type Props = {
   showHeight?: boolean;
 };
 
-export function MeasurementForm({ fields, state, onChange, serverErrors = {}, requireAll = false, showHeight = true }: Props) {
+export function MeasurementForm({
+  fields,
+  state,
+  onChange,
+  serverErrors = {},
+  requireAll = false,
+  showHeight = true,
+}: Props) {
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [rounded, setRounded] = useState<string[]>([]);
 
@@ -71,7 +80,9 @@ export function MeasurementForm({ fields, state, onChange, serverErrors = {}, re
   }
 
   const err = (key: string, raw: string, min: number, max: number, req: boolean) =>
-    serverErrors[`values.${key}`] ?? serverErrors[key] ?? (touched[key] ? fieldError(raw, state.unit, min, max, req) : "");
+    serverErrors[`values.${key}`] ??
+    serverErrors[key] ??
+    (touched[key] ? fieldError(raw, state.unit, min, max, req) : "");
 
   return (
     <div className="stack">
@@ -80,7 +91,13 @@ export function MeasurementForm({ fields, state, onChange, serverErrors = {}, re
         <div className="choices" role="radiogroup">
           {(["cm", "in"] as const).map((u) => (
             <label key={u} className="choice">
-              <input type="radio" name="measure-unit" value={u} checked={state.unit === u} onChange={() => switchUnit(u)} />
+              <input
+                type="radio"
+                name="measure-unit"
+                value={u}
+                checked={state.unit === u}
+                onChange={() => switchUnit(u)}
+              />
               <span>{u === "cm" ? "Centimetres" : "Inches"}</span>
             </label>
           ))}
@@ -88,7 +105,8 @@ export function MeasurementForm({ fields, state, onChange, serverErrors = {}, re
       </fieldset>
       {rounded.length ? (
         <p className="notice notice-warning small" role="status">
-          Converted and rounded to the nearest {state.unit === "cm" ? "millimetre" : "quarter inch"}: {rounded.join(", ")}. Please check these values.
+          Converted and rounded to the nearest {state.unit === "cm" ? "millimetre" : "quarter inch"}:{" "}
+          {rounded.join(", ")}. Please check these values.
         </p>
       ) : null}
       <div className={styles.grid}>
@@ -99,7 +117,9 @@ export function MeasurementForm({ fields, state, onChange, serverErrors = {}, re
             instruction="Stand straight against a wall without shoes."
             unit={state.unit}
             value={state.height}
-            error={serverErrors.height ?? (touched.height ? fieldError(state.height, state.unit, 1200, 2300, false) : "")}
+            error={
+              serverErrors.height ?? (touched.height ? fieldError(state.height, state.unit, 1200, 2300, false) : "")
+            }
             onChange={(v) => onChange({ ...state, height: v })}
             onBlur={() => setTouched((t) => ({ ...t, height: true }))}
           />

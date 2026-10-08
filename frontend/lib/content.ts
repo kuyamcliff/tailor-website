@@ -4,7 +4,15 @@
 import type { ContentBlocks } from "./types";
 
 export type Cta = { label: string; href: string };
-export type Hero = { eyebrow: string; title: string; subtitle: string; primaryCta: Cta; secondaryCta: Cta; image: string; imageAlt?: string };
+export type Hero = {
+  eyebrow: string;
+  title: string;
+  subtitle: string;
+  primaryCta: Cta;
+  secondaryCta: Cta;
+  image: string;
+  imageAlt?: string;
+};
 export type Step = { title: string; body: string };
 export type Service = { title: string; body: string; href: string };
 export type Faq = { q: string; a: string };
@@ -40,7 +48,13 @@ const fallbacks = {
 } as const;
 
 type Fallbacks = typeof fallbacks;
-type Widen<T> = T extends string ? string : T extends readonly (infer U)[] ? Widen<U>[] : T extends object ? { [K in keyof T]: Widen<T[K]> } : T;
+type Widen<T> = T extends string
+  ? string
+  : T extends readonly (infer U)[]
+    ? Widen<U>[]
+    : T extends object
+      ? { [K in keyof T]: Widen<T[K]> }
+      : T;
 
 export function block<K extends keyof Fallbacks>(content: ContentBlocks, key: K): Widen<Fallbacks[K]> {
   const v = content[key];

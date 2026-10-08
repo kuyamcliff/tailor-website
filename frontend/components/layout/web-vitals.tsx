@@ -8,7 +8,8 @@ export function WebVitals() {
     let cancelled = false;
     void import("web-vitals").then(({ onCLS, onINP, onLCP, onFCP, onTTFB }) => {
       if (cancelled) return;
-      const report = (m: { name: string; value: number; rating: string }) => reportMetric(m.name, m.value, { rating: m.rating });
+      const report = (m: { name: string; value: number; rating: string }) =>
+        reportMetric(m.name, m.value, { rating: m.rating });
       onCLS(report);
       onINP(report);
       onLCP(report);

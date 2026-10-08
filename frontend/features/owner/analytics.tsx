@@ -21,13 +21,17 @@ type Data = {
   ordersByStatus: { label: string; count: number }[];
 };
 
-const pct = (v: number | null | undefined) => (v === null || v === undefined ? "Not enough data" : `${Math.round(v * 100)}%`);
+const pct = (v: number | null | undefined) =>
+  v === null || v === undefined ? "Not enough data" : `${Math.round(v * 100)}%`;
 
 export function OwnerAnalytics() {
   const cfg = useConfig();
   const cur = cfg.business.currency;
   const [period, setPeriod] = useState("90");
-  const q = useQuery({ queryKey: ["owner", "analytics", period], queryFn: () => api<Data>(`/owner/analytics?period=${period}`) });
+  const q = useQuery({
+    queryKey: ["owner", "analytics", period],
+    queryFn: () => api<Data>(`/owner/analytics?period=${period}`),
+  });
   const d = q.data;
   const money = (m: number) => formatMoney(Math.round(m), cur);
   return (
@@ -38,7 +42,12 @@ export function OwnerAnalytics() {
         actions={
           <label className="row small">
             <span>Period</span>
-            <select className="select" value={period} onChange={(e) => setPeriod(e.target.value)} style={{ width: "auto" }}>
+            <select
+              className="select"
+              value={period}
+              onChange={(e) => setPeriod(e.target.value)}
+              style={{ width: "auto" }}
+            >
               <option value="30">Last 30 days</option>
               <option value="90">Last 90 days</option>
               <option value="365">Last 12 months</option>
@@ -92,9 +101,17 @@ export function OwnerAnalytics() {
               </h2>
               <dl className={styles.dl}>
                 <dt>First reply to messages</dt>
-                <dd className="tabular">{d.values.supportFirstResponseHours ? `${d.values.supportFirstResponseHours.toFixed(1)} hours on average` : "No replies yet"}</dd>
+                <dd className="tabular">
+                  {d.values.supportFirstResponseHours
+                    ? `${d.values.supportFirstResponseHours.toFixed(1)} hours on average`
+                    : "No replies yet"}
+                </dd>
                 <dt>Order to completion</dt>
-                <dd className="tabular">{d.values.orderCompletionDays ? `${Math.round(d.values.orderCompletionDays)} days on average` : "No completed orders yet"}</dd>
+                <dd className="tabular">
+                  {d.values.orderCompletionDays
+                    ? `${Math.round(d.values.orderCompletionDays)} days on average`
+                    : "No completed orders yet"}
+                </dd>
                 <dt>Appointments booked</dt>
                 <dd className="tabular">{d.values.appointmentsBooked ?? 0}</dd>
               </dl>
@@ -102,13 +119,24 @@ export function OwnerAnalytics() {
           </div>
 
           <div className={styles.split}>
-            <WeeklyBars title="Money collected per week" rows={d.revenueByWeek.map((r) => ({ week: r.week, value: r.amount }))} format={money} />
-            <WeeklyBars title="Requests per week" rows={d.requestsByWeek.map((r) => ({ week: r.week, value: r.count }))} format={(n) => String(n)} />
+            <WeeklyBars
+              title="Money collected per week"
+              rows={d.revenueByWeek.map((r) => ({ week: r.week, value: r.amount }))}
+              format={money}
+            />
+            <WeeklyBars
+              title="Requests per week"
+              rows={d.requestsByWeek.map((r) => ({ week: r.week, value: r.count }))}
+              format={(n) => String(n)}
+            />
           </div>
           <div className={styles.split}>
             <RankBars title="Most requested garments" rows={d.topGarments} />
             <RankBars title="Most requested fabrics" rows={d.topFabrics} />
-            <RankBars title="Open orders by stage" rows={d.ordersByStatus.map((r) => ({ ...r, label: humanize(r.label) }))} />
+            <RankBars
+              title="Open orders by stage"
+              rows={d.ordersByStatus.map((r) => ({ ...r, label: humanize(r.label) }))}
+            />
           </div>
         </>
       )}
@@ -117,7 +145,15 @@ export function OwnerAnalytics() {
 }
 
 // WeeklyBars: one series over time, so one hue and no legend; the title names the series.
-function WeeklyBars({ title, rows, format }: { title: string; rows: { week: string; value: number }[]; format: (n: number) => string }) {
+function WeeklyBars({
+  title,
+  rows,
+  format,
+}: {
+  title: string;
+  rows: { week: string; value: number }[];
+  format: (n: number) => string;
+}) {
   const [hover, setHover] = useState<number | null>(null);
   const max = Math.max(1, ...rows.map((r) => r.value));
   const W = 560;
@@ -132,7 +168,11 @@ function WeeklyBars({ title, rows, format }: { title: string; rows: { week: stri
       {rows.length ? (
         <>
           <div className={chart.plot}>
-            <svg viewBox={`0 0 ${W} ${H + 22}`} role="img" aria-label={`${title}, ${rows.length} weeks, highest ${format(max)}`}>
+            <svg
+              viewBox={`0 0 ${W} ${H + 22}`}
+              role="img"
+              aria-label={`${title}, ${rows.length} weeks, highest ${format(max)}`}
+            >
               <line x1={pad} x2={W} y1={H} y2={H} className={chart.axis} />
               <text x={0} y={12} className={chart.tick}>
                 {format(max)}
@@ -141,9 +181,21 @@ function WeeklyBars({ title, rows, format }: { title: string; rows: { week: stri
                 const bh = Math.max(1, (r.value / max) * (H - 20));
                 const x = pad + i * step + (step - bw) / 2;
                 return (
-                  <g key={r.week} onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)} onFocus={() => setHover(i)} onBlur={() => setHover(null)} tabIndex={0} aria-label={`Week of ${formatDate(r.week, "short")}: ${format(r.value)}`}>
+                  <g
+                    key={r.week}
+                    onMouseEnter={() => setHover(i)}
+                    onMouseLeave={() => setHover(null)}
+                    onFocus={() => setHover(i)}
+                    onBlur={() => setHover(null)}
+                    tabIndex={0}
+                    aria-label={`Week of ${formatDate(r.week, "short")}: ${format(r.value)}`}
+                  >
                     <rect x={pad + i * step} y={0} width={step} height={H} fill="transparent" />
-                    <path d={roundedTop(x, H - bh, bw, bh, Math.min(4, bw / 2))} className={chart.bar} data-active={hover === i} />
+                    <path
+                      d={roundedTop(x, H - bh, bw, bh, Math.min(4, bw / 2))}
+                      className={chart.bar}
+                      data-active={hover === i}
+                    />
                   </g>
                 );
               })}
@@ -159,7 +211,11 @@ function WeeklyBars({ title, rows, format }: { title: string; rows: { week: stri
               ) : null}
             </svg>
             {h ? (
-              <div className={chart.tip} style={{ left: `${((pad + (hover ?? 0) * step + step / 2) / W) * 100}%` }} role="status">
+              <div
+                className={chart.tip}
+                style={{ left: `${((pad + (hover ?? 0) * step + step / 2) / W) * 100}%` }}
+                role="status"
+              >
                 <span className="tiny muted">Week of {formatDate(h.week, "short")}</span>
                 <strong className="tabular">{format(h.value)}</strong>
               </div>

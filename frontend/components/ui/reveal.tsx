@@ -19,7 +19,8 @@ export function Reveal({
   const ref = useRef<HTMLElement>(null);
   useEffect(() => {
     const el = ref.current;
-    if (!el || !("IntersectionObserver" in window) || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (!el || !("IntersectionObserver" in window) || window.matchMedia("(prefers-reduced-motion: reduce)").matches)
+      return;
     if (el.getBoundingClientRect().top < window.innerHeight) return; // already on screen
     el.classList.add("reveal-pending");
     const io = new IntersectionObserver(
@@ -35,7 +36,11 @@ export function Reveal({
     return () => io.disconnect();
   }, []);
   return (
-    <Tag ref={ref as never} className={`reveal ${className}`} style={delay ? { transitionDelay: `${delay}ms` } : undefined}>
+    <Tag
+      ref={ref as never}
+      className={`reveal ${className}`}
+      style={delay ? { transitionDelay: `${delay}ms` } : undefined}
+    >
       {children}
     </Tag>
   );

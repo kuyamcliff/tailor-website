@@ -57,7 +57,15 @@ export function OwnerOrders() {
             { key: "q", label: "Search", type: "search" },
             { key: "status", label: "Stage", type: "select", options: stageOptions },
             { key: "paymentStatus", label: "Payment", type: "select", options: Object.entries(paymentLabels) },
-            { key: "kind", label: "Type", type: "select", options: [["bespoke", "Bespoke"], ["ready_made", "Ready to wear"]] },
+            {
+              key: "kind",
+              label: "Type",
+              type: "select",
+              options: [
+                ["bespoke", "Bespoke"],
+                ["ready_made", "Ready to wear"],
+              ],
+            },
           ]}
           rowKey={(r) => r.id}
           href={(r) => `/owner/orders/${r.id}`}
@@ -67,9 +75,28 @@ export function OwnerOrders() {
             { label: "Customer", cell: (r) => r.customerName ?? "" },
             { label: "Type", cell: (r) => (r.kind === "bespoke" ? "Bespoke" : "Ready to wear") },
             { label: "Stage", cell: (r) => <StatusBadge status={r.status} /> },
-            { label: "Payment", cell: (r) => <StatusBadge status={r.paymentStatus} label={paymentLabels[r.paymentStatus]} /> },
+            {
+              label: "Payment",
+              cell: (r) => <StatusBadge status={r.paymentStatus} label={paymentLabels[r.paymentStatus]} />,
+            },
             { label: "Total", cell: (r) => <Price minor={r.totalMinor} currency={r.currency} />, className: "tabular" },
-            { label: "Due", cell: (r) => (r.dueDate ? <span style={new Date(r.dueDate) < new Date() && !["completed", "delivered", "cancelled"].includes(r.status) ? { color: "var(--danger)" } : undefined}>{formatDate(r.dueDate, "short")}</span> : "") },
+            {
+              label: "Due",
+              cell: (r) =>
+                r.dueDate ? (
+                  <span
+                    style={
+                      new Date(r.dueDate) < new Date() && !["completed", "delivered", "cancelled"].includes(r.status)
+                        ? { color: "var(--danger)" }
+                        : undefined
+                    }
+                  >
+                    {formatDate(r.dueDate, "short")}
+                  </span>
+                ) : (
+                  ""
+                ),
+            },
             { label: "Placed", cell: (r) => formatDate(r.createdAt, "short") },
           ]}
         />
@@ -78,8 +105,22 @@ export function OwnerOrders() {
   );
 }
 
-type Task = { id: string; stage: string; title: string; status: string; assignee: string | null; dueAt: string | null; completedAt: string | null };
-type Resp = { order: Order; tasks: Task[]; supportThreads: { id: string; number: string; subject: string; status: string }[]; workflow: string[]; statusLabels: Record<string, string> };
+type Task = {
+  id: string;
+  stage: string;
+  title: string;
+  status: string;
+  assignee: string | null;
+  dueAt: string | null;
+  completedAt: string | null;
+};
+type Resp = {
+  order: Order;
+  tasks: Task[];
+  supportThreads: { id: string; number: string; subject: string; status: string }[];
+  workflow: string[];
+  statusLabels: Record<string, string>;
+};
 
 export function OwnerOrderDetail({ id }: { id: string }) {
   const qc = useQueryClient();
@@ -111,7 +152,11 @@ export function OwnerOrderDetail({ id }: { id: string }) {
   if (!q.data) return <p className="notice notice-danger">This order could not be loaded.</p>;
   const { order: o, tasks, workflow, statusLabels } = q.data;
   const cur = o.currency;
-  const stages = [...workflow.filter((s) => s !== o.status && s !== "draft"), ...(o.status !== "completed" ? ["completed"] : []), "cancelled"].filter((v, i, a) => a.indexOf(v) === i);
+  const stages = [
+    ...workflow.filter((s) => s !== o.status && s !== "draft"),
+    ...(o.status !== "completed" ? ["completed"] : []),
+    "cancelled",
+  ].filter((v, i, a) => a.indexOf(v) === i);
   const backwards = stage && workflow.indexOf(stage) > -1 && workflow.indexOf(stage) < workflow.indexOf(o.status);
   const needsNote = Boolean(stage && (stage === "cancelled" || stage === "refunded" || backwards));
 
@@ -121,7 +166,8 @@ export function OwnerOrderDetail({ id }: { id: string }) {
         title={`Order ${o.number}`}
         sub={
           <>
-            {o.contact.name} · {o.kind === "bespoke" ? "Bespoke" : "Ready to wear"} · placed {formatDateTime(o.createdAt)}
+            {o.contact.name} · {o.kind === "bespoke" ? "Bespoke" : "Ready to wear"} · placed{" "}
+            {formatDateTime(o.createdAt)}
           </>
         }
         actions={
@@ -233,7 +279,12 @@ export function OwnerOrderDetail({ id }: { id: string }) {
             <p style={{ margin: 0 }}>{humanize(o.status)}</p>
             {!["cancelled", "refunded"].includes(o.status) ? (
               <>
-                <select className="select" aria-label="Move to stage" value={stage} onChange={(e) => setStage(e.target.value)}>
+                <select
+                  className="select"
+                  aria-label="Move to stage"
+                  value={stage}
+                  onChange={(e) => setStage(e.target.value)}
+                >
                   <option value="">Move to</option>
                   {stages.map((s) => (
                     <option key={s} value={s}>
@@ -245,7 +296,12 @@ export function OwnerOrderDetail({ id }: { id: string }) {
                   <>
                     <label className="field">
                       <span className="label">{needsNote ? "Reason (required)" : "Note (optional)"}</span>
-                      <textarea className="textarea" rows={2} value={stageNote} onChange={(e) => setStageNote(e.target.value)} />
+                      <textarea
+                        className="textarea"
+                        rows={2}
+                        value={stageNote}
+                        onChange={(e) => setStageNote(e.target.value)}
+                      />
                     </label>
                     <label className="check">
                       <input type="checkbox" checked={tell} onChange={(e) => setTell(e.target.checked)} />
@@ -255,8 +311,20 @@ export function OwnerOrderDetail({ id }: { id: string }) {
                       className={`btn btn-sm ${stage === "cancelled" ? "btn-danger" : "btn-primary"}`}
                       disabled={busy || (needsNote && !stageNote.trim())}
                       onClick={async () => {
-                        if (stage === "cancelled" && !confirm("Cancel this order? Paid amounts must be refunded separately.")) return;
-                        if (await run(() => api(`/owner/orders/${o.id}/status`, { body: { status: stage, note: stageNote, customerVisible: tell, version: o.version } }), "Stage updated.")) {
+                        if (
+                          stage === "cancelled" &&
+                          !confirm("Cancel this order? Paid amounts must be refunded separately.")
+                        )
+                          return;
+                        if (
+                          await run(
+                            () =>
+                              api(`/owner/orders/${o.id}/status`, {
+                                body: { status: stage, note: stageNote, customerVisible: tell, version: o.version },
+                              }),
+                            "Stage updated.",
+                          )
+                        ) {
                           setStage("");
                           setStageNote("");
                         }
@@ -285,7 +353,9 @@ export function OwnerOrderDetail({ id }: { id: string }) {
             </span>
             <span className="small muted">
               {humanize(o.fulfillmentMethod)}
-              {o.deliveryAddress ? `: ${[o.deliveryAddress.line1, o.deliveryAddress.city].filter(Boolean).join(", ")}` : ""}
+              {o.deliveryAddress
+                ? `: ${[o.deliveryAddress.line1, o.deliveryAddress.city].filter(Boolean).join(", ")}`
+                : ""}
             </span>
             {o.requestId ? (
               <Link className="link small" href={`/owner/requests/${o.requestId}`}>
@@ -314,7 +384,9 @@ type RunFn = (fn: () => Promise<unknown>, done: string) => Promise<boolean>;
 function Payments({ order: o, busy, run }: { order: Order; busy: boolean; run: RunFn }) {
   const [open, setOpen] = useState(false);
   const [amount, setAmount] = useState("");
-  const [purpose, setPurpose] = useState(o.amountPaidMinor === 0 && o.depositRequiredMinor < o.totalMinor ? "deposit" : "balance");
+  const [purpose, setPurpose] = useState(
+    o.amountPaidMinor === 0 && o.depositRequiredMinor < o.totalMinor ? "deposit" : "balance",
+  );
   const [note, setNote] = useState("");
   const [refundFor, setRefundFor] = useState<string | null>(null);
   const [refundAmount, setRefundAmount] = useState("");
@@ -335,12 +407,19 @@ function Payments({ order: o, busy, run }: { order: Order; busy: boolean; run: R
       {open ? (
         <div className="panel panel-pad stack-sm">
           <p className="small muted" style={{ margin: 0 }}>
-            For cash, bank transfer or Mobile Money received outside the website. Record only money you have actually received.
+            For cash, bank transfer or Mobile Money received outside the website. Record only money you have actually
+            received.
           </p>
           <div className="form-grid cols-2">
             <label className="field">
               <span className="label">Amount ({o.currency})</span>
-              <input className="input tabular" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder={String(o.balanceMinor / 10 ** exp)} />
+              <input
+                className="input tabular"
+                inputMode="decimal"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder={String(o.balanceMinor / 10 ** exp)}
+              />
             </label>
             <label className="field">
               <span className="label">For</span>
@@ -353,7 +432,12 @@ function Payments({ order: o, busy, run }: { order: Order; busy: boolean; run: R
           </div>
           <label className="field">
             <span className="label">How it was paid (required)</span>
-            <input className="input" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Cash at the studio, receipt 0142" />
+            <input
+              className="input"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Cash at the studio, receipt 0142"
+            />
           </label>
           <button
             className="btn btn-primary btn-sm"
@@ -362,7 +446,11 @@ function Payments({ order: o, busy, run }: { order: Order; busy: boolean; run: R
             onClick={async () => {
               if (
                 await run(
-                  () => api(`/owner/orders/${o.id}/payments/manual`, { body: { amountMinor: toMinor(amount, o.currency), purpose, note }, idempotencyKey: `manual-${o.id}-${o.version}-${amount}` }),
+                  () =>
+                    api(`/owner/orders/${o.id}/payments/manual`, {
+                      body: { amountMinor: toMinor(amount, o.currency), purpose, note },
+                      idempotencyKey: `manual-${o.id}-${o.version}-${amount}`,
+                    }),
                   "Payment recorded.",
                 )
               ) {
@@ -396,8 +484,16 @@ function Payments({ order: o, busy, run }: { order: Order; busy: boolean; run: R
                 <tr key={p.id}>
                   <td>{formatDate(p.succeededAt ?? p.createdAt, "short")}</td>
                   <td>
-                    {p.provider === "mtn" ? "MTN MoMo" : p.provider === "orange" ? "Orange Money" : humanize(p.provider)}
-                    {p.simulated ? <span className="badge badge-warning" style={{ marginLeft: 6 }}>Test</span> : null}
+                    {p.provider === "mtn"
+                      ? "MTN MoMo"
+                      : p.provider === "orange"
+                        ? "Orange Money"
+                        : humanize(p.provider)}
+                    {p.simulated ? (
+                      <span className="badge badge-warning" style={{ marginLeft: 6 }}>
+                        Test
+                      </span>
+                    ) : null}
                   </td>
                   <td>{humanize(p.purpose)}</td>
                   <td className="tabular">
@@ -408,7 +504,16 @@ function Payments({ order: o, busy, run }: { order: Order; busy: boolean; run: R
                   </td>
                   <td>
                     {["pending", "processing", "customer_action_required", "created"].includes(p.status) ? (
-                      <button className="link small" disabled={busy} onClick={() => run(() => api(`/owner/payments/${p.id}/recheck`, { method: "POST", body: {} }), "Checked with the provider.")}>
+                      <button
+                        className="link small"
+                        disabled={busy}
+                        onClick={() =>
+                          run(
+                            () => api(`/owner/payments/${p.id}/recheck`, { method: "POST", body: {} }),
+                            "Checked with the provider.",
+                          )
+                        }
+                      >
                         Check again
                       </button>
                     ) : (p.status === "succeeded" || p.status === "partially_refunded") && !p.simulated ? (
@@ -428,12 +533,18 @@ function Payments({ order: o, busy, run }: { order: Order; busy: boolean; run: R
       {refundFor ? (
         <div className="panel panel-pad stack-sm">
           <p className="small" style={{ margin: 0 }}>
-            Refunds are recorded here after you have sent the money back. Mobile Money refunds must be sent from the merchant account.
+            Refunds are recorded here after you have sent the money back. Mobile Money refunds must be sent from the
+            merchant account.
           </p>
           <div className="form-grid cols-2">
             <label className="field">
               <span className="label">Amount ({o.currency})</span>
-              <input className="input tabular" inputMode="decimal" value={refundAmount} onChange={(e) => setRefundAmount(e.target.value)} />
+              <input
+                className="input tabular"
+                inputMode="decimal"
+                value={refundAmount}
+                onChange={(e) => setRefundAmount(e.target.value)}
+              />
             </label>
             <label className="field">
               <span className="label">Reason</span>
@@ -446,7 +557,16 @@ function Payments({ order: o, busy, run }: { order: Order; busy: boolean; run: R
             disabled={busy || !reason.trim() || toMinor(refundAmount, o.currency) === null}
             onClick={async () => {
               if (!confirm("Record this refund?")) return;
-              if (await run(() => api(`/owner/payments/${refundFor}/refunds`, { body: { amountMinor: toMinor(refundAmount, o.currency), reason }, idempotencyKey: `refund-${refundFor}-${refundAmount}-${reason.length}` }), "Refund recorded.")) {
+              if (
+                await run(
+                  () =>
+                    api(`/owner/payments/${refundFor}/refunds`, {
+                      body: { amountMinor: toMinor(refundAmount, o.currency), reason },
+                      idempotencyKey: `refund-${refundFor}-${refundAmount}-${reason.length}`,
+                    }),
+                  "Refund recorded.",
+                )
+              ) {
                 setRefundFor(null);
                 setRefundAmount("");
                 setReason("");
@@ -478,9 +598,28 @@ function Tasks({ orderId, tasks, busy, run }: { orderId: string; tasks: Task[]; 
                   type="checkbox"
                   checked={t.status === "done"}
                   disabled={busy}
-                  onChange={(e) => run(() => api(`/owner/orders/${orderId}/tasks`, { body: { taskId: t.id, stage: t.stage, title: t.title, status: e.target.checked ? "done" : "open" } }), "Task updated.")}
+                  onChange={(e) =>
+                    run(
+                      () =>
+                        api(`/owner/orders/${orderId}/tasks`, {
+                          body: {
+                            taskId: t.id,
+                            stage: t.stage,
+                            title: t.title,
+                            status: e.target.checked ? "done" : "open",
+                          },
+                        }),
+                      "Task updated.",
+                    )
+                  }
                 />
-                <span style={t.status === "done" ? { textDecoration: "line-through", color: "var(--text-muted)" } : undefined}>{t.title}</span>
+                <span
+                  style={
+                    t.status === "done" ? { textDecoration: "line-through", color: "var(--text-muted)" } : undefined
+                  }
+                >
+                  {t.title}
+                </span>
               </label>
               <span className="small muted">
                 {humanize(t.stage)}
@@ -491,19 +630,38 @@ function Tasks({ orderId, tasks, busy, run }: { orderId: string; tasks: Task[]; 
         </ul>
       ) : null}
       <div className="row-wrap">
-        <select className="select" aria-label="Task stage" value={stage} onChange={(e) => setStage(e.target.value)} style={{ width: "auto" }}>
+        <select
+          className="select"
+          aria-label="Task stage"
+          value={stage}
+          onChange={(e) => setStage(e.target.value)}
+          style={{ width: "auto" }}
+        >
           {["patterning", "cutting", "sewing", "quality_check", "fitting", "alteration", "finishing"].map((s) => (
             <option key={s} value={s}>
               {humanize(s)}
             </option>
           ))}
         </select>
-        <input className="input" aria-label="New task" placeholder="Add a task" value={title} onChange={(e) => setTitle(e.target.value)} style={{ flex: 1, minWidth: 200 }} />
+        <input
+          className="input"
+          aria-label="New task"
+          placeholder="Add a task"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          style={{ flex: 1, minWidth: 200 }}
+        />
         <button
           className="btn btn-sm"
           disabled={busy || !title.trim()}
           onClick={async () => {
-            if (await run(() => api(`/owner/orders/${orderId}/tasks`, { body: { stage, title, status: "open" } }), "Task added.")) setTitle("");
+            if (
+              await run(
+                () => api(`/owner/orders/${orderId}/tasks`, { body: { stage, title, status: "open" } }),
+                "Task added.",
+              )
+            )
+              setTitle("");
           }}
         >
           Add
@@ -541,7 +699,11 @@ function Fittings({ order: o, busy, run }: { order: Order; busy: boolean; run: R
               ))}
             </ul>
           ) : null}
-          {f.notes ? <p className="muted" style={{ margin: 0 }}>{f.notes}</p> : null}
+          {f.notes ? (
+            <p className="muted" style={{ margin: 0 }}>
+              {f.notes}
+            </p>
+          ) : null}
         </div>
       ))}
       {!o.fittings.length && !open ? <p className="small muted">No fittings recorded.</p> : null}
@@ -549,11 +711,27 @@ function Fittings({ order: o, busy, run }: { order: Order; busy: boolean; run: R
         <div className="panel panel-pad stack-sm">
           {adj.map((a, i) => (
             <div key={i} className="form-grid cols-2">
-              <input className="input" aria-label={`Adjustment ${i + 1} area`} placeholder="Area, for example sleeve length" value={a.area} onChange={(e) => setAdj((x) => x.map((y, j) => (j === i ? { ...y, area: e.target.value } : y)))} />
-              <input className="input" aria-label={`Adjustment ${i + 1} change`} placeholder="Change, for example shorten 1.5 cm" value={a.change} onChange={(e) => setAdj((x) => x.map((y, j) => (j === i ? { ...y, change: e.target.value } : y)))} />
+              <input
+                className="input"
+                aria-label={`Adjustment ${i + 1} area`}
+                placeholder="Area, for example sleeve length"
+                value={a.area}
+                onChange={(e) => setAdj((x) => x.map((y, j) => (j === i ? { ...y, area: e.target.value } : y)))}
+              />
+              <input
+                className="input"
+                aria-label={`Adjustment ${i + 1} change`}
+                placeholder="Change, for example shorten 1.5 cm"
+                value={a.change}
+                onChange={(e) => setAdj((x) => x.map((y, j) => (j === i ? { ...y, change: e.target.value } : y)))}
+              />
             </div>
           ))}
-          <button className="link small" style={{ justifySelf: "start" }} onClick={() => setAdj((x) => [...x, { area: "", change: "" }])}>
+          <button
+            className="link small"
+            style={{ justifySelf: "start" }}
+            onClick={() => setAdj((x) => [...x, { area: "", change: "" }])}
+          >
             Add another adjustment
           </button>
           <label className="field">
@@ -562,7 +740,12 @@ function Fittings({ order: o, busy, run }: { order: Order; busy: boolean; run: R
           </label>
           <label className="field">
             <span className="label">Notes the customer will see</span>
-            <textarea className="textarea" rows={2} value={customerNotes} onChange={(e) => setCustomerNotes(e.target.value)} />
+            <textarea
+              className="textarea"
+              rows={2}
+              value={customerNotes}
+              onChange={(e) => setCustomerNotes(e.target.value)}
+            />
           </label>
           <button
             className="btn btn-primary btn-sm"
@@ -571,7 +754,10 @@ function Fittings({ order: o, busy, run }: { order: Order; busy: boolean; run: R
             onClick={async () => {
               if (
                 await run(
-                  () => api(`/owner/orders/${o.id}/fittings`, { body: { notes, customerNotes, adjustments: adj.filter((a) => a.area.trim() && a.change.trim()) } }),
+                  () =>
+                    api(`/owner/orders/${o.id}/fittings`, {
+                      body: { notes, customerNotes, adjustments: adj.filter((a) => a.area.trim() && a.change.trim()) },
+                    }),
                   "Fitting recorded.",
                 )
               ) {
@@ -603,16 +789,29 @@ function Notes({ order: o, busy, run }: { order: Order; busy: boolean; run: RunF
           {o.notes.map((n) => (
             <li key={n.id} style={{ padding: "10px 0" }}>
               <p className="tiny muted" style={{ margin: 0 }}>
-                {n.author ?? "Staff"} · {formatDateTime(n.createdAt)} · {n.visibility === "customer" ? "visible to customer" : "internal"}
+                {n.author ?? "Staff"} · {formatDateTime(n.createdAt)} ·{" "}
+                {n.visibility === "customer" ? "visible to customer" : "internal"}
               </p>
               <p style={{ margin: "4px 0 0", whiteSpace: "pre-wrap" }}>{n.body}</p>
             </li>
           ))}
         </ul>
       ) : null}
-      <textarea className="textarea" rows={3} aria-label="New note" value={body} onChange={(e) => setBody(e.target.value)} />
+      <textarea
+        className="textarea"
+        rows={3}
+        aria-label="New note"
+        value={body}
+        onChange={(e) => setBody(e.target.value)}
+      />
       <div className="row-wrap">
-        <select className="select" aria-label="Note visibility" value={visibility} onChange={(e) => setVisibility(e.target.value)} style={{ width: "auto" }}>
+        <select
+          className="select"
+          aria-label="Note visibility"
+          value={visibility}
+          onChange={(e) => setVisibility(e.target.value)}
+          style={{ width: "auto" }}
+        >
           <option value="internal">Internal</option>
           <option value="customer">Visible to the customer</option>
         </select>
@@ -620,7 +819,8 @@ function Notes({ order: o, busy, run }: { order: Order; busy: boolean; run: RunF
           className="btn btn-sm"
           disabled={busy || !body.trim()}
           onClick={async () => {
-            if (await run(() => api(`/owner/orders/${o.id}/notes`, { body: { body, visibility } }), "Note added.")) setBody("");
+            if (await run(() => api(`/owner/orders/${o.id}/notes`, { body: { body, visibility } }), "Note added."))
+              setBody("");
           }}
         >
           Add note
@@ -663,7 +863,20 @@ function Details({ order: o, busy, run }: { order: Order; busy: boolean; run: Ru
         </select>
       </label>
       {dirty ? (
-        <button className="btn btn-sm" disabled={busy} onClick={() => run(() => api(`/owner/orders/${o.id}`, { method: "PATCH", body: { dueDate: due || null, urgency, deliveryStatus: delivery, version: o.version } }), "Saved.")}>
+        <button
+          className="btn btn-sm"
+          disabled={busy}
+          onClick={() =>
+            run(
+              () =>
+                api(`/owner/orders/${o.id}`, {
+                  method: "PATCH",
+                  body: { dueDate: due || null, urgency, deliveryStatus: delivery, version: o.version },
+                }),
+              "Saved.",
+            )
+          }
+        >
           Save
         </button>
       ) : null}

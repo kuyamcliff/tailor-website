@@ -24,7 +24,9 @@ export function QuickView({ slug, onClose }: { slug: string; onClose: () => void
       ) : (
         <div style={{ display: "grid", gap: 24, gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))" }}>
           <div style={{ position: "relative", aspectRatio: "4 / 5", background: "var(--surface)" }}>
-            {p.media[0] ? <Image src={p.media[0].url} alt={p.media[0].alt} fill sizes="400px" style={{ objectFit: "cover" }} /> : null}
+            {p.media[0] ? (
+              <Image src={p.media[0].url} alt={p.media[0].alt} fill sizes="400px" style={{ objectFit: "cover" }} />
+            ) : null}
             <SampleTag show={p.media[0]?.sample} />
           </div>
           <div className="stack">

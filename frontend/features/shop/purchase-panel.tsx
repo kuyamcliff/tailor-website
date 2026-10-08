@@ -84,7 +84,15 @@ export function PurchasePanel({ product, compact = false }: { product: Product; 
               title={v.available ? undefined : "Sold out"}
             >
               <span className="choice-title">{v.sizeLabel}</span>
-              <span className="choice-meta">{!v.available ? "Sold out" : v.madeToOrder && !v.lowStock ? "Made to order" : v.lowStock ? "Few left" : ""}</span>
+              <span className="choice-meta">
+                {!v.available
+                  ? "Sold out"
+                  : v.madeToOrder && !v.lowStock
+                    ? "Made to order"
+                    : v.lowStock
+                      ? "Few left"
+                      : ""}
+              </span>
             </button>
           ))}
         </div>
@@ -101,13 +109,17 @@ export function PurchasePanel({ product, compact = false }: { product: Product; 
         <div className={styles.extras}>
           {product.requiresFitting ? (
             <p className="small">
-              <Ruler size={15} aria-hidden /> This piece includes a fitting. We will contact you to book it after your order.
+              <Ruler size={15} aria-hidden /> This piece includes a fitting. We will contact you to book it after your
+              order.
             </p>
           ) : null}
           {product.customizable ? (
             <p className="small">
               <Scissors size={15} aria-hidden /> Want it cut to your measurements?{" "}
-              <Link className="link" href={`/studio?garment=${product.garmentTypeKey ?? "suit"}${product.fabric ? `&fabric=${product.fabric.key}` : ""}`}>
+              <Link
+                className="link"
+                href={`/studio?garment=${product.garmentTypeKey ?? "suit"}${product.fabric ? `&fabric=${product.fabric.key}` : ""}`}
+              >
                 Customise in the fitting studio
               </Link>
             </p>

@@ -5,7 +5,9 @@
   height: var(--header-h);
   background: rgba(11, 11, 12, 0.86);
   border-bottom: 1px solid transparent;
-  transition: border-color var(--dur) var(--ease), background var(--dur) var(--ease);
+  transition:
+    border-color var(--dur) var(--ease),
+    background var(--dur) var(--ease);
 }
 
 .scrolled {

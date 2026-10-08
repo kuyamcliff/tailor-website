@@ -30,7 +30,16 @@ export function OwnerRequests() {
           filters={[
             { key: "q", label: "Search", type: "search" },
             { key: "status", label: "Status", type: "select", options: Object.entries(requestLabels) },
-            { key: "urgency", label: "Urgency", type: "select", options: [["standard", "Standard"], ["soon", "Soon"], ["urgent", "Urgent"]] },
+            {
+              key: "urgency",
+              label: "Urgency",
+              type: "select",
+              options: [
+                ["standard", "Standard"],
+                ["soon", "Soon"],
+                ["urgent", "Urgent"],
+              ],
+            },
           ]}
           rowKey={(r) => r.id}
           href={(r) => `/owner/requests/${r.id}`}

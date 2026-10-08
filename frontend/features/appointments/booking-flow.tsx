@@ -26,10 +26,20 @@ export const appointmentTypes = [
 type Slots = { slots: string[]; timezone: string; durationMinutes: number; from: string; to: string };
 
 function ymd(d: Date, tz: string) {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
+  return new Intl.DateTimeFormat("en-CA", { timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit" }).format(
+    d,
+  );
 }
 
-export function BookingFlow({ initialType, orderId, requestId }: { initialType?: string; orderId?: string; requestId?: string }) {
+export function BookingFlow({
+  initialType,
+  orderId,
+  requestId,
+}: {
+  initialType?: string;
+  orderId?: string;
+  requestId?: string;
+}) {
   const router = useRouter();
   const cfg = useConfig();
   const tz = cfg.business.timezone || "Africa/Douala";
@@ -38,10 +48,19 @@ export function BookingFlow({ initialType, orderId, requestId }: { initialType?:
   const [weekOffset, setWeekOffset] = useState(0);
   const now = useNow();
   const from = useMemo(() => ymd(new Date(now + weekOffset * 14 * 86400000), tz), [now, weekOffset, tz]);
-  const slots = useQuery({ queryKey: ["slots", type, from], queryFn: () => api<Slots>(`/appointments/slots?type=${type}&from=${from}`), refetchInterval: 60000 });
+  const slots = useQuery({
+    queryKey: ["slots", type, from],
+    queryFn: () => api<Slots>(`/appointments/slots?type=${type}&from=${from}`),
+    refetchInterval: 60000,
+  });
   const [day, setDay] = useState<string | null>(null);
   const [slot, setSlot] = useState<string | null>(null);
-  const [contact, setContact] = useState({ name: user?.name ?? "", phone: "", email: user?.email ?? "", preferredContact: "whatsapp" });
+  const [contact, setContact] = useState({
+    name: user?.name ?? "",
+    phone: "",
+    email: user?.email ?? "",
+    preferredContact: "whatsapp",
+  });
   const [notes, setNotes] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [error, setError] = useState("");
@@ -62,7 +81,7 @@ export function BookingFlow({ initialType, orderId, requestId }: { initialType?:
     for (let i = 0; i < 14; i++) out.push(ymd(new Date(start.getTime() + i * 86400000), tz));
     return out;
   }, [from, tz]);
-  const activeDay = day && byDay.has(day) ? day : days.find((d) => byDay.has(d)) ?? null;
+  const activeDay = day && byDay.has(day) ? day : (days.find((d) => byDay.has(d)) ?? null);
 
   async function book(e: React.FormEvent) {
     e.preventDefault();
@@ -77,7 +96,14 @@ export function BookingFlow({ initialType, orderId, requestId }: { initialType?:
       const r = await api<{ id: string; number: string; accessToken: string }>("/appointments", {
         idempotencyKey: key.current,
         accessToken: orderId ? tokenFor("order", orderId) || undefined : undefined,
-        body: { type, startsAt: slot, contact: { ...contact, email: contact.email || null }, notes, orderId, requestId },
+        body: {
+          type,
+          startsAt: slot,
+          contact: { ...contact, email: contact.email || null },
+          notes,
+          orderId,
+          requestId,
+        },
       });
       rememberLink({ kind: "appointment", id: r.id, number: r.number, token: r.accessToken });
       router.push(`/appointments/${r.id}?token=${r.accessToken}&booked=1`);
@@ -107,7 +133,15 @@ export function BookingFlow({ initialType, orderId, requestId }: { initialType?:
           <div className="choices">
             {appointmentTypes.map((t) => (
               <label key={t.key} className="choice">
-                <input type="radio" name="type" checked={type === t.key} onChange={() => { setType(t.key); setSlot(null); }} />
+                <input
+                  type="radio"
+                  name="type"
+                  checked={type === t.key}
+                  onChange={() => {
+                    setType(t.key);
+                    setSlot(null);
+                  }}
+                />
                 <span className="choice-title">{t.label}</span>
                 <span className="choice-meta">{t.body}</span>
               </label>
@@ -118,25 +152,58 @@ export function BookingFlow({ initialType, orderId, requestId }: { initialType?:
         <fieldset className={styles.fieldset}>
           <legend className="display-3">2. Choose a time</legend>
           <div className={styles.dayNav}>
-            <button type="button" className="icon-btn" onClick={() => { setWeekOffset((w) => Math.max(0, w - 1)); setDay(null); }} disabled={weekOffset === 0} aria-label="Earlier dates">
+            <button
+              type="button"
+              className="icon-btn"
+              onClick={() => {
+                setWeekOffset((w) => Math.max(0, w - 1));
+                setDay(null);
+              }}
+              disabled={weekOffset === 0}
+              aria-label="Earlier dates"
+            >
               <ChevronLeft size={18} aria-hidden />
             </button>
             <div className={styles.days} role="group" aria-label="Day">
               {days.map((d) => (
-                <button key={d} type="button" className={styles.day} aria-pressed={d === activeDay} disabled={!byDay.has(d)} onClick={() => { setDay(d); setSlot(null); }}>
+                <button
+                  key={d}
+                  type="button"
+                  className={styles.day}
+                  aria-pressed={d === activeDay}
+                  disabled={!byDay.has(d)}
+                  onClick={() => {
+                    setDay(d);
+                    setSlot(null);
+                  }}
+                >
                   {fmtDay(d)}
-                  <span className="tiny">{byDay.get(d)?.length ?? 0 ? `${byDay.get(d)!.length} free` : "Full"}</span>
+                  <span className="tiny">{(byDay.get(d)?.length ?? 0) ? `${byDay.get(d)!.length} free` : "Full"}</span>
                 </button>
               ))}
             </div>
-            <button type="button" className="icon-btn" onClick={() => { setWeekOffset((w) => Math.min(4, w + 1)); setDay(null); }} disabled={weekOffset >= 4} aria-label="Later dates">
+            <button
+              type="button"
+              className="icon-btn"
+              onClick={() => {
+                setWeekOffset((w) => Math.min(4, w + 1));
+                setDay(null);
+              }}
+              disabled={weekOffset >= 4}
+              aria-label="Later dates"
+            >
               <ChevronRight size={18} aria-hidden />
             </button>
           </div>
           {slots.isLoading ? (
             <div className="skeleton" style={{ height: 100 }} />
           ) : slots.error ? (
-            <p className="notice notice-danger">Times could not be loaded. <button type="button" className="link" onClick={() => slots.refetch()}>Try again</button></p>
+            <p className="notice notice-danger">
+              Times could not be loaded.{" "}
+              <button type="button" className="link" onClick={() => slots.refetch()}>
+                Try again
+              </button>
+            </p>
           ) : activeDay ? (
             <div className={styles.slots} role="radiogroup" aria-label="Time">
               {byDay.get(activeDay)!.map((s) => (
@@ -149,7 +216,12 @@ export function BookingFlow({ initialType, orderId, requestId }: { initialType?:
           ) : (
             <p className="notice">No times are free in these two weeks. Try later dates, or contact us.</p>
           )}
-          {slots.data ? <p className="tiny muted">Each {appointmentTypes.find((t) => t.key === type)?.label.toLowerCase()} lasts about {slots.data.durationMinutes} minutes.</p> : null}
+          {slots.data ? (
+            <p className="tiny muted">
+              Each {appointmentTypes.find((t) => t.key === type)?.label.toLowerCase()} lasts about{" "}
+              {slots.data.durationMinutes} minutes.
+            </p>
+          ) : null}
         </fieldset>
       </div>
 
@@ -161,17 +233,48 @@ export function BookingFlow({ initialType, orderId, requestId }: { initialType?:
           </p>
         ) : null}
         <Field label="Name" error={errors.name}>
-          {(p) => <input {...p} className="input" autoComplete="name" value={contact.name} onChange={(e) => setContact({ ...contact, name: e.target.value })} />}
+          {(p) => (
+            <input
+              {...p}
+              className="input"
+              autoComplete="name"
+              value={contact.name}
+              onChange={(e) => setContact({ ...contact, name: e.target.value })}
+            />
+          )}
         </Field>
         <Field label="Phone" error={errors.phone}>
-          {(p) => <input {...p} className="input" inputMode="tel" autoComplete="tel" value={contact.phone} onChange={(e) => setContact({ ...contact, phone: e.target.value })} />}
+          {(p) => (
+            <input
+              {...p}
+              className="input"
+              inputMode="tel"
+              autoComplete="tel"
+              value={contact.phone}
+              onChange={(e) => setContact({ ...contact, phone: e.target.value })}
+            />
+          )}
         </Field>
         <Field label="Email (optional)" error={errors.email}>
-          {(p) => <input {...p} className="input" type="email" autoComplete="email" value={contact.email} onChange={(e) => setContact({ ...contact, email: e.target.value })} />}
+          {(p) => (
+            <input
+              {...p}
+              className="input"
+              type="email"
+              autoComplete="email"
+              value={contact.email}
+              onChange={(e) => setContact({ ...contact, email: e.target.value })}
+            />
+          )}
         </Field>
         <Field label="Reminders by" error={errors.preferredContact}>
           {(p) => (
-            <select {...p} className="select" value={contact.preferredContact} onChange={(e) => setContact({ ...contact, preferredContact: e.target.value })}>
+            <select
+              {...p}
+              className="select"
+              value={contact.preferredContact}
+              onChange={(e) => setContact({ ...contact, preferredContact: e.target.value })}
+            >
               <option value="whatsapp">WhatsApp</option>
               <option value="sms">SMS</option>
               <option value="phone">Phone call</option>
@@ -180,7 +283,15 @@ export function BookingFlow({ initialType, orderId, requestId }: { initialType?:
           )}
         </Field>
         <Field label="Anything we should prepare? (optional)" error={errors.notes}>
-          {(p) => <textarea {...p} className="textarea" value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={1000} />}
+          {(p) => (
+            <textarea
+              {...p}
+              className="textarea"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              maxLength={1000}
+            />
+          )}
         </Field>
         {slot ? (
           <p className="small">

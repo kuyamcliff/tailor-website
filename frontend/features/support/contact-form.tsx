@@ -18,17 +18,35 @@ const categories = [
   ["other", "Something else"],
 ] as const;
 
-export function ContactForm({ orderId, defaultCategory = "general", attachments = true }: { orderId?: string; defaultCategory?: string; attachments?: boolean }) {
+export function ContactForm({
+  orderId,
+  defaultCategory = "general",
+  attachments = true,
+}: {
+  orderId?: string;
+  defaultCategory?: string;
+  attachments?: boolean;
+}) {
   const { user } = useSession();
   const key = useRef(newIdempotencyKey());
-  const [form, setForm] = useState({ subject: "", category: defaultCategory, message: "", name: "", phone: "", email: "", preferredContact: "whatsapp" });
+  const [form, setForm] = useState({
+    subject: "",
+    category: defaultCategory,
+    message: "",
+    name: "",
+    phone: "",
+    email: "",
+    preferredContact: "whatsapp",
+  });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState<{ id: string; number: string; accessToken: string } | null>(null);
   const [error, setError] = useState("");
   const [files, setFiles] = useState<UploadItem[]>([]);
 
-  const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => setForm((f) => ({ ...f, [k]: e.target.value }));
+  const set =
+    (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
+      setForm((f) => ({ ...f, [k]: e.target.value }));
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -43,7 +61,14 @@ export function ContactForm({ orderId, defaultCategory = "general", attachments 
           message: form.message,
           orderId,
           attachments: uploadedIds(files),
-          contact: user?.customerId ? undefined : { name: form.name, phone: form.phone, email: form.email || null, preferredContact: form.preferredContact },
+          contact: user?.customerId
+            ? undefined
+            : {
+                name: form.name,
+                phone: form.phone,
+                email: form.email || null,
+                preferredContact: form.preferredContact,
+              },
         },
         idempotencyKey: key.current,
         accessToken: orderId ? tokenFor("order", orderId) || undefined : undefined,
@@ -84,13 +109,34 @@ export function ContactForm({ orderId, defaultCategory = "general", attachments 
       {!user?.customerId ? (
         <div className="form-grid cols-2">
           <Field label="Your name" error={errors.name}>
-            {(p) => <input {...p} className="input" value={form.name} onChange={set("name")} autoComplete="name" required />}
+            {(p) => (
+              <input {...p} className="input" value={form.name} onChange={set("name")} autoComplete="name" required />
+            )}
           </Field>
           <Field label="Phone" error={errors.phone}>
-            {(p) => <input {...p} className="input" value={form.phone} onChange={set("phone")} autoComplete="tel" inputMode="tel" required />}
+            {(p) => (
+              <input
+                {...p}
+                className="input"
+                value={form.phone}
+                onChange={set("phone")}
+                autoComplete="tel"
+                inputMode="tel"
+                required
+              />
+            )}
           </Field>
           <Field label="Email (optional)" error={errors.email}>
-            {(p) => <input {...p} className="input" type="email" value={form.email} onChange={set("email")} autoComplete="email" />}
+            {(p) => (
+              <input
+                {...p}
+                className="input"
+                type="email"
+                value={form.email}
+                onChange={set("email")}
+                autoComplete="email"
+              />
+            )}
           </Field>
           <Field label="Reply by" error={errors.preferredContact}>
             {(p) => (
@@ -117,14 +163,32 @@ export function ContactForm({ orderId, defaultCategory = "general", attachments 
           )}
         </Field>
         <Field label="Subject" error={errors.subject}>
-          {(p) => <input {...p} className="input" value={form.subject} onChange={set("subject")} maxLength={200} required />}
+          {(p) => (
+            <input {...p} className="input" value={form.subject} onChange={set("subject")} maxLength={200} required />
+          )}
         </Field>
       </div>
       <Field label="Message" error={errors.message}>
-        {(p) => <textarea {...p} className="textarea" value={form.message} onChange={set("message")} maxLength={5000} required />}
+        {(p) => (
+          <textarea
+            {...p}
+            className="textarea"
+            value={form.message}
+            onChange={set("message")}
+            maxLength={5000}
+            required
+          />
+        )}
       </Field>
       {attachments ? (
-        <ImageUploader purpose="support" items={files} onChange={setFiles} max={4} label="Attach photos (optional)" hint="JPEG, PNG or WebP up to 15 MB" />
+        <ImageUploader
+          purpose="support"
+          items={files}
+          onChange={setFiles}
+          max={4}
+          label="Attach photos (optional)"
+          hint="JPEG, PNG or WebP up to 15 MB"
+        />
       ) : null}
       <button className="btn btn-primary" disabled={busy || uploadsPending(files)} type="submit">
         {busy ? <span className="spinner" aria-hidden /> : null} Send message

@@ -59,7 +59,9 @@ export function QuoteView({ id }: { id: string }) {
         router.push(`/orders/${r.orderId}${token ? `?token=${token}` : ""}`);
         return;
       }
-      toast(action === "decline" ? "We have recorded your decision." : "Thank you. Your tailor will send an updated quote.");
+      toast(
+        action === "decline" ? "We have recorded your decision." : "Thank you. Your tailor will send an updated quote.",
+      );
       await q.refetch();
     } catch (e) {
       const msg = e instanceof ApiError ? e.message : "Please try again.";
@@ -70,7 +72,12 @@ export function QuoteView({ id }: { id: string }) {
     }
   }
 
-  if (q.isLoading || token === null) return <div className="container section-tight"><div className="skeleton" style={{ height: 420 }} /></div>;
+  if (q.isLoading || token === null)
+    return (
+      <div className="container section-tight">
+        <div className="skeleton" style={{ height: 420 }} />
+      </div>
+    );
   if (!q.data)
     return (
       <div className="container-narrow section-tight stack-lg">
@@ -90,9 +97,14 @@ export function QuoteView({ id }: { id: string }) {
     <div className="container-narrow section-tight stack-lg">
       <header className="stack-sm">
         <span className="eyebrow">Quote {qt.number}</span>
-        <h1 className="display-2">{qt.expired && qt.status === "sent" ? "This quote has expired" : statusText[qt.status]}</h1>
+        <h1 className="display-2">
+          {qt.expired && qt.status === "sent" ? "This quote has expired" : statusText[qt.status]}
+        </h1>
         <div className="row-wrap">
-          <StatusBadge status={qt.expired ? "expired" : qt.status} label={qt.expired ? "Expired" : statusText[qt.status]} />
+          <StatusBadge
+            status={qt.expired ? "expired" : qt.status}
+            label={qt.expired ? "Expired" : statusText[qt.status]}
+          />
           <span className="badge">
             <CalendarClock size={13} aria-hidden /> Valid until {formatDate(rev.expiresAt)}
           </span>
@@ -142,7 +154,9 @@ export function QuoteView({ id }: { id: string }) {
             ["Subtotal", rev.subtotalMinor],
             ...(rev.discountMinor ? [["Discount", -rev.discountMinor]] : []),
             ...(rev.deliveryMinor ? [["Delivery", rev.deliveryMinor]] : []),
-            ...(rev.taxMinor ? [[`${business.taxLabel}${business.pricesIncludeTax ? " (included)" : ""}`, rev.taxMinor]] : []),
+            ...(rev.taxMinor
+              ? [[`${business.taxLabel}${business.pricesIncludeTax ? " (included)" : ""}`, rev.taxMinor]]
+              : []),
           ].map(([k, v]) => (
             <div key={k as string} className="spread">
               <dt className="muted">{k}</dt>
@@ -152,7 +166,10 @@ export function QuoteView({ id }: { id: string }) {
               </dd>
             </div>
           ))}
-          <div className="spread" style={{ borderTop: "1px solid var(--line)", paddingTop: 8, fontWeight: 600, fontSize: "1.1rem" }}>
+          <div
+            className="spread"
+            style={{ borderTop: "1px solid var(--line)", paddingTop: 8, fontWeight: 600, fontSize: "1.1rem" }}
+          >
             <dt>Total</dt>
             <dd style={{ margin: 0 }}>
               <Price minor={rev.totalMinor} currency={rev.currency} />
@@ -177,7 +194,9 @@ export function QuoteView({ id }: { id: string }) {
             </li>
           ) : null}
         </ul>
-        {rev.estimatedReadyDate ? <p className="muted">Estimated ready date: {formatDate(rev.estimatedReadyDate)}</p> : null}
+        {rev.estimatedReadyDate ? (
+          <p className="muted">Estimated ready date: {formatDate(rev.estimatedReadyDate)}</p>
+        ) : null}
         {rev.customerNotes ? (
           <div>
             <h3 className="label">Notes from your tailor</h3>
@@ -215,7 +234,9 @@ export function QuoteView({ id }: { id: string }) {
           View your order
         </Link>
       ) : null}
-      {open ? <p className="tiny muted">Accepting creates your order with exactly the items and prices above.</p> : null}
+      {open ? (
+        <p className="tiny muted">Accepting creates your order with exactly the items and prices above.</p>
+      ) : null}
 
       <Sheet
         open={dialog !== null}
@@ -227,15 +248,27 @@ export function QuoteView({ id }: { id: string }) {
             <button className="btn btn-ghost" onClick={() => setDialog(null)}>
               Cancel
             </button>
-            <button className="btn btn-primary" disabled={busy || (dialog === "changes" && !note.trim())} onClick={() => decide(dialog === "decline" ? "decline" : "request-changes")}>
+            <button
+              className="btn btn-primary"
+              disabled={busy || (dialog === "changes" && !note.trim())}
+              onClick={() => decide(dialog === "decline" ? "decline" : "request-changes")}
+            >
               {dialog === "decline" ? "Decline" : "Send request"}
             </button>
           </div>
         }
       >
         <div className="field">
-          <label htmlFor="decision-note">{dialog === "decline" ? "Would you like to tell us why? (optional)" : "What would you like to change?"}</label>
-          <textarea id="decision-note" className="textarea" value={note} onChange={(e) => setNote(e.target.value)} maxLength={2000} />
+          <label htmlFor="decision-note">
+            {dialog === "decline" ? "Would you like to tell us why? (optional)" : "What would you like to change?"}
+          </label>
+          <textarea
+            id="decision-note"
+            className="textarea"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            maxLength={2000}
+          />
         </div>
       </Sheet>
     </div>

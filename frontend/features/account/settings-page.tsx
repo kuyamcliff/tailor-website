@@ -19,7 +19,14 @@ type Profile = {
   marketingConsent: boolean;
   createdAt: string;
 };
-type SessionRow = { id: string; ip: string | null; userAgent: string | null; createdAt: string; lastSeenAt: string; current: boolean };
+type SessionRow = {
+  id: string;
+  ip: string | null;
+  userAgent: string | null;
+  createdAt: string;
+  lastSeenAt: string;
+  current: boolean;
+};
 
 export function AccountSettings() {
   return (
@@ -71,17 +78,39 @@ function ProfileForm({ initial, onSaved }: { initial: Profile; onSaved: () => Pr
       </h2>
       <div className="form-grid cols-2">
         <Field label="Full name" error={errors.name}>
-          {(p) => <input {...p} className="input" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} autoComplete="name" />}
+          {(p) => (
+            <input
+              {...p}
+              className="input"
+              value={f.name}
+              onChange={(e) => setF({ ...f, name: e.target.value })}
+              autoComplete="name"
+            />
+          )}
         </Field>
         <Field label="Email" hint="Contact the atelier to change the email you sign in with.">
           {(p) => <input {...p} className="input" value={f.email ?? ""} readOnly />}
         </Field>
         <Field label="Phone" error={errors.phone}>
-          {(p) => <input {...p} className="input" value={f.phone ?? ""} onChange={(e) => setF({ ...f, phone: e.target.value })} inputMode="tel" autoComplete="tel" />}
+          {(p) => (
+            <input
+              {...p}
+              className="input"
+              value={f.phone ?? ""}
+              onChange={(e) => setF({ ...f, phone: e.target.value })}
+              inputMode="tel"
+              autoComplete="tel"
+            />
+          )}
         </Field>
         <Field label="Preferred contact" error={errors.preferredContact}>
           {(p) => (
-            <select {...p} className="select" value={f.preferredContact} onChange={(e) => setF({ ...f, preferredContact: e.target.value })}>
+            <select
+              {...p}
+              className="select"
+              value={f.preferredContact}
+              onChange={(e) => setF({ ...f, preferredContact: e.target.value })}
+            >
               <option value="whatsapp">WhatsApp</option>
               <option value="phone">Phone call</option>
               <option value="sms">SMS</option>
@@ -93,15 +122,27 @@ function ProfileForm({ initial, onSaved }: { initial: Profile; onSaved: () => Pr
       <fieldset className="stack-sm" style={{ border: 0, padding: 0, margin: 0 }}>
         <legend className="label">Order updates</legend>
         <label className="check">
-          <input type="checkbox" checked={Boolean(f.notificationPrefs.email)} onChange={(e) => setF({ ...f, notificationPrefs: { ...f.notificationPrefs, email: e.target.checked } })} />
+          <input
+            type="checkbox"
+            checked={Boolean(f.notificationPrefs.email)}
+            onChange={(e) => setF({ ...f, notificationPrefs: { ...f.notificationPrefs, email: e.target.checked } })}
+          />
           <span>Email me when my order or request changes</span>
         </label>
         <label className="check">
-          <input type="checkbox" checked={Boolean(f.notificationPrefs.sms)} onChange={(e) => setF({ ...f, notificationPrefs: { ...f.notificationPrefs, sms: e.target.checked } })} />
+          <input
+            type="checkbox"
+            checked={Boolean(f.notificationPrefs.sms)}
+            onChange={(e) => setF({ ...f, notificationPrefs: { ...f.notificationPrefs, sms: e.target.checked } })}
+          />
           <span>Send me SMS updates</span>
         </label>
         <label className="check">
-          <input type="checkbox" checked={f.marketingConsent} onChange={(e) => setF({ ...f, marketingConsent: e.target.checked })} />
+          <input
+            type="checkbox"
+            checked={f.marketingConsent}
+            onChange={(e) => setF({ ...f, marketingConsent: e.target.checked })}
+          />
           <span>Occasional news about new fabrics and collections</span>
         </label>
       </fieldset>
@@ -128,7 +169,8 @@ function PasswordSection() {
       setNext("");
       toast("Password changed. Other devices were signed out.");
     } catch (err) {
-      if (err instanceof ApiError) setErrors(Object.keys(err.fields).length ? err.fields : { currentPassword: err.message });
+      if (err instanceof ApiError)
+        setErrors(Object.keys(err.fields).length ? err.fields : { currentPassword: err.message });
     } finally {
       setBusy(false);
     }
@@ -140,10 +182,28 @@ function PasswordSection() {
       </h2>
       <div className="form-grid cols-2">
         <Field label="Current password" error={errors.currentPassword}>
-          {(p) => <input {...p} className="input" type="password" value={cur} onChange={(e) => setCur(e.target.value)} autoComplete="current-password" />}
+          {(p) => (
+            <input
+              {...p}
+              className="input"
+              type="password"
+              value={cur}
+              onChange={(e) => setCur(e.target.value)}
+              autoComplete="current-password"
+            />
+          )}
         </Field>
         <Field label="New password" error={errors.newPassword} hint="At least 10 characters.">
-          {(p) => <input {...p} className="input" type="password" value={next} onChange={(e) => setNext(e.target.value)} autoComplete="new-password" />}
+          {(p) => (
+            <input
+              {...p}
+              className="input"
+              type="password"
+              value={next}
+              onChange={(e) => setNext(e.target.value)}
+              autoComplete="new-password"
+            />
+          )}
         </Field>
       </div>
       <button className="btn" style={{ justifySelf: "start" }} disabled={busy || !cur || next.length < 10}>
@@ -191,8 +251,26 @@ function SessionsSection() {
 
 function describeAgent(ua: string | null): string {
   if (!ua) return "Unknown device";
-  const os = /iPhone|iPad/.test(ua) ? "iOS" : /Android/.test(ua) ? "Android" : /Mac OS/.test(ua) ? "macOS" : /Windows/.test(ua) ? "Windows" : /Linux/.test(ua) ? "Linux" : "";
-  const br = /Edg\//.test(ua) ? "Edge" : /Chrome\//.test(ua) ? "Chrome" : /Firefox\//.test(ua) ? "Firefox" : /Safari\//.test(ua) ? "Safari" : "Browser";
+  const os = /iPhone|iPad/.test(ua)
+    ? "iOS"
+    : /Android/.test(ua)
+      ? "Android"
+      : /Mac OS/.test(ua)
+        ? "macOS"
+        : /Windows/.test(ua)
+          ? "Windows"
+          : /Linux/.test(ua)
+            ? "Linux"
+            : "";
+  const br = /Edg\//.test(ua)
+    ? "Edge"
+    : /Chrome\//.test(ua)
+      ? "Chrome"
+      : /Firefox\//.test(ua)
+        ? "Firefox"
+        : /Safari\//.test(ua)
+          ? "Safari"
+          : "Browser";
   return os ? `${br} on ${os}` : br;
 }
 
@@ -239,13 +317,16 @@ function PrivacySection() {
       <h2 id="privacy-h" className="title">
         Your data
       </h2>
-      <p className="muted">Download a copy of your profile, addresses, measurements, designs, requests, orders, appointments and messages.</p>
+      <p className="muted">
+        Download a copy of your profile, addresses, measurements, designs, requests, orders, appointments and messages.
+      </p>
       <button className="btn" style={{ justifySelf: "start" }} onClick={exportData}>
         Download my data
       </button>
       <hr className="rule" />
       <p className="muted">
-        Deleting your account removes your measurements, designs, addresses and uploaded photos. Order and payment records are kept with your name removed, because we must keep accounting records.
+        Deleting your account removes your measurements, designs, addresses and uploaded photos. Order and payment
+        records are kept with your name removed, because we must keep accounting records.
       </p>
       {confirming ? (
         <form className="stack" onSubmit={del}>
@@ -255,7 +336,17 @@ function PrivacySection() {
             </p>
           ) : null}
           <Field label="Enter your password to confirm">
-            {(p) => <input {...p} className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" style={{ maxWidth: 360 }} />}
+            {(p) => (
+              <input
+                {...p}
+                className="input"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
+                style={{ maxWidth: 360 }}
+              />
+            )}
           </Field>
           <div className="row-wrap">
             <button className="btn btn-danger" disabled={busy || !password}>

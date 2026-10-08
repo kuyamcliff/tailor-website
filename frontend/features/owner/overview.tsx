@@ -10,8 +10,23 @@ import styles from "./tables.module.css";
 type Dash = {
   counts: Record<string, number>;
   timezone: string;
-  todayAppointments: { id: string; number: string; type: string; status: string; starts_at: string; customer: string }[];
-  newRequestList: { id: string; number: string; customer: string; garment: string; occasion: string; urgency: string; created_at: string }[];
+  todayAppointments: {
+    id: string;
+    number: string;
+    type: string;
+    status: string;
+    starts_at: string;
+    customer: string;
+  }[];
+  newRequestList: {
+    id: string;
+    number: string;
+    customer: string;
+    garment: string;
+    occasion: string;
+    urgency: string;
+    created_at: string;
+  }[];
   overdueList: { id: string; number: string; status: string; due_date: string; customer: string }[];
   lowStockList: { key: string; name: string; stock_status: string; stock_meters: number | null }[];
   recentActivity?: { action: string; object_type: string; actor: string | null; created_at: string }[];
@@ -21,15 +36,35 @@ const attention: [key: string, label: (n: number) => string, href: string][] = [
   ["newRequests", (n) => `${n} new ${n === 1 ? "request" : "requests"} to review`, "/owner/requests?status=new"],
   ["draftQuotes", (n) => `${n} draft ${n === 1 ? "quote" : "quotes"} not sent yet`, "/owner/quotes?status=draft"],
   ["ordersAttention", (n) => `${n} ${n === 1 ? "order needs" : "orders need"} action`, "/owner/orders"],
-  ["overdueOrders", (n) => `${n} ${n === 1 ? "order is" : "orders are"} past the due date`, "/owner/orders?overdue=true"],
-  ["awaitingDeposit", (n) => `${n} ${n === 1 ? "order is" : "orders are"} waiting for a deposit`, "/owner/orders?status=awaiting_customer"],
-  ["paymentsPending", (n) => `${n} ${n === 1 ? "payment is" : "payments are"} still in progress`, "/owner/payments?status=pending"],
-  ["unreadSupport", (n) => `${n} ${n === 1 ? "conversation has" : "conversations have"} unread messages`, "/owner/support?unread=true"],
+  [
+    "overdueOrders",
+    (n) => `${n} ${n === 1 ? "order is" : "orders are"} past the due date`,
+    "/owner/orders?overdue=true",
+  ],
+  [
+    "awaitingDeposit",
+    (n) => `${n} ${n === 1 ? "order is" : "orders are"} waiting for a deposit`,
+    "/owner/orders?status=awaiting_customer",
+  ],
+  [
+    "paymentsPending",
+    (n) => `${n} ${n === 1 ? "payment is" : "payments are"} still in progress`,
+    "/owner/payments?status=pending",
+  ],
+  [
+    "unreadSupport",
+    (n) => `${n} ${n === 1 ? "conversation has" : "conversations have"} unread messages`,
+    "/owner/support?unread=true",
+  ],
   ["lowStockFabrics", (n) => `${n} ${n === 1 ? "fabric is" : "fabrics are"} low or out of stock`, "/owner/fabrics"],
 ];
 
 export function OwnerOverview() {
-  const q = useQuery({ queryKey: ["owner", "dashboard"], queryFn: () => api<Dash>("/owner/dashboard"), refetchInterval: 60_000 });
+  const q = useQuery({
+    queryKey: ["owner", "dashboard"],
+    queryFn: () => api<Dash>("/owner/dashboard"),
+    refetchInterval: 60_000,
+  });
   const d = q.data;
   const items = d ? attention.filter(([k]) => (d.counts[k] ?? 0) > 0) : [];
   return (

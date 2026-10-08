@@ -4,7 +4,8 @@ import { siteUrl } from "@/lib/server-data";
 import { policyKeys } from "@/lib/content";
 import type { ListResponse, PortfolioProject, Product } from "@/lib/types";
 
-export const revalidate = 3600;
+// Rendered per request (cached by the CDN) so PUBLIC_SITE_URL comes from the running server.
+export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = siteUrl();
@@ -12,7 +13,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     serverApiOr<ListResponse<Product>>("/products?limit=500", { items: [], total: 0, limit: 0, offset: 0 }, 3600),
     serverApiOr<PortfolioProject[]>("/portfolio", [], 3600),
   ]);
-  const fixed = ["", "/shop", "/custom-tailor", "/studio", "/our-work", "/about", "/contact", "/appointments", "/support"].map((p) => ({
+  const fixed = [
+    "",
+    "/shop",
+    "/custom-tailor",
+    "/studio",
+    "/our-work",
+    "/about",
+    "/contact",
+    "/appointments",
+    "/support",
+  ].map((p) => ({
     url: `${base}${p}`,
     changeFrequency: "weekly" as const,
     priority: p === "" ? 1 : 0.7,

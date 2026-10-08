@@ -1,0 +1,53 @@
+# Local production-like stack: PostgreSQL, the API and the site.
+# Secrets come from .env (never commit it). For real deployments see docs/deployment.md.
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: atelier
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-atelier}
+      POSTGRES_DB: atelier
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U atelier"]
+      interval: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://atelier:${POSTGRES_PASSWORD:-atelier}@db:5432/atelier?sslmode=disable
+      STORAGE_LOCAL_DIR: /data/storage
+    # Local storage needs a writable volume; production should use STORAGE_DRIVER=s3 instead.
+    user: root
+    volumes:
+      - uploads:/data
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+
+  web:
+    build:
+      context: ./frontend
+      args:
+        BACKEND_URL: http://api:8080
+        PUBLIC_SITE_URL: ${PUBLIC_SITE_URL:-http://localhost:3000}
+    environment:
+      API_INTERNAL_URL: http://api:8080
+      BACKEND_URL: http://api:8080
+      PUBLIC_SITE_URL: ${PUBLIC_SITE_URL:-http://localhost:3000}
+      APP_ENV: ${APP_ENV:-development}
+    depends_on:
+      - api
+    ports:
+      - "3000:3000"
+
+volumes:
+  pgdata:
+  uploads:

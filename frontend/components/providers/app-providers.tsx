@@ -8,7 +8,15 @@ import { ToastProvider } from "./toast";
 import type { ContentBlocks, PublicConfig } from "@/lib/types";
 import { ApiError } from "@/lib/api";
 
-export function AppProviders({ config, content, children }: { config: PublicConfig; content: ContentBlocks; children: React.ReactNode }) {
+export function AppProviders({
+  config,
+  content,
+  children,
+}: {
+  config: PublicConfig;
+  content: ContentBlocks;
+  children: React.ReactNode;
+}) {
   const [client] = useState(
     () =>
       new QueryClient({

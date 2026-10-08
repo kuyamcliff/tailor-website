@@ -8,7 +8,8 @@ import { Studio } from "@/features/studio/studio";
 
 export const metadata: Metadata = {
   title: "Fitting studio",
-  description: "Design your garment in 3D: choose the cloth and every detail, add your measurements and see an estimate of the fit before requesting a quote.",
+  description:
+    "Design your garment in 3D: choose the cloth and every detail, add your measurements and see an estimate of the fit before requesting a quote.",
   alternates: { canonical: "/studio" },
 };
 

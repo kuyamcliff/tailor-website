@@ -11,9 +11,14 @@ export default async function ContactPage() {
   const [cfg, content] = await Promise.all([getConfig(), getContent()]);
   const c = block(content, "contact");
   const b = cfg.business;
-  const addr = [b.address.line1, b.address.line2, b.address.city, b.address.region, b.address.country].filter(Boolean).join(", ");
+  const addr = [b.address.line1, b.address.line2, b.address.city, b.address.region, b.address.country]
+    .filter(Boolean)
+    .join(", ");
   return (
-    <div className="container section-tight" style={{ display: "grid", gap: 48, gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 380px), 1fr))" }}>
+    <div
+      className="container section-tight"
+      style={{ display: "grid", gap: 48, gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 380px), 1fr))" }}
+    >
       <section className="stack-lg">
         <span className="eyebrow">Contact</span>
         <h1 className="display-2">{c.title}</h1>
@@ -69,7 +74,14 @@ export default async function ContactPage() {
           {(b.social ?? [])
             .filter((s) => s.network !== "whatsapp")
             .map((s) => (
-              <a key={s.network} className="icon-btn" href={s.url} target="_blank" rel="noopener noreferrer" aria-label={socialTitle[s.network]}>
+              <a
+                key={s.network}
+                className="icon-btn"
+                href={s.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={socialTitle[s.network]}
+              >
                 <SocialIcon network={s.network} />
               </a>
             ))}
@@ -80,7 +92,8 @@ export default async function ContactPage() {
           Send a message
         </h2>
         <p className="muted small" style={{ marginBottom: 24 }}>
-          We reply during opening hours. For an existing order, use the help link on your order page so we can see the details.
+          We reply during opening hours. For an existing order, use the help link on your order page so we can see the
+          details.
         </p>
         {cfg.flags.support_inbox ? (
           <ContactForm />

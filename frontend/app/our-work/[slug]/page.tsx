@@ -17,7 +17,9 @@ async function load(slug: string) {
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const p = await load((await params).slug);
-  return p ? { title: p.title, description: p.description, alternates: { canonical: `/our-work/${p.slug}` } } : { title: "Not found" };
+  return p
+    ? { title: p.title, description: p.description, alternates: { canonical: `/our-work/${p.slug}` } }
+    : { title: "Not found" };
 }
 
 export default async function ProjectPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -36,8 +38,22 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
       </header>
       <div style={{ display: "grid", gap: 16, gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 420px), 1fr))" }}>
         {p.media.map((m, i) => (
-          <div key={m.id} style={{ position: "relative", aspectRatio: m.width && m.height ? `${m.width} / ${m.height}` : "4 / 5", background: "var(--surface)" }}>
-            <Image src={m.url} alt={m.alt} fill priority={i === 0} sizes="(max-width: 900px) 100vw, 50vw" style={{ objectFit: "cover" }} />
+          <div
+            key={m.id}
+            style={{
+              position: "relative",
+              aspectRatio: m.width && m.height ? `${m.width} / ${m.height}` : "4 / 5",
+              background: "var(--surface)",
+            }}
+          >
+            <Image
+              src={m.url}
+              alt={m.alt}
+              fill
+              priority={i === 0}
+              sizes="(max-width: 900px) 100vw, 50vw"
+              style={{ objectFit: "cover" }}
+            />
             <SampleTag show={m.sample} />
           </div>
         ))}

@@ -23,7 +23,9 @@ export function CartDrawer() {
               <span className="muted">Subtotal</span>
               <Price minor={subtotal} className="title" />
             </div>
-            <p className="tiny muted">Delivery is calculated at checkout. Prices are confirmed when you place the order.</p>
+            <p className="tiny muted">
+              Delivery is calculated at checkout. Prices are confirmed when you place the order.
+            </p>
             <Link href="/checkout" className="btn btn-primary btn-block" onClick={() => setOpen(false)}>
               Checkout
             </Link>
@@ -66,13 +68,21 @@ export function CartDrawer() {
                 ) : null}
                 <div className="spread">
                   <div className={styles.qty} role="group" aria-label={`Quantity for ${l.name}`}>
-                    <button onClick={() => setQuantity(l.variantId, l.quantity - 1)} aria-label="Decrease quantity" disabled={l.quantity <= 1}>
+                    <button
+                      onClick={() => setQuantity(l.variantId, l.quantity - 1)}
+                      aria-label="Decrease quantity"
+                      disabled={l.quantity <= 1}
+                    >
                       <Minus size={14} aria-hidden />
                     </button>
                     <span aria-live="polite" className="tabular">
                       {l.quantity}
                     </span>
-                    <button onClick={() => setQuantity(l.variantId, l.quantity + 1)} aria-label="Increase quantity" disabled={l.quantity >= 20}>
+                    <button
+                      onClick={() => setQuantity(l.variantId, l.quantity + 1)}
+                      aria-label="Increase quantity"
+                      disabled={l.quantity >= 20}
+                    >
                       <Plus size={14} aria-hidden />
                     </button>
                   </div>

@@ -8,7 +8,13 @@ import { formatLength } from "@/lib/units";
 import type { GarmentType, MeasurementField, MeasurementProfile, MeasurementVersion } from "@/lib/types";
 import { Field } from "@/components/ui/field";
 import { useToast } from "@/components/providers/toast";
-import { MeasurementForm, measureErrors, measurePayload, stateFromMM, type MeasureState } from "@/features/measurements/measurement-form";
+import {
+  MeasurementForm,
+  measureErrors,
+  measurePayload,
+  stateFromMM,
+  type MeasureState,
+} from "@/features/measurements/measurement-form";
 
 const sourceLabel: Record<MeasurementVersion["source"], string> = {
   customer_entered: "Entered by you",
@@ -26,12 +32,22 @@ const ageRanges = [
   ["60_plus", "60 or over"],
 ] as const;
 
-type ProfileForm = { name: string; bodyModel: string; fitPreference: string; unit: string; ageRange: string; isDefault: boolean };
+type ProfileForm = {
+  name: string;
+  bodyModel: string;
+  fitPreference: string;
+  unit: string;
+  ageRange: string;
+  isDefault: boolean;
+};
 
 export function AccountMeasurements() {
   const qc = useQueryClient();
   const toast = useToast();
-  const profiles = useQuery({ queryKey: ["me", "profiles"], queryFn: () => api<MeasurementProfile[]>("/me/measurement-profiles") });
+  const profiles = useQuery({
+    queryKey: ["me", "profiles"],
+    queryFn: () => api<MeasurementProfile[]>("/me/measurement-profiles"),
+  });
   const [editing, setEditing] = useState<string | null>(null);
   const [history, setHistory] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
@@ -52,7 +68,10 @@ export function AccountMeasurements() {
     <>
       <header className="stack-sm">
         <h1 className="display-2">Measurements</h1>
-        <p className="lede">Keep measurements for yourself or the people you order for. Every change is saved as a new version, so past orders keep the numbers they were made with.</p>
+        <p className="lede">
+          Keep measurements for yourself or the people you order for. Every change is saved as a new version, so past
+          orders keep the numbers they were made with.
+        </p>
       </header>
       {profiles.isLoading ? (
         <div className="skeleton" style={{ height: 200 }} />
@@ -66,15 +85,26 @@ export function AccountMeasurements() {
                     {p.name} {p.isDefault ? <span className="badge badge-gold">Default</span> : null}
                   </h2>
                   <span className="small muted">
-                    {humanize(p.bodyModel)} · {humanize(p.fitPreference)} fit · {p.current ? `${sourceLabel[p.current.source]}, ${formatDate(p.current.createdAt)}` : "No measurements yet"}
+                    {humanize(p.bodyModel)} · {humanize(p.fitPreference)} fit ·{" "}
+                    {p.current
+                      ? `${sourceLabel[p.current.source]}, ${formatDate(p.current.createdAt)}`
+                      : "No measurements yet"}
                   </span>
                 </div>
                 <div className="row-wrap">
-                  <button className="btn btn-sm" onClick={() => setEditing(editing === p.id ? null : p.id)} aria-expanded={editing === p.id}>
+                  <button
+                    className="btn btn-sm"
+                    onClick={() => setEditing(editing === p.id ? null : p.id)}
+                    aria-expanded={editing === p.id}
+                  >
                     {p.current ? "Update measurements" : "Add measurements"}
                   </button>
                   {p.current ? (
-                    <button className="btn btn-ghost btn-sm" onClick={() => setHistory(history === p.id ? null : p.id)} aria-expanded={history === p.id}>
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      onClick={() => setHistory(history === p.id ? null : p.id)}
+                      aria-expanded={history === p.id}
+                    >
                       History
                     </button>
                   ) : null}
@@ -116,7 +146,14 @@ export function AccountMeasurements() {
 
 function ProfileEditor({ onDone }: { onDone: () => void }) {
   const toast = useToast();
-  const [f, setF] = useState<ProfileForm>({ name: "", bodyModel: "masculine", fitPreference: "regular", unit: "cm", ageRange: "", isDefault: false });
+  const [f, setF] = useState<ProfileForm>({
+    name: "",
+    bodyModel: "masculine",
+    fitPreference: "regular",
+    unit: "cm",
+    ageRange: "",
+    isDefault: false,
+  });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   async function save(e: React.FormEvent) {
@@ -133,7 +170,8 @@ function ProfileEditor({ onDone }: { onDone: () => void }) {
       setBusy(false);
     }
   }
-  const set = (k: keyof ProfileForm) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setF((x) => ({ ...x, [k]: e.target.value }));
+  const set = (k: keyof ProfileForm) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+    setF((x) => ({ ...x, [k]: e.target.value }));
   return (
     <form className="panel panel-pad stack" onSubmit={save} aria-label="New measurement profile">
       <h2 className="title">New profile</h2>
@@ -179,7 +217,11 @@ function ProfileEditor({ onDone }: { onDone: () => void }) {
         </Field>
       </div>
       <label className="check">
-        <input type="checkbox" checked={f.isDefault} onChange={(e) => setF((x) => ({ ...x, isDefault: e.target.checked }))} />
+        <input
+          type="checkbox"
+          checked={f.isDefault}
+          onChange={(e) => setF((x) => ({ ...x, isDefault: e.target.checked }))}
+        />
         <span>Use as my default profile</span>
       </label>
       <div className="row-wrap">
@@ -198,9 +240,14 @@ function VersionEditor({ profile, onDone }: { profile: MeasurementProfile; onDon
   const toast = useToast();
   const [garment, setGarment] = useState("");
   const garments = useQuery({ queryKey: ["garments"], queryFn: () => api<GarmentType[]>("/garments") });
-  const fields = useQuery({ queryKey: ["measure-fields", garment], queryFn: () => api<MeasurementField[]>(`/measurements/fields${garment ? `?garment=${garment}` : ""}`) });
+  const fields = useQuery({
+    queryKey: ["measure-fields", garment],
+    queryFn: () => api<MeasurementField[]>(`/measurements/fields${garment ? `?garment=${garment}` : ""}`),
+  });
   const [state, setState] = useState<MeasureState>(() =>
-    profile.current ? stateFromMM(profile.current.valuesMm, profile.current.heightMm, profile.unit) : { unit: profile.unit, height: "", values: {} },
+    profile.current
+      ? stateFromMM(profile.current.valuesMm, profile.current.heightMm, profile.unit)
+      : { unit: profile.unit, height: "", values: {} },
   );
   const [notes, setNotes] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -212,10 +259,17 @@ function VersionEditor({ profile, onDone }: { profile: MeasurementProfile; onDon
     if (Object.keys(local).length) return;
     setBusy(true);
     try {
-      const r = await api<{ id: string; reviewFlags: { message: string }[] | null }>(`/me/measurement-profiles/${profile.id}/versions`, {
-        body: { garment, ...measurePayload(state), notes },
-      });
-      toast(r.reviewFlags?.length ? "Saved. Your tailor will double-check a few values." : "Measurements saved as a new version.");
+      const r = await api<{ id: string; reviewFlags: { message: string }[] | null }>(
+        `/me/measurement-profiles/${profile.id}/versions`,
+        {
+          body: { garment, ...measurePayload(state), notes },
+        },
+      );
+      toast(
+        r.reviewFlags?.length
+          ? "Saved. Your tailor will double-check a few values."
+          : "Measurements saved as a new version.",
+      );
       onDone();
     } catch (err) {
       if (err instanceof ApiError) setErrors(err.fields);
@@ -229,7 +283,13 @@ function VersionEditor({ profile, onDone }: { profile: MeasurementProfile; onDon
     <div className="stack">
       <Field label="Show measurements for" hint="Each garment uses a different set of measurements.">
         {(p) => (
-          <select {...p} className="select" value={garment} onChange={(e) => setGarment(e.target.value)} style={{ maxWidth: 360 }}>
+          <select
+            {...p}
+            className="select"
+            value={garment}
+            onChange={(e) => setGarment(e.target.value)}
+            style={{ maxWidth: 360 }}
+          >
             <option value="">All measurements</option>
             {(garments.data ?? []).map((g) => (
               <option key={g.key} value={g.key}>
@@ -239,14 +299,27 @@ function VersionEditor({ profile, onDone }: { profile: MeasurementProfile; onDon
           </select>
         )}
       </Field>
-      {fields.isLoading ? <div className="skeleton" style={{ height: 240 }} /> : <MeasurementForm fields={fields.data ?? []} state={state} onChange={setState} serverErrors={errors} />}
+      {fields.isLoading ? (
+        <div className="skeleton" style={{ height: 240 }} />
+      ) : (
+        <MeasurementForm fields={fields.data ?? []} state={state} onChange={setState} serverErrors={errors} />
+      )}
       {errors.values ? (
         <p className="notice notice-danger" role="alert">
           {errors.values}
         </p>
       ) : null}
       <Field label="Notes for your tailor (optional)">
-        {(p) => <textarea {...p} className="textarea" value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={1000} rows={3} />}
+        {(p) => (
+          <textarea
+            {...p}
+            className="textarea"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            maxLength={1000}
+            rows={3}
+          />
+        )}
       </Field>
       <div className="row-wrap">
         <button className="btn btn-primary" onClick={save} disabled={busy}>
@@ -261,12 +334,22 @@ function VersionEditor({ profile, onDone }: { profile: MeasurementProfile; onDon
 }
 
 function VersionValues({ version, unit }: { version: MeasurementVersion; unit: "cm" | "in" }) {
-  const fields = useQuery({ queryKey: ["measure-fields", ""], queryFn: () => api<MeasurementField[]>("/measurements/fields") });
+  const fields = useQuery({
+    queryKey: ["measure-fields", ""],
+    queryFn: () => api<MeasurementField[]>("/measurements/fields"),
+  });
   const label = (k: string) => fields.data?.find((f) => f.key === k)?.label ?? humanize(k);
   const entries = Object.entries(version.valuesMm);
   return (
     <div className="stack-sm">
-      <dl style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: "10px 24px", margin: 0 }}>
+      <dl
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))",
+          gap: "10px 24px",
+          margin: 0,
+        }}
+      >
         {version.heightMm ? (
           <div>
             <dt className="small muted">Height</dt>
@@ -296,7 +379,10 @@ function VersionValues({ version, unit }: { version: MeasurementVersion; unit: "
 }
 
 function History({ profileId, unit }: { profileId: string; unit: "cm" | "in" }) {
-  const q = useQuery({ queryKey: ["me", "profile-versions", profileId], queryFn: () => api<MeasurementVersion[]>(`/me/measurement-profiles/${profileId}/versions`) });
+  const q = useQuery({
+    queryKey: ["me", "profile-versions", profileId],
+    queryFn: () => api<MeasurementVersion[]>(`/me/measurement-profiles/${profileId}/versions`),
+  });
   if (q.isLoading) return <div className="skeleton" style={{ height: 120 }} />;
   return (
     <ol className="list-rows" aria-label="Version history">

@@ -9,7 +9,15 @@ import { RotateCcw, RotateCw } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
 import { humanize } from "@/lib/format";
 import { useHydrated } from "@/lib/client-hooks";
-import type { DesignSnapshot, Fabric, GarmentType, MeasurementProfile, OptionGroup, SavedDesign, StudioConfig } from "@/lib/types";
+import type {
+  DesignSnapshot,
+  Fabric,
+  GarmentType,
+  MeasurementProfile,
+  OptionGroup,
+  SavedDesign,
+  StudioConfig,
+} from "@/lib/types";
 import { useSession } from "@/components/providers/session";
 import { useToast } from "@/components/providers/toast";
 import { Price } from "@/components/ui/price";
@@ -116,12 +124,23 @@ export function Studio({ garments }: { garments: GarmentType[] }) {
     setReducedMotion(window.matchMedia("(prefers-reduced-motion: reduce)").matches);
   }, []);
 
-  const studio = useQuery({ queryKey: ["studio", garmentKey], queryFn: () => api<StudioConfig>(`/garments/${garmentKey}/studio`) });
+  const studio = useQuery({
+    queryKey: ["studio", garmentKey],
+    queryFn: () => api<StudioConfig>(`/garments/${garmentKey}/studio`),
+  });
   const fabrics = useQuery({ queryKey: ["fabrics"], queryFn: () => api<Fabric[]>("/fabrics") });
-  const profiles = useQuery({ queryKey: ["me", "profiles"], enabled: Boolean(user?.customerId), queryFn: () => api<MeasurementProfile[]>("/me/measurement-profiles") });
+  const profiles = useQuery({
+    queryKey: ["me", "profiles"],
+    enabled: Boolean(user?.customerId),
+    queryFn: () => api<MeasurementProfile[]>("/me/measurement-profiles"),
+  });
   const cfg = studio.data;
   const suitable = useMemo(
-    () => (fabrics.data ?? []).filter((f) => f.stockStatus !== "discontinued" && (!f.suitableGarments.length || f.suitableGarments.includes(garmentKey))),
+    () =>
+      (fabrics.data ?? []).filter(
+        (f) =>
+          f.stockStatus !== "discontinued" && (!f.suitableGarments.length || f.suitableGarments.includes(garmentKey)),
+      ),
     [fabrics.data, garmentKey],
   );
 
@@ -130,7 +149,7 @@ export function Studio({ garments }: { garments: GarmentType[] }) {
   useEffect(() => {
     if (!cfg || appliedFor.current === cfg.garment.key) return;
     appliedFor.current = cfg.garment.key;
-     
+
     setSelections(defaultsFor(cfg.groups));
   }, [cfg]);
 
@@ -152,7 +171,11 @@ export function Studio({ garments }: { garments: GarmentType[] }) {
           setFabricKey(s.fabric.key);
           setColorKey(s.fabric.colorKey);
         }
-        setFitPreference((["slim", "regular", "relaxed"].includes(s.fitPreference) ? s.fitPreference : "regular") as typeof fitPreference);
+        setFitPreference(
+          (["slim", "regular", "relaxed"].includes(s.fitPreference)
+            ? s.fitPreference
+            : "regular") as typeof fitPreference,
+        );
         setBaseline(s.baseline?.type === "size" ? (s.baseline.label ?? "") : "");
         if (s.measurements?.versionId) {
           setMeasureMode("saved");
@@ -162,8 +185,17 @@ export function Studio({ garments }: { garments: GarmentType[] }) {
           setMeasureMode("entered");
           setMeasure({
             unit,
-            height: s.measurements.heightMm ? String(unit === "in" ? Math.round((s.measurements.heightMm / 25.4) * 4) / 4 : s.measurements.heightMm / 10) : "",
-            values: Object.fromEntries(Object.entries(s.measurements.valuesMm).map(([k, mm]) => [k, String(unit === "in" ? Math.round((mm / 25.4) * 4) / 4 : mm / 10)])),
+            height: s.measurements.heightMm
+              ? String(
+                  unit === "in" ? Math.round((s.measurements.heightMm / 25.4) * 4) / 4 : s.measurements.heightMm / 10,
+                )
+              : "",
+            values: Object.fromEntries(
+              Object.entries(s.measurements.valuesMm).map(([k, mm]) => [
+                k,
+                String(unit === "in" ? Math.round((mm / 25.4) * 4) / 4 : mm / 10),
+              ]),
+            ),
           });
         }
       })
@@ -176,7 +208,9 @@ export function Studio({ garments }: { garments: GarmentType[] }) {
   const fabric = suitable.find((f) => f.key === fabricKey) ?? suitable[0] ?? null;
   const color = fabric?.colors.find((c) => c.key === colorKey) ?? fabric?.colors[0] ?? null;
   const asset = cfg?.asset ?? null;
-  const bodyModel = (asset?.supportedOptions.bodyModel as "masculine" | "feminine" | undefined) ?? (cfg?.garment.bodyModelHint === "feminine" ? "feminine" : "masculine");
+  const bodyModel =
+    (asset?.supportedOptions.bodyModel as "masculine" | "feminine" | undefined) ??
+    (cfg?.garment.bodyModelHint === "feminine" ? "feminine" : "masculine");
   const body = cfg?.bodyAssets.find((b) => b.supportedOptions.bodyModel === bodyModel) ?? null;
   const fileFor = (a: typeof asset) => a?.files.find((f) => f.lod === quality)?.url ?? a?.files[0]?.url ?? null;
 
@@ -193,7 +227,19 @@ export function Studio({ garments }: { garments: GarmentType[] }) {
       measurementVersionId: measureMode === "saved" && profileVersionId ? profileVersionId : undefined,
       measurements: measureMode === "entered" ? measurePayload(measure) : undefined,
     };
-  }, [cfg, garmentKey, selections, fabric, color, baseline, fitPreference, bodyModel, measureMode, profileVersionId, measure]);
+  }, [
+    cfg,
+    garmentKey,
+    selections,
+    fabric,
+    color,
+    baseline,
+    fitPreference,
+    bodyModel,
+    measureMode,
+    profileVersionId,
+    measure,
+  ]);
 
   // Server-side evaluation keeps price and fit authoritative. Debounced while the customer edits.
   const [debounced, setDebounced] = useState(config);
@@ -214,12 +260,23 @@ export function Studio({ garments }: { garments: GarmentType[] }) {
   const morphs = useMemo(() => {
     const out: Record<string, number> = {};
     const base = asset?.bodyCompat.baseMm as BaseMm | undefined;
-    const step = (asset?.bodyCompat.morphStepM as Record<string, number> | undefined) ?? { chest: 0.1, waist: 0.1, hip: 0.1, shoulders: 0.05 };
+    const step = (asset?.bodyCompat.morphStepM as Record<string, number> | undefined) ?? {
+      chest: 0.1,
+      waist: 0.1,
+      hip: 0.1,
+      shoulders: 0.05,
+    };
     let mm: Record<string, number> = {};
     if (snap?.measurements?.valuesMm) mm = snap.measurements.valuesMm;
     else if (baseline && cfg) {
       const size = cfg.sizes.find((s) => s.label === baseline);
-      if (size) mm = { chest: (size.dims.chest ?? 0) - 100, waist: (size.dims.waist ?? 0) - 90, hip: (size.dims.hip ?? 0) - 70, shoulder: size.dims.shoulders ?? 0 };
+      if (size)
+        mm = {
+          chest: (size.dims.chest ?? 0) - 100,
+          waist: (size.dims.waist ?? 0) - 90,
+          hip: (size.dims.hip ?? 0) - 70,
+          shoulder: size.dims.shoulders ?? 0,
+        };
     }
     if (base) {
       const chest = bodyModel === "feminine" ? (mm.bust ?? mm.chest) : mm.chest;
@@ -249,7 +306,10 @@ export function Studio({ garments }: { garments: GarmentType[] }) {
   }, [asset, snap]);
 
   const visibility = useMemo(() => (cfg ? visibilityFor(cfg, selections) : {}), [cfg, selections]);
-  const fabricLook = useMemo(() => (fabric && color ? { pbr: fabric.pbr, colorHex: color.hex } : null), [fabric, color]);
+  const fabricLook = useMemo(
+    () => (fabric && color ? { pbr: fabric.pbr, colorHex: color.hex } : null),
+    [fabric, color],
+  );
 
   const sections = useMemo(() => {
     const m = new Map<string, OptionGroup[]>();
@@ -261,7 +321,11 @@ export function Studio({ garments }: { garments: GarmentType[] }) {
     if (!config) return null;
     setSaving(true);
     try {
-      const body = { name: name.trim() || `${cfg?.garment.name ?? "My"} design`, config, expectedVersion: designVersion ?? undefined };
+      const body = {
+        name: name.trim() || `${cfg?.garment.name ?? "My"} design`,
+        config,
+        expectedVersion: designVersion ?? undefined,
+      };
       const r = designId
         ? await api<{ id: string; version: number }>(`/designs/${designId}`, { method: "PUT", body })
         : await api<{ id: string; version: number }>("/designs", { body });
@@ -289,7 +353,10 @@ export function Studio({ garments }: { garments: GarmentType[] }) {
       <section className={styles.stage} aria-label="3D preview">
         {webgl === false ? (
           <div className={styles.fallback}>
-            <p>Your browser cannot show the 3D preview. You can still choose every option and send your design for a quote.</p>
+            <p>
+              Your browser cannot show the 3D preview. You can still choose every option and send your design for a
+              quote.
+            </p>
           </div>
         ) : cfg && body && asset ? (
           <Viewer
@@ -329,20 +396,36 @@ export function Studio({ garments }: { garments: GarmentType[] }) {
             ))}
           </div>
           <div className="row">
-            <button type="button" className="icon-btn" aria-label="Turn left" onClick={() => setTurn((t) => t - Math.PI / 8)}>
+            <button
+              type="button"
+              className="icon-btn"
+              aria-label="Turn left"
+              onClick={() => setTurn((t) => t - Math.PI / 8)}
+            >
               <RotateCcw size={18} aria-hidden />
             </button>
-            <button type="button" className="icon-btn" aria-label="Turn right" onClick={() => setTurn((t) => t + Math.PI / 8)}>
+            <button
+              type="button"
+              className="icon-btn"
+              aria-label="Turn right"
+              onClick={() => setTurn((t) => t + Math.PI / 8)}
+            >
               <RotateCw size={18} aria-hidden />
             </button>
             <label className={styles.quality}>
-              <input type="checkbox" checked={quality === "low"} onChange={(e) => setQuality(e.target.checked ? "low" : "high")} />
+              <input
+                type="checkbox"
+                checked={quality === "low"}
+                onChange={(e) => setQuality(e.target.checked ? "low" : "high")}
+              />
               Lighter model
             </label>
           </div>
         </div>
         {asset && !asset.productionQuality ? (
-          <p className={styles.standin}>Simplified preview model. Your garment is cut from your own pattern and its drape and details will differ.</p>
+          <p className={styles.standin}>
+            Simplified preview model. Your garment is cut from your own pattern and its drape and details will differ.
+          </p>
         ) : null}
       </section>
 
@@ -381,7 +464,15 @@ export function Studio({ garments }: { garments: GarmentType[] }) {
           </div>
         </header>
 
-        {studio.isError ? <p className="notice notice-danger">This garment is not available in the studio. <Link className="link" href="/custom-tailor/request">Describe it instead</Link>.</p> : null}
+        {studio.isError ? (
+          <p className="notice notice-danger">
+            This garment is not available in the studio.{" "}
+            <Link className="link" href="/custom-tailor/request">
+              Describe it instead
+            </Link>
+            .
+          </p>
+        ) : null}
 
         <div className={styles.sections}>
           <PanelSection title="Fabric">
@@ -400,7 +491,12 @@ export function Studio({ garments }: { garments: GarmentType[] }) {
                       }}
                     />
                     <span className={styles.swatch}>
-                      <FabricSwatch fabric={f} colorHex={fabric?.key === f.key ? color?.hex : f.colors[0]?.hex} sizes="64px" round={false} />
+                      <FabricSwatch
+                        fabric={f}
+                        colorHex={fabric?.key === f.key ? color?.hex : f.colors[0]?.hex}
+                        sizes="64px"
+                        round={false}
+                      />
                     </span>
                     <span className="small">{f.name}</span>
                   </label>
@@ -424,7 +520,13 @@ export function Studio({ garments }: { garments: GarmentType[] }) {
                 <div className="row-wrap">
                   {fabric.colors.map((c) => (
                     <label key={c.key} className={styles.color} title={c.name}>
-                      <input type="radio" name="studio-color" className="visually-hidden" checked={color?.key === c.key} onChange={() => setColorKey(c.key)} />
+                      <input
+                        type="radio"
+                        name="studio-color"
+                        className="visually-hidden"
+                        checked={color?.key === c.key}
+                        onChange={() => setColorKey(c.key)}
+                      />
                       <span style={{ background: c.hex }} aria-hidden />
                       <span className="visually-hidden">{c.name}</span>
                     </label>
@@ -459,7 +561,12 @@ export function Studio({ garments }: { garments: GarmentType[] }) {
                     <div className={styles.values}>
                       {g.values.map((v) => (
                         <label key={v.key} className={styles.value}>
-                          <input type="radio" name={`g-${g.key}`} checked={selections[g.key] === v.key} onChange={() => setSelections((s) => ({ ...s, [g.key]: v.key }))} />
+                          <input
+                            type="radio"
+                            name={`g-${g.key}`}
+                            checked={selections[g.key] === v.key}
+                            onChange={() => setSelections((s) => ({ ...s, [g.key]: v.key }))}
+                          />
                           <span>{v.name}</span>
                           {v.priceMinor ? (
                             <span className="tiny muted">
@@ -471,7 +578,11 @@ export function Studio({ garments }: { garments: GarmentType[] }) {
                     </div>
                     {(() => {
                       const d = g.values.find((v) => v.key === selections[g.key])?.description;
-                      return d ? <p className="tiny muted" style={{ margin: 0 }}>{d}</p> : null;
+                      return d ? (
+                        <p className="tiny muted" style={{ margin: 0 }}>
+                          {d}
+                        </p>
+                      ) : null;
                     })()}
                   </fieldset>
                 ),
@@ -495,16 +606,31 @@ export function Studio({ garments }: { garments: GarmentType[] }) {
               <legend className="label">Measurements</legend>
               <div className={styles.values}>
                 <label className={styles.value}>
-                  <input type="radio" name="mm" checked={measureMode === "none"} onChange={() => setMeasureMode("none")} />
+                  <input
+                    type="radio"
+                    name="mm"
+                    checked={measureMode === "none"}
+                    onChange={() => setMeasureMode("none")}
+                  />
                   <span>Later, or at the studio</span>
                 </label>
                 <label className={styles.value}>
-                  <input type="radio" name="mm" checked={measureMode === "entered"} onChange={() => setMeasureMode("entered")} />
+                  <input
+                    type="radio"
+                    name="mm"
+                    checked={measureMode === "entered"}
+                    onChange={() => setMeasureMode("entered")}
+                  />
                   <span>Enter mine</span>
                 </label>
                 {user?.customerId && (profiles.data ?? []).some((p) => p.current) ? (
                   <label className={styles.value}>
-                    <input type="radio" name="mm" checked={measureMode === "saved"} onChange={() => setMeasureMode("saved")} />
+                    <input
+                      type="radio"
+                      name="mm"
+                      checked={measureMode === "saved"}
+                      onChange={() => setMeasureMode("saved")}
+                    />
                     <span>Use saved</span>
                   </label>
                 ) : null}
@@ -524,7 +650,12 @@ export function Studio({ garments }: { garments: GarmentType[] }) {
               </label>
             ) : null}
             {measureMode === "saved" ? (
-              <select className="select" aria-label="Saved measurements" value={profileVersionId} onChange={(e) => setProfileVersionId(e.target.value)}>
+              <select
+                className="select"
+                aria-label="Saved measurements"
+                value={profileVersionId}
+                onChange={(e) => setProfileVersionId(e.target.value)}
+              >
                 <option value="">Choose a profile</option>
                 {(profiles.data ?? [])
                   .filter((p) => p.current)
@@ -535,7 +666,9 @@ export function Studio({ garments }: { garments: GarmentType[] }) {
                   ))}
               </select>
             ) : null}
-            {measureMode === "entered" && cfg ? <MeasurementForm fields={cfg.measurements} state={measure} onChange={setMeasure} /> : null}
+            {measureMode === "entered" && cfg ? (
+              <MeasurementForm fields={cfg.measurements} state={measure} onChange={setMeasure} />
+            ) : null}
           </PanelSection>
 
           <PanelSection title="Fit estimate">
@@ -580,14 +713,26 @@ export function Studio({ garments }: { garments: GarmentType[] }) {
           <label className="visually-hidden" htmlFor="design-name">
             Design name
           </label>
-          <input id="design-name" className="input" placeholder={`${cfg?.garment.name ?? "My"} design`} value={name} onChange={(e) => setName(e.target.value)} maxLength={80} />
+          <input
+            id="design-name"
+            className="input"
+            placeholder={`${cfg?.garment.name ?? "My"} design`}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            maxLength={80}
+          />
           <div className={styles.actions}>
             <button
               type="button"
               className="btn"
               disabled={saving || !config}
               onClick={async () => {
-                if (await save()) toast(user?.customerId ? "Saved to your account." : "Saved on this device. Sign in to keep it in your account.");
+                if (await save())
+                  toast(
+                    user?.customerId
+                      ? "Saved to your account."
+                      : "Saved on this device. Sign in to keep it in your account.",
+                  );
               }}
             >
               Save
@@ -621,4 +766,3 @@ function PanelSection({ title, children }: { title: string; children: React.Reac
     </details>
   );
 }
-

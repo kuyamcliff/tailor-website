@@ -5,10 +5,12 @@ export function trackErrors(page: Page) {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(`pageerror: ${e.message}`));
   page.on("console", (m) => {
-    if (m.type() === "error" && !/Download the React DevTools/.test(m.text())) errors.push(`console: ${m.text()} (${m.location().url})`);
+    if (m.type() === "error" && !/Download the React DevTools/.test(m.text()))
+      errors.push(`console: ${m.text()} (${m.location().url})`);
   });
   page.on("response", (r) => {
-    if (r.status() >= 500 || (r.status() === 404 && !r.url().includes("/api/"))) errors.push(`${r.status()} ${r.url()}`);
+    if (r.status() >= 500 || (r.status() === 404 && !r.url().includes("/api/")))
+      errors.push(`${r.status()} ${r.url()}`);
   });
   return {
     assertClean: () => expect(errors, errors.join("\n")).toEqual([]),
@@ -23,7 +25,10 @@ export async function signIn(page: Page, email: string, password: string, next =
   await page.waitForURL((u) => u.pathname.startsWith(next));
 }
 
-export const owner = { email: process.env.E2E_OWNER_EMAIL ?? "owner@atelier.test", password: process.env.E2E_OWNER_PASSWORD ?? "atelier-owner-dev" };
+export const owner = {
+  email: process.env.E2E_OWNER_EMAIL ?? "owner@atelier.test",
+  password: process.env.E2E_OWNER_PASSWORD ?? "atelier-owner-dev",
+};
 
 export async function noHorizontalOverflow(page: Page) {
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);

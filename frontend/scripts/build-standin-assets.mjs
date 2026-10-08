@@ -82,9 +82,37 @@ const BODIES = {
     ],
     neck: { y0: 1.5, y1: 1.6, r: 0.055 },
     bands: { chest: [1.32, 0.07], waist: [1.1, 0.06], hip: [0.96, 0.06], shoulders: [1.41, 0.04] },
-    leg: { x0: 0.088, x1: 0.1, keys: [[0.06, 0.034], [0.15, 0.036], [0.3, 0.05], [0.42, 0.058], [0.5, 0.055], [0.55, 0.058], [0.7, 0.075], [0.84, 0.092], [0.92, 0.098]] },
+    leg: {
+      x0: 0.088,
+      x1: 0.1,
+      keys: [
+        [0.06, 0.034],
+        [0.15, 0.036],
+        [0.3, 0.05],
+        [0.42, 0.058],
+        [0.5, 0.055],
+        [0.55, 0.058],
+        [0.7, 0.075],
+        [0.84, 0.092],
+        [0.92, 0.098],
+      ],
+    },
     crotch: 0.86,
-    arm: { x: 0.195, y: 1.41, z: -0.01, len: 0.58, splay: 0.18, keys: [[0, 0.052], [0.1, 0.05], [0.45, 0.04], [0.5, 0.038], [0.85, 0.03], [1, 0.027]] },
+    arm: {
+      x: 0.195,
+      y: 1.41,
+      z: -0.01,
+      len: 0.58,
+      splay: 0.18,
+      keys: [
+        [0, 0.052],
+        [0.1, 0.05],
+        [0.45, 0.04],
+        [0.5, 0.038],
+        [0.85, 0.03],
+        [1, 0.027],
+      ],
+    },
     hemJacket: 0.8,
   },
   feminine: {
@@ -108,9 +136,37 @@ const BODIES = {
     ],
     neck: { y0: 1.4, y1: 1.49, r: 0.047 },
     bands: { chest: [1.22, 0.06], waist: [1.04, 0.05], hip: [0.88, 0.06], shoulders: [1.32, 0.04] },
-    leg: { x0: 0.082, x1: 0.095, keys: [[0.05, 0.03], [0.12, 0.032], [0.26, 0.045], [0.38, 0.054], [0.46, 0.05], [0.5, 0.052], [0.66, 0.07], [0.78, 0.09], [0.86, 0.1]] },
+    leg: {
+      x0: 0.082,
+      x1: 0.095,
+      keys: [
+        [0.05, 0.03],
+        [0.12, 0.032],
+        [0.26, 0.045],
+        [0.38, 0.054],
+        [0.46, 0.05],
+        [0.5, 0.052],
+        [0.66, 0.07],
+        [0.78, 0.09],
+        [0.86, 0.1],
+      ],
+    },
     crotch: 0.8,
-    arm: { x: 0.165, y: 1.315, z: -0.01, len: 0.54, splay: 0.2, keys: [[0, 0.044], [0.1, 0.042], [0.45, 0.034], [0.5, 0.032], [0.85, 0.026], [1, 0.024]] },
+    arm: {
+      x: 0.165,
+      y: 1.315,
+      z: -0.01,
+      len: 0.54,
+      splay: 0.2,
+      keys: [
+        [0, 0.044],
+        [0.1, 0.042],
+        [0.45, 0.034],
+        [0.5, 0.032],
+        [0.85, 0.026],
+        [1, 0.024],
+      ],
+    },
     hemJacket: 0.76,
   },
 };
@@ -143,7 +199,7 @@ function legAt(B, y, side, mods) {
   const t = clamp((B.crotch + 0.06 - y) / (B.crotch + 0.06), 0, 1);
   const x = side * lerp(B.leg.x0, B.leg.x1, t);
   let [r] = keyed(B.leg.keys, y);
-  r += 0.012 * (mods.hip ?? 0) / 0.1 * gauss(y, B.crotch, 0.12);
+  r += ((0.012 * (mods.hip ?? 0)) / 0.1) * gauss(y, B.crotch, 0.12);
   return { x, r };
 }
 
@@ -231,7 +287,11 @@ function armTube(mesh, B, side, mods, s0, s1, radius, nu, nv) {
     nv,
     (u, v) => {
       const s = lerp(s0, s1, v);
-      const c = [origin[0] + dir[0] * s * B.arm.len, origin[1] + dir[1] * s * B.arm.len, origin[2] + dir[2] * s * B.arm.len];
+      const c = [
+        origin[0] + dir[0] * s * B.arm.len,
+        origin[1] + dir[1] * s * B.arm.len,
+        origin[2] + dir[2] * s * B.arm.len,
+      ];
       const r = radius(s);
       const th = u * TAU;
       const ca = Math.cos(th) * r;
@@ -299,7 +359,9 @@ function torsoNormal(B, y, theta, mods, clampLow) {
 
 function bodyParts(B, mods, q, extra = {}) {
   const skin = new Mesh("mannequin", "mannequin");
-  grid(skin, 48 * q, 40 * q, (u, v) => torsoPoint(B, lerp(B.torso[0][0], B.neck.y0, v), u * TAU, mods), { closed: true });
+  grid(skin, 48 * q, 40 * q, (u, v) => torsoPoint(B, lerp(B.torso[0][0], B.neck.y0, v), u * TAU, mods), {
+    closed: true,
+  });
   grid(
     skin,
     24 * q,
@@ -330,7 +392,13 @@ function bodyParts(B, mods, q, extra = {}) {
     armTube(skin, B, side, mods, 0, 1, (s) => keyed(B.arm.keys, s)[0], 20 * q, 28 * q);
     const { origin, dir } = armFrame(B, side, mods);
     const wrist = [origin[0] + dir[0] * B.arm.len, origin[1] + dir[1] * B.arm.len, origin[2] + dir[2] * B.arm.len];
-    ellipsoid(skin, [wrist[0] + dir[0] * 0.075, wrist[1] + dir[1] * 0.075, wrist[2]], [0.024, 0.08, 0.042], 14 * q, 10 * q);
+    ellipsoid(
+      skin,
+      [wrist[0] + dir[0] * 0.075, wrist[1] + dir[1] * 0.075, wrist[2]],
+      [0.024, 0.08, 0.042],
+      14 * q,
+      10 * q,
+    );
   }
   // The pelvis cap closing the torso between the legs.
   ellipsoid(skin, [0, B.torso[0][0] + 0.005, 0], [B.torso[0][1], 0.04, B.torso[0][2]], 32 * q, 6 * q);
@@ -375,8 +443,14 @@ function jacketParts(B, mods, q) {
 
   // Lapels lie on the jacket front either side of the opening. width(y) gives each style its outline.
   const lapelStyles = {
-    lapel_notch: (t) => (t < 0.78 ? lerp(0.08, 0.3, smooth(t / 0.78)) : t < 0.84 ? 0.1 : lerp(0.22, 0.16, (t - 0.84) / 0.16)),
-    lapel_peak: (t) => (t < 0.74 ? lerp(0.08, 0.32, smooth(t / 0.74)) : t < 0.84 ? lerp(0.32, 0.46, (t - 0.74) / 0.1) : lerp(0.16, 0.14, (t - 0.84) / 0.16)),
+    lapel_notch: (t) =>
+      t < 0.78 ? lerp(0.08, 0.3, smooth(t / 0.78)) : t < 0.84 ? 0.1 : lerp(0.22, 0.16, (t - 0.84) / 0.16),
+    lapel_peak: (t) =>
+      t < 0.74
+        ? lerp(0.08, 0.32, smooth(t / 0.74))
+        : t < 0.84
+          ? lerp(0.32, 0.46, (t - 0.74) / 0.1)
+          : lerp(0.16, 0.14, (t - 0.84) / 0.16),
     lapel_shawl: (t) => lerp(0.07, 0.26, Math.sin(Math.min(1, t * 1.15) * Math.PI * 0.5)),
   };
   for (const [name, width] of Object.entries(lapelStyles)) {
@@ -449,7 +523,9 @@ function trouserParts(B, mods, q) {
   const out = [];
   const waistY = B === BODIES.masculine ? 1.08 : 1.02;
   const t = new Mesh("trousers", "fabric");
-  grid(t, 48 * q, 10 * q, (u, v) => torsoPoint(B, lerp(B.crotch - 0.02, waistY, v), u * TAU, mods, 0.012), { closed: true });
+  grid(t, 48 * q, 10 * q, (u, v) => torsoPoint(B, lerp(B.crotch - 0.02, waistY, v), u * TAU, mods, 0.012), {
+    closed: true,
+  });
   const hemY = 0.035;
   const legR = (y) => {
     const { r } = legAt(B, y, 1, mods);
@@ -476,7 +552,9 @@ function trouserParts(B, mods, q) {
   t.morphExtras = { leg_wide: (m) => ({ ...m, __legWide: 1 }) };
   out.push(t);
   const band = new Mesh("waistband", "fabric");
-  grid(band, 48 * q, 2, (u, v) => torsoPoint(B, lerp(waistY - 0.035, waistY + 0.002, v), u * TAU, mods, 0.016), { closed: true });
+  grid(band, 48 * q, 2, (u, v) => torsoPoint(B, lerp(waistY - 0.035, waistY + 0.002, v), u * TAU, mods, 0.016), {
+    closed: true,
+  });
   out.push(band);
   const cuff = new Mesh("trouser_cuff", "fabric");
   for (const side of [-1, 1]) {
@@ -538,7 +616,13 @@ function shirtCollar(B, mods, q, name, style) {
 function shirtParts(B, mods, q, { base = false } = {}) {
   const out = [];
   const body = new Mesh(base ? "shirt_base" : "shirt_body", "shirt");
-  grid(body, 48 * q, 30 * q, (u, v) => torsoPoint(B, lerp(base ? 1.0 : B.hemJacket - 0.02, B.neck.y0 - 0.005, v), u * TAU, mods, 0.007, true), { closed: true });
+  grid(
+    body,
+    48 * q,
+    30 * q,
+    (u, v) => torsoPoint(B, lerp(base ? 1.0 : B.hemJacket - 0.02, B.neck.y0 - 0.005, v), u * TAU, mods, 0.007, true),
+    { closed: true },
+  );
   out.push(body);
   if (base) {
     out.push(Object.assign(shirtCollar(B, mods, q, "shirt_base_collar", "spread"), {}));
@@ -579,13 +663,16 @@ function dressParts(B, mods, q) {
   const top = B.neck.y0 - 0.005;
   const under = 1.3;
   const bodice = new Mesh("bodice", "fabric");
-  grid(bodice, 56 * q, 18 * q, (u, v) => torsoPoint(B, lerp(waistY - 0.01, under, v), u * TAU, mods, 0.006), { closed: true });
+  grid(bodice, 56 * q, 18 * q, (u, v) => torsoPoint(B, lerp(waistY - 0.01, under, v), u * TAU, mods, 0.006), {
+    closed: true,
+  });
   out.push(bodice);
   // Neckline pieces cover the upper bodice and shoulders; the top edge follows each cut.
   const cuts = {
     neckline_round: (th) => 0.03 + 0.05 * gauss(th, 0, 0.55),
     neckline_v: (th) => 0.03 + 0.16 * Math.max(0, 1 - Math.abs(th) / 0.55),
-    neckline_sweetheart: (th) => 0.03 + 0.11 * Math.max(0, 1 - Math.abs(th) / 0.75) - 0.04 * gauss(Math.abs(th), 0.32, 0.12),
+    neckline_sweetheart: (th) =>
+      0.03 + 0.11 * Math.max(0, 1 - Math.abs(th) / 0.75) - 0.04 * gauss(Math.abs(th), 0.32, 0.12),
   };
   for (const [name, cut] of Object.entries(cuts)) {
     const m = new Mesh(name, "fabric");
@@ -608,7 +695,17 @@ function dressParts(B, mods, q) {
   const cap = new Mesh("sleeve_cap", "fabric");
   const long = new Mesh("sleeve_long", "fabric");
   for (const side of [-1, 1]) {
-    armTube(cap, B, side, mods, -0.03, 0.17, (s) => keyed(B.arm.keys, s)[0] + 0.012 + 0.03 * clamp(s / 0.17, 0, 1), 18 * q, 4 * q);
+    armTube(
+      cap,
+      B,
+      side,
+      mods,
+      -0.03,
+      0.17,
+      (s) => keyed(B.arm.keys, s)[0] + 0.012 + 0.03 * clamp(s / 0.17, 0, 1),
+      18 * q,
+      4 * q,
+    );
     armTube(long, B, side, mods, -0.03, 0.97, (s) => keyed(B.arm.keys, s)[0] + 0.01, 18 * q, 22 * q);
   }
   out.push(cap, long);
@@ -636,7 +733,11 @@ function dressParts(B, mods, q) {
         const flare = y > hipY ? 0 : shape(t, hem);
         const rx = Math.max(body.rx + 0.012, flare);
         const rz = Math.max(body.rz + 0.012, flare * 0.82);
-        return [spow(Math.sin(th), 0.85) * rx, y, body.cz * (1 - t) + spow(Math.cos(th), 0.85) * rz - (name === "skirt_ballgown" ? 0.03 * t : 0)];
+        return [
+          spow(Math.sin(th), 0.85) * rx,
+          y,
+          body.cz * (1 - t) + spow(Math.cos(th), 0.85) * rz - (name === "skirt_ballgown" ? 0.03 * t : 0),
+        ];
       },
       { closed: true },
     );
@@ -658,7 +759,8 @@ function build(builder, B, q) {
     for (const name of names) {
       const mods = BODY_MORPHS.includes(name) ? { [name]: MORPH_STEP[name] } : mesh.morphExtras[name]({});
       const moved = builder(B, mods, q)[i];
-      if (moved.positions.length !== mesh.positions.length) throw new Error(`morph ${name} changed vertex count of ${mesh.name}`);
+      if (moved.positions.length !== mesh.positions.length)
+        throw new Error(`morph ${name} changed vertex count of ${mesh.name}`);
       mesh.targets.push({ name, delta: moved.positions.map((p, k) => p - mesh.positions[k]) });
     }
   }
@@ -749,13 +851,18 @@ function writeGLB(meshes, rootName) {
         NORMAL: add(nor, 34962, { componentType: 5126, count: m.vertexCount, type: "VEC3" }),
         TEXCOORD_0: add(uv, 34962, { componentType: 5126, count: m.vertexCount, type: "VEC2" }),
       },
-      indices: add(idx, 34963, { componentType: idx instanceof Uint32Array ? 5125 : 5123, count: idx.length, type: "SCALAR" }),
+      indices: add(idx, 34963, {
+        componentType: idx instanceof Uint32Array ? 5125 : 5123,
+        count: idx.length,
+        type: "SCALAR",
+      }),
       material: matNames.indexOf(m.material),
       // Morph targets use sparse accessors: only vertices that actually move are stored.
       targets: m.targets.map((t) => {
         const moved = [];
         for (let v = 0; v < m.vertexCount; v++) {
-          if (Math.abs(t.delta[v * 3]) + Math.abs(t.delta[v * 3 + 1]) + Math.abs(t.delta[v * 3 + 2]) > 5e-5) moved.push(v); // ignore sub-0.05 mm movement
+          if (Math.abs(t.delta[v * 3]) + Math.abs(t.delta[v * 3 + 1]) + Math.abs(t.delta[v * 3 + 2]) > 5e-5)
+            moved.push(v); // ignore sub-0.05 mm movement
         }
         const values = new Float32Array(Math.max(1, moved.length) * 3);
         moved.forEach((v, i) => values.set(t.delta.slice(v * 3, v * 3 + 3), i * 3));
@@ -773,12 +880,21 @@ function writeGLB(meshes, rootName) {
           type: "VEC3",
           min: range.min.map((x) => Math.min(x, 0)),
           max: range.max.map((x) => Math.max(x, 0)),
-          sparse: { count: indices.length, indices: { bufferView: idxView, componentType: 5125 }, values: { bufferView: valView } },
+          sparse: {
+            count: indices.length,
+            indices: { bufferView: idxView, componentType: 5125 },
+            values: { bufferView: valView },
+          },
         });
         return { POSITION: accessors.length - 1 };
       }),
     };
-    gltfMeshes.push({ name: m.name, primitives: [prim], weights: m.targets.map(() => 0), extras: { targetNames: m.targets.map((t) => t.name) } });
+    gltfMeshes.push({
+      name: m.name,
+      primitives: [prim],
+      weights: m.targets.map(() => 0),
+      extras: { targetNames: m.targets.map((t) => t.name) },
+    });
     nodes.push({ name: m.name, mesh: gltfMeshes.length - 1 });
     nodes[0].children.push(nodes.length - 1);
   }
@@ -818,23 +934,93 @@ function writeGLB(meshes, rootName) {
 const MODELS = [
   { file: "body-masculine", kind: "body", body: "masculine", builder: (B, m, q) => bodyParts(B, m, q) },
   { file: "body-feminine", kind: "body", body: "feminine", builder: (B, m, q) => bodyParts(B, m, q) },
-  { file: "suit", kind: "garment", body: "masculine", builder: (B, m, q) => [...shirtParts(B, m, q, { base: true }), ...trouserParts(B, m, q), ...jacketParts(B, m, q)] },
-  { file: "shirt", kind: "garment", body: "masculine", builder: (B, m, q) => [...trouserParts(B, m, q), ...shirtParts(B, m, q)] },
+  {
+    file: "suit",
+    kind: "garment",
+    body: "masculine",
+    builder: (B, m, q) => [...shirtParts(B, m, q, { base: true }), ...trouserParts(B, m, q), ...jacketParts(B, m, q)],
+  },
+  {
+    file: "shirt",
+    kind: "garment",
+    body: "masculine",
+    builder: (B, m, q) => [...trouserParts(B, m, q), ...shirtParts(B, m, q)],
+  },
   { file: "dress", kind: "garment", body: "feminine", builder: (B, m, q) => dressParts(B, m, q) },
 ];
 
 const jacketOnly = ["trousers", "waistband", "trouser_cuff"];
-const trousersOnly = ["jacket_body", "jacket_collar", "sleeve_left", "sleeve_right", "lapel_notch", "lapel_peak", "lapel_shawl", "buttons_1", "buttons_2", "buttons_3", "buttons_db", "pocket_flap", "pocket_jetted", "pocket_patch", "chest_pocket", "shirt_base", "shirt_base_collar"];
+const trousersOnly = [
+  "jacket_body",
+  "jacket_collar",
+  "sleeve_left",
+  "sleeve_right",
+  "lapel_notch",
+  "lapel_peak",
+  "lapel_shawl",
+  "buttons_1",
+  "buttons_2",
+  "buttons_3",
+  "buttons_db",
+  "pocket_flap",
+  "pocket_jetted",
+  "pocket_patch",
+  "chest_pocket",
+  "shirt_base",
+  "shirt_base_collar",
+];
 
 const ENTRIES = [
   { assetKey: "body-masculine", file: "body-masculine", kind: "body", garmentTypeKeys: [], bodyModel: "masculine" },
   { assetKey: "body-feminine", file: "body-feminine", kind: "body", garmentTypeKeys: [], bodyModel: "feminine" },
-  { assetKey: "suit-standin", file: "suit", kind: "garment", garmentTypeKeys: ["suit"], bodyModel: "masculine", baseHidden: [] },
-  { assetKey: "jacket-standin", file: "suit", kind: "garment", garmentTypeKeys: ["jacket"], bodyModel: "masculine", baseHidden: jacketOnly },
-  { assetKey: "trousers-standin", file: "suit", kind: "garment", garmentTypeKeys: ["trousers"], bodyModel: "masculine", baseHidden: trousersOnly },
-  { assetKey: "shirt-standin", file: "shirt", kind: "garment", garmentTypeKeys: ["shirt"], bodyModel: "masculine", baseHidden: [] },
-  { assetKey: "dress-standin", file: "dress", kind: "garment", garmentTypeKeys: ["dress"], bodyModel: "feminine", baseHidden: [] },
-  { assetKey: "gown-standin", file: "dress", kind: "garment", garmentTypeKeys: ["gown"], bodyModel: "feminine", baseHidden: [] },
+  {
+    assetKey: "suit-standin",
+    file: "suit",
+    kind: "garment",
+    garmentTypeKeys: ["suit"],
+    bodyModel: "masculine",
+    baseHidden: [],
+  },
+  {
+    assetKey: "jacket-standin",
+    file: "suit",
+    kind: "garment",
+    garmentTypeKeys: ["jacket"],
+    bodyModel: "masculine",
+    baseHidden: jacketOnly,
+  },
+  {
+    assetKey: "trousers-standin",
+    file: "suit",
+    kind: "garment",
+    garmentTypeKeys: ["trousers"],
+    bodyModel: "masculine",
+    baseHidden: trousersOnly,
+  },
+  {
+    assetKey: "shirt-standin",
+    file: "shirt",
+    kind: "garment",
+    garmentTypeKeys: ["shirt"],
+    bodyModel: "masculine",
+    baseHidden: [],
+  },
+  {
+    assetKey: "dress-standin",
+    file: "dress",
+    kind: "garment",
+    garmentTypeKeys: ["dress"],
+    bodyModel: "feminine",
+    baseHidden: [],
+  },
+  {
+    assetKey: "gown-standin",
+    file: "dress",
+    kind: "garment",
+    garmentTypeKeys: ["gown"],
+    bodyModel: "feminine",
+    baseHidden: [],
+  },
 ];
 
 // The mannequin's own measurements, so the studio can turn a customer's numbers into morph amounts.
@@ -852,7 +1038,13 @@ function baseMeasurements(B) {
     void rz;
     return Math.round(len * 1000);
   };
-  return { height: Math.round(B.height * 1000), chest: circ(B.bands.chest[0]), waist: circ(B.bands.waist[0]), hip: circ(B.bands.hip[0]), shoulder: Math.round((2 * B.arm.x + 0.04) * 1000) };
+  return {
+    height: Math.round(B.height * 1000),
+    chest: circ(B.bands.chest[0]),
+    waist: circ(B.bands.waist[0]),
+    hip: circ(B.bands.hip[0]),
+    shoulder: Math.round((2 * B.arm.x + 0.04) * 1000),
+  };
 }
 
 mkdirSync(OUT, { recursive: true });
@@ -868,12 +1060,19 @@ for (const model of MODELS) {
     const glb = writeGLB(meshes, model.file);
     const name = lod === "high" ? `${model.file}.glb` : `${model.file}-low.glb`;
     writeFileSync(join(OUT, name), glb);
-    files[model.file].lods.push({ lod, url: `/3d/${name}`, bytes: glb.length, sha256: createHash("sha256").update(glb).digest("hex") });
+    files[model.file].lods.push({
+      lod,
+      url: `/3d/${name}`,
+      bytes: glb.length,
+      sha256: createHash("sha256").update(glb).digest("hex"),
+    });
     if (lod === "high") {
       files[model.file].parts = meshes.map((m) => m.name);
       for (const m of meshes) for (const t of m.targets ?? []) files[model.file].morphs.add(t.name);
     }
-    console.log(`${name}: ${(glb.length / 1024).toFixed(0)} KB, ${meshes.reduce((n, m) => n + m.vertexCount, 0)} vertices`);
+    console.log(
+      `${name}: ${(glb.length / 1024).toFixed(0)} KB, ${meshes.reduce((n, m) => n + m.vertexCount, 0)} vertices`,
+    );
   }
 }
 
@@ -886,10 +1085,24 @@ const manifest = {
     kind: e.kind,
     garmentTypeKeys: e.garmentTypeKeys,
     files: files[e.file].lods,
-    bodyCompat: { bodyModel: e.bodyModel, heightM: BODIES[e.bodyModel].height, morphStepM: MORPH_STEP, baseMm: baseMeasurements(BODIES[e.bodyModel]) },
-    supportedOptions: { parts: files[e.file].parts, morphs: [...files[e.file].morphs], baseHidden: e.baseHidden ?? [], bodyModel: e.bodyModel },
+    bodyCompat: {
+      bodyModel: e.bodyModel,
+      heightM: BODIES[e.bodyModel].height,
+      morphStepM: MORPH_STEP,
+      baseMm: baseMeasurements(BODIES[e.bodyModel]),
+    },
+    supportedOptions: {
+      parts: files[e.file].parts,
+      morphs: [...files[e.file].morphs],
+      baseHidden: e.baseHidden ?? [],
+      bodyModel: e.bodyModel,
+    },
     textureSetVersion: "ambientcg-cc0-1",
-    license: { source: "Generated by frontend/scripts/build-standin-assets.mjs", license: "Project-owned", author: "Project" },
+    license: {
+      source: "Generated by frontend/scripts/build-standin-assets.mjs",
+      license: "Project-owned",
+      author: "Project",
+    },
     productionQuality: false,
     notes: "Procedural development stand-in. Shapes are simplified and do not show real drape or construction.",
   })),

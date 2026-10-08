@@ -33,7 +33,17 @@ type Props = {
 };
 
 // ImageUploader uploads each selected image immediately with progress, retry and removal.
-export function ImageUploader({ purpose, items, onChange, max = 6, label = "Add photos", hint, layout = "grid", reorderable = false, renderDetail }: Props) {
+export function ImageUploader({
+  purpose,
+  items,
+  onChange,
+  max = 6,
+  label = "Add photos",
+  hint,
+  layout = "grid",
+  reorderable = false,
+  renderDetail,
+}: Props) {
   const input = useRef<HTMLInputElement>(null);
   const controllers = useRef(new Map<string, AbortController>());
   const [notice, setNotice] = useState("");
@@ -46,7 +56,8 @@ export function ImageUploader({ purpose, items, onChange, max = 6, label = "Add 
   function start(item: UploadItem) {
     const ctrl = new AbortController();
     controllers.current.set(item.key, ctrl);
-    const patch = (p: Partial<UploadItem>) => onChange((list) => list.map((i) => (i.key === item.key ? { ...i, ...p } : i)));
+    const patch = (p: Partial<UploadItem>) =>
+      onChange((list) => list.map((i) => (i.key === item.key ? { ...i, ...p } : i)));
     uploadImage(item.file, purpose, (f) => patch({ progress: f }), ctrl.signal)
       .then((result) => patch({ status: "done", progress: 1, result }))
       .catch((e) => {
@@ -74,7 +85,14 @@ export function ImageUploader({ purpose, items, onChange, max = 6, label = "Add 
         setNotice(`${file.name} is larger than 15 MB.`);
         continue;
       }
-      next.push({ key: crypto.randomUUID(), name: file.name, preview: URL.createObjectURL(file), progress: 0, status: "uploading", file });
+      next.push({
+        key: crypto.randomUUID(),
+        name: file.name,
+        preview: URL.createObjectURL(file),
+        progress: 0,
+        status: "uploading",
+        file,
+      });
     }
     onChange((list) => [...list, ...next]);
     next.forEach(start);
@@ -118,7 +136,9 @@ export function ImageUploader({ purpose, items, onChange, max = 6, label = "Add 
               <div className={styles.item} data-status={i.status}>
                 {/* eslint-disable-next-line @next/next/no-img-element -- local object URL preview */}
                 <img src={i.preview} alt="" className={styles.thumb} />
-                {i.status === "uploading" ? <progress className={styles.progress} value={i.progress} max={1} aria-label={`Uploading ${i.name}`} /> : null}
+                {i.status === "uploading" ? (
+                  <progress className={styles.progress} value={i.progress} max={1} aria-label={`Uploading ${i.name}`} />
+                ) : null}
               </div>
               <div className={styles.detail}>
                 {i.status === "error" ? (
@@ -134,10 +154,22 @@ export function ImageUploader({ purpose, items, onChange, max = 6, label = "Add 
               <div className={styles.actions}>
                 {reorderable ? (
                   <>
-                    <button type="button" className="icon-btn" onClick={() => move(idx, -1)} disabled={idx === 0} aria-label={`Move ${i.name} up`}>
+                    <button
+                      type="button"
+                      className="icon-btn"
+                      onClick={() => move(idx, -1)}
+                      disabled={idx === 0}
+                      aria-label={`Move ${i.name} up`}
+                    >
                       <ArrowUp size={16} aria-hidden />
                     </button>
-                    <button type="button" className="icon-btn" onClick={() => move(idx, 1)} disabled={idx === items.length - 1} aria-label={`Move ${i.name} down`}>
+                    <button
+                      type="button"
+                      className="icon-btn"
+                      onClick={() => move(idx, 1)}
+                      disabled={idx === items.length - 1}
+                      aria-label={`Move ${i.name} down`}
+                    >
                       <ArrowDown size={16} aria-hidden />
                     </button>
                   </>
@@ -179,7 +211,14 @@ export function ImageUploader({ purpose, items, onChange, max = 6, label = "Add 
           <ImagePlus size={20} aria-hidden />
           <span>{label}</span>
           {hint ? <span className="small muted">{hint}</span> : null}
-          <input ref={input} type="file" accept={accepted.join(",")} multiple className="visually-hidden" onChange={(e) => add(e.target.files)} />
+          <input
+            ref={input}
+            type="file"
+            accept={accepted.join(",")}
+            multiple
+            className="visually-hidden"
+            onChange={(e) => add(e.target.files)}
+          />
         </label>
       ) : null}
       {notice ? (

@@ -9,13 +9,23 @@ import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(fileURLToPath(import.meta.url), "..", "..", "..");
-const targets = ["frontend/app", "frontend/features", "frontend/components", "frontend/lib", "backend/internal/seed", "backend/internal/notifications"];
+const targets = [
+  "frontend/app",
+  "frontend/features",
+  "frontend/components",
+  "frontend/lib",
+  "backend/internal/seed",
+  "backend/internal/notifications",
+];
 const exts = new Set([".ts", ".tsx", ".css", ".go", ".json", ".md"]);
 const rules = [
   { re: /—/, why: "em dash" },
   { re: / – /, why: "spaced en dash used as a dash" },
   { re: /lorem ipsum/i, why: "placeholder text" },
-  { re: /\b(unlock your|elevate your|revolutionary|cutting-edge|world-class|seamless experience|game[- ]changer|AI[- ]powered)\b/i, why: "template marketing phrase" },
+  {
+    re: /\b(unlock your|elevate your|revolutionary|cutting-edge|world-class|seamless experience|game[- ]changer|AI[- ]powered)\b/i,
+    why: "template marketing phrase",
+  },
 ];
 
 const problems = [];
@@ -30,7 +40,8 @@ function walk(dir) {
       readFileSync(p, "utf8")
         .split("\n")
         .forEach((line, i) => {
-          for (const r of rules) if (r.re.test(line)) problems.push(`${relative(root, p)}:${i + 1}: ${r.why}: ${line.trim().slice(0, 120)}`);
+          for (const r of rules)
+            if (r.re.test(line)) problems.push(`${relative(root, p)}:${i + 1}: ${r.why}: ${line.trim().slice(0, 120)}`);
         });
     }
   }

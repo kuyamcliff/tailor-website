@@ -32,18 +32,29 @@ export function DesignList({ designs }: { designs: SavedDesign[] }) {
           <span className="row" style={{ alignItems: "flex-start" }}>
             <span
               aria-hidden
-              style={{ width: 40, height: 40, flex: "none", border: "1px solid var(--line)", background: d.snapshot.fabric?.colorHex ?? "var(--surface-2)" }}
+              style={{
+                width: 40,
+                height: 40,
+                flex: "none",
+                border: "1px solid var(--line)",
+                background: d.snapshot.fabric?.colorHex ?? "var(--surface-2)",
+              }}
             />
             <span className="stack-xs">
               <strong>{d.name}</strong>
               <span className="small muted">
                 {d.snapshot.garment.name}
-                {d.snapshot.fabric ? ` · ${d.snapshot.fabric.name}, ${d.snapshot.fabric.colorName}` : ""} · saved {formatDate(d.updatedAt)}
+                {d.snapshot.fabric ? ` · ${d.snapshot.fabric.name}, ${d.snapshot.fabric.colorName}` : ""} · saved{" "}
+                {formatDate(d.updatedAt)}
               </span>
               <span className="small">
                 Estimate <Price minor={d.snapshot.price.totalMinor} currency={d.snapshot.price.currency} />
               </span>
-              {!d.assetAvailable ? <span className="small" style={{ color: "var(--warning)" }}>The 3D model for this design was updated. Opening it uses the current model.</span> : null}
+              {!d.assetAvailable ? (
+                <span className="small" style={{ color: "var(--warning)" }}>
+                  The 3D model for this design was updated. Opening it uses the current model.
+                </span>
+              ) : null}
             </span>
           </span>
           <span className="row-wrap">
@@ -69,7 +80,9 @@ export function AccountDesigns() {
     <>
       <header className="stack-sm">
         <h1 className="display-2">Saved designs</h1>
-        <p className="lede">Designs you save in the fitting studio. Open one to keep editing or send it to us for a quote.</p>
+        <p className="lede">
+          Designs you save in the fitting studio. Open one to keep editing or send it to us for a quote.
+        </p>
       </header>
       {q.isLoading ? (
         <div className="skeleton" style={{ height: 200 }} />

@@ -20,7 +20,13 @@ export function AccountOrders() {
         <h2 id="orders-h" className="title">
           Orders
         </h2>
-        {orders.isLoading ? <div className="skeleton" style={{ height: 160 }} /> : orders.data?.length ? <OrderRows orders={orders.data} /> : <p className="muted">No orders yet.</p>}
+        {orders.isLoading ? (
+          <div className="skeleton" style={{ height: 160 }} />
+        ) : orders.data?.length ? (
+          <OrderRows orders={orders.data} />
+        ) : (
+          <p className="muted">No orders yet.</p>
+        )}
       </section>
       <section className="stack-sm" aria-labelledby="requests-h">
         <div className="spread">

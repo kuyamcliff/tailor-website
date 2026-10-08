@@ -8,7 +8,9 @@ import { api } from "@/lib/api";
 import type { ListResponse } from "@/lib/types";
 import styles from "./tables.module.css";
 
-export type Filter = { key: string; label: string; type: "search" } | { key: string; label: string; type: "select"; options: [string, string][] };
+export type Filter =
+  | { key: string; label: string; type: "search" }
+  | { key: string; label: string; type: "select"; options: [string, string][] };
 export type Column<T> = { label: string; cell: (row: T) => React.ReactNode; className?: string };
 
 type Props<T> = {
@@ -25,7 +27,16 @@ type Props<T> = {
 
 // OwnerList renders a filterable, paged table whose filters live in the URL, so a filtered view can
 // be bookmarked or linked from the overview.
-export function OwnerList<T>({ endpoint, filters = [], columns, href, rowKey, empty = "Nothing here yet.", pageSize = 50, unpaged }: Props<T>) {
+export function OwnerList<T>({
+  endpoint,
+  filters = [],
+  columns,
+  href,
+  rowKey,
+  empty = "Nothing here yet.",
+  pageSize = 50,
+  unpaged,
+}: Props<T>) {
   const router = useRouter();
   const path = usePathname();
   const sp = useSearchParams();
@@ -66,11 +77,20 @@ export function OwnerList<T>({ endpoint, filters = [], columns, href, rowKey, em
         <div className={styles.filters} role="search">
           {filters.map((f) =>
             f.type === "search" ? (
-              <SearchBox key={f.key} label={f.label} initial={sp.get(f.key) ?? ""} onSearch={(v) => setParam(f.key, v)} />
+              <SearchBox
+                key={f.key}
+                label={f.label}
+                initial={sp.get(f.key) ?? ""}
+                onSearch={(v) => setParam(f.key, v)}
+              />
             ) : (
               <label key={f.key} className="field" style={{ gap: 4 }}>
                 <span className="label">{f.label}</span>
-                <select className="select" value={sp.get(f.key) ?? ""} onChange={(e) => setParam(f.key, e.target.value)}>
+                <select
+                  className="select"
+                  value={sp.get(f.key) ?? ""}
+                  onChange={(e) => setParam(f.key, e.target.value)}
+                >
                   <option value="">All</option>
                   {f.options.map(([v, l]) => (
                     <option key={v} value={v}>
@@ -125,10 +145,18 @@ export function OwnerList<T>({ endpoint, filters = [], columns, href, rowKey, em
             {offset + 1} to {Math.min(offset + pageSize, total)} of {total}
           </span>
           <div className="row">
-            <button className="btn btn-sm" disabled={offset === 0} onClick={() => setOffset(Math.max(0, offset - pageSize))}>
+            <button
+              className="btn btn-sm"
+              disabled={offset === 0}
+              onClick={() => setOffset(Math.max(0, offset - pageSize))}
+            >
               Previous
             </button>
-            <button className="btn btn-sm" disabled={offset + pageSize >= total} onClick={() => setOffset(offset + pageSize)}>
+            <button
+              className="btn btn-sm"
+              disabled={offset + pageSize >= total}
+              onClick={() => setOffset(offset + pageSize)}
+            >
               Next
             </button>
           </div>

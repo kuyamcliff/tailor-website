@@ -20,7 +20,10 @@ export async function generateMetadata(): Promise<Metadata> {
   const description = `${hero.subtitle} Bespoke suits, shirts, dresses, gowns, traditional wear and alterations${cfg.business.address.city ? ` in ${cfg.business.address.city}` : ""}.`;
   return {
     metadataBase: new URL(siteUrl()),
-    title: { default: `${name} | Bespoke tailoring${cfg.business.address.city ? ` in ${cfg.business.address.city}` : ""}`, template: `%s | ${name}` },
+    title: {
+      default: `${name} | Bespoke tailoring${cfg.business.address.city ? ` in ${cfg.business.address.city}` : ""}`,
+      template: `%s | ${name}`,
+    },
     description,
     applicationName: name,
     alternates: { canonical: "/" },
@@ -87,7 +90,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           </SiteOnly>
           <WebVitals />
         </AppProviders>
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
+        />
       </body>
     </html>
   );

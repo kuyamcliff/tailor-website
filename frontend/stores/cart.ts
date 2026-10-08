@@ -48,7 +48,9 @@ export const useCart = create<CartState>()(
         }),
       setQuantity: (variantId, quantity) =>
         set((s) => ({
-          lines: s.lines.map((l) => (l.variantId === variantId ? { ...l, quantity: Math.max(1, Math.min(20, quantity)) } : l)),
+          lines: s.lines.map((l) =>
+            l.variantId === variantId ? { ...l, quantity: Math.max(1, Math.min(20, quantity)) } : l,
+          ),
         })),
       remove: (variantId) => set((s) => ({ lines: s.lines.filter((l) => l.variantId !== variantId) })),
       clear: () => set({ lines: [] }),

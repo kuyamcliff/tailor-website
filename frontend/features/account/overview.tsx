@@ -23,8 +23,23 @@ export type MyOrder = {
   createdAt: string;
   summary: string | null;
 };
-export type MyRequest = { id: string; number: string; status: string; garment: string; occasion: string; createdAt: string };
-type Notice = { id: string; event: string; title: string; body: string; link: string | null; readAt: string | null; createdAt: string };
+export type MyRequest = {
+  id: string;
+  number: string;
+  status: string;
+  garment: string;
+  occasion: string;
+  createdAt: string;
+};
+type Notice = {
+  id: string;
+  event: string;
+  title: string;
+  body: string;
+  link: string | null;
+  readAt: string | null;
+  createdAt: string;
+};
 
 export function useMyOrders() {
   return useQuery({ queryKey: ["me", "orders"], queryFn: () => api<MyOrder[]>("/me/orders") });
@@ -87,9 +102,16 @@ export function AccountOverview() {
   const orders = useMyOrders();
   const requests = useMyRequests();
   const appts = useMyAppointments();
-  const notices = useQuery({ queryKey: ["me", "notifications"], queryFn: () => api<{ items: Notice[]; unread: number }>("/me/notifications") });
-  const next = (appts.data ?? []).filter((a) => a.status === "booked" && new Date(a.startsAt) > new Date()).reverse()[0];
-  const active = (orders.data ?? []).filter((o) => !["completed", "cancelled", "refunded", "delivered"].includes(o.status));
+  const notices = useQuery({
+    queryKey: ["me", "notifications"],
+    queryFn: () => api<{ items: Notice[]; unread: number }>("/me/notifications"),
+  });
+  const next = (appts.data ?? [])
+    .filter((a) => a.status === "booked" && new Date(a.startsAt) > new Date())
+    .reverse()[0];
+  const active = (orders.data ?? []).filter(
+    (o) => !["completed", "cancelled", "refunded", "delivered"].includes(o.status),
+  );
   const openRequests = (requests.data ?? []).filter((r) => !["converted", "closed"].includes(r.status));
 
   async function markRead() {
@@ -133,8 +155,15 @@ export function AccountOverview() {
           <OrderRows orders={active.slice(0, 5)} />
         ) : (
           <p className="muted">
-            Nothing in progress. <Link className="link" href="/shop">Browse the shop</Link> or{" "}
-            <Link className="link" href="/custom-tailor">start a bespoke request</Link>.
+            Nothing in progress.{" "}
+            <Link className="link" href="/shop">
+              Browse the shop
+            </Link>{" "}
+            or{" "}
+            <Link className="link" href="/custom-tailor">
+              start a bespoke request
+            </Link>
+            .
           </p>
         )}
       </section>

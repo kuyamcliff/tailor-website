@@ -33,7 +33,11 @@ export function Viewer(props: ViewerProps) {
       aria-label={props.label}
       role="img"
       dpr={props.quality === "low" ? [1, 1.25] : [1, 1.75]}
-      gl={{ antialias: props.quality === "high", powerPreference: props.quality === "low" ? "low-power" : "high-performance", preserveDrawingBuffer: true }}
+      gl={{
+        antialias: props.quality === "high",
+        powerPreference: props.quality === "low" ? "low-power" : "high-performance",
+        preserveDrawingBuffer: true,
+      }}
       camera={{ position: [0, 1.1, 3.3], fov: 33, near: 0.1, far: 30 }}
       onCreated={({ gl }) => {
         gl.toneMapping = THREE.ACESFilmicToneMapping;
@@ -49,7 +53,14 @@ export function Viewer(props: ViewerProps) {
       <Suspense fallback={null}>
         <Scene {...props} />
       </Suspense>
-      <ContactShadows position={[0, 0, 0]} opacity={0.55} scale={3} blur={2.4} far={1.2} resolution={props.quality === "low" ? 256 : 512} />
+      <ContactShadows
+        position={[0, 0, 0]}
+        opacity={0.55}
+        scale={3}
+        blur={2.4}
+        far={1.2}
+        resolution={props.quality === "low" ? 256 : 512}
+      />
       <CameraRig view={props.view} turn={props.turn} reducedMotion={props.reducedMotion} />
     </Canvas>
   );
@@ -104,12 +115,24 @@ function Scene({ bodyUrl, garmentUrl, visibility, morphs, heightScale, fabric, o
   return (
     <group scale={[1, heightScale, 1]}>
       {bodyUrl ? <Model url={bodyUrl} visibility={{}} morphs={morphs} fabricMaterial={null} /> : null}
-      {garmentUrl ? <Model url={garmentUrl} visibility={visibility} morphs={morphs} fabricMaterial={fabricMaterial} /> : null}
+      {garmentUrl ? (
+        <Model url={garmentUrl} visibility={visibility} morphs={morphs} fabricMaterial={fabricMaterial} />
+      ) : null}
     </group>
   );
 }
 
-function Model({ url, visibility, morphs, fabricMaterial }: { url: string; visibility: Record<string, boolean>; morphs: Record<string, number>; fabricMaterial: THREE.Material | null }) {
+function Model({
+  url,
+  visibility,
+  morphs,
+  fabricMaterial,
+}: {
+  url: string;
+  visibility: Record<string, boolean>;
+  morphs: Record<string, number>;
+  fabricMaterial: THREE.Material | null;
+}) {
   const { scene } = useGLTF(url, false);
   const root = useMemo(() => scene.clone(true), [scene]);
   const originals = useMemo(() => {
@@ -128,7 +151,8 @@ function Model({ url, visibility, morphs, fabricMaterial }: { url: string; visib
       const orig = originals.get(mesh)!;
       mesh.material = fabricMaterial && orig.name === "fabric" ? fabricMaterial : orig;
       if (mesh.morphTargetDictionary && mesh.morphTargetInfluences) {
-        for (const [name, idx] of Object.entries(mesh.morphTargetDictionary)) mesh.morphTargetInfluences[idx] = morphs[name] ?? 0;
+        for (const [name, idx] of Object.entries(mesh.morphTargetDictionary))
+          mesh.morphTargetInfluences[idx] = morphs[name] ?? 0;
       }
     });
   }, [root, originals, visibility, morphs, fabricMaterial]);

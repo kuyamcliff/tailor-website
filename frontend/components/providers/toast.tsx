@@ -26,7 +26,13 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       <div className={styles.region} role="status" aria-live="polite">
         {toasts.map((t) => (
           <div key={t.id} className={`${styles.toast} ${styles[t.tone]}`}>
-            {t.tone === "success" ? <CheckCircle2 size={18} aria-hidden /> : t.tone === "error" ? <AlertTriangle size={18} aria-hidden /> : <Info size={18} aria-hidden />}
+            {t.tone === "success" ? (
+              <CheckCircle2 size={18} aria-hidden />
+            ) : t.tone === "error" ? (
+              <AlertTriangle size={18} aria-hidden />
+            ) : (
+              <Info size={18} aria-hidden />
+            )}
             <span>{t.message}</span>
             <button className={styles.close} onClick={() => dismiss(t.id)} aria-label="Dismiss notification">
               <X size={16} aria-hidden />

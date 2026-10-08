@@ -16,9 +16,23 @@ const active = (s: Payment["status"]) => ["created", "pending", "customer_action
 
 // PaymentPanel starts a Mobile Money payment and follows it until the provider confirms the final
 // state. Success is only shown when the server reports a verified "succeeded" status.
-export function PaymentPanel({ order, accessToken, online, onSettled }: { order: Order; accessToken?: string; online: boolean; onSettled: () => void }) {
+export function PaymentPanel({
+  order,
+  accessToken,
+  online,
+  onSettled,
+}: {
+  order: Order;
+  accessToken?: string;
+  online: boolean;
+  onSettled: () => void;
+}) {
   const cfg = useConfig();
-  const methods = useQuery({ queryKey: ["payment-methods"], queryFn: () => api<Methods>("/payments/methods"), enabled: online });
+  const methods = useQuery({
+    queryKey: ["payment-methods"],
+    queryFn: () => api<Methods>("/payments/methods"),
+    enabled: online,
+  });
   const inflight = order.payments.find((p) => active(p.status));
   const [chosen, setProvider] = useState("");
   const [msisdn, setMsisdn] = useState(order.contact.phone?.replace(/^237/, "") ?? "");
@@ -28,10 +42,15 @@ export function PaymentPanel({ order, accessToken, online, onSettled }: { order:
   const [busy, setBusy] = useState(false);
   const provider = chosen || methods.data?.methods[0]?.provider || "";
   const keyRef = useRef(newIdempotencyKey());
-  const depositDue = order.depositRequiredMinor > order.amountPaidMinor && order.depositRequiredMinor < order.totalMinor;
-  const [purpose, setPurpose] = useState<"deposit" | "balance" | "full">(depositDue ? "deposit" : order.amountPaidMinor > 0 ? "balance" : "full");
-  const amount = purpose === "deposit" ? order.depositRequiredMinor - order.amountPaidMinor : order.totalMinor - order.amountPaidMinor;
-
+  const depositDue =
+    order.depositRequiredMinor > order.amountPaidMinor && order.depositRequiredMinor < order.totalMinor;
+  const [purpose, setPurpose] = useState<"deposit" | "balance" | "full">(
+    depositDue ? "deposit" : order.amountPaidMinor > 0 ? "balance" : "full",
+  );
+  const amount =
+    purpose === "deposit"
+      ? order.depositRequiredMinor - order.amountPaidMinor
+      : order.totalMinor - order.amountPaidMinor;
 
   // Poll the payment while it is in flight. The server re-checks with the provider on each read.
   useEffect(() => {
@@ -87,10 +106,16 @@ export function PaymentPanel({ order, accessToken, online, onSettled }: { order:
           Payment
         </h2>
         <p className="muted">
-          Amount due: <Price minor={amount} currency={order.currency} />. Online payment is not available right now. You can pay at the studio, or contact us and we will send payment details.
+          Amount due: <Price minor={amount} currency={order.currency} />. Online payment is not available right now. You
+          can pay at the studio, or contact us and we will send payment details.
         </p>
         {b.whatsapp ? (
-          <a className="btn btn-sm" href={whatsappLink(b.whatsapp, `Hello, I would like to pay for order ${order.number}.`)} target="_blank" rel="noopener noreferrer">
+          <a
+            className="btn btn-sm"
+            href={whatsappLink(b.whatsapp, `Hello, I would like to pay for order ${order.number}.`)}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             Message us about payment
           </a>
         ) : null}
@@ -120,7 +145,11 @@ export function PaymentPanel({ order, accessToken, online, onSettled }: { order:
           <Smartphone size={36} aria-hidden className={styles.phoneIcon} />
           <div className="stack-sm">
             <p>
-              We sent a request for <strong><Price minor={payment!.amountMinor} currency={payment!.currency} /></strong> to {payment!.payer} on {payment!.providerName}.
+              We sent a request for{" "}
+              <strong>
+                <Price minor={payment!.amountMinor} currency={payment!.currency} />
+              </strong>{" "}
+              to {payment!.payer} on {payment!.providerName}.
             </p>
             <p className="small muted">
               {payment!.provider === "orange"
@@ -152,7 +181,12 @@ export function PaymentPanel({ order, accessToken, online, onSettled }: { order:
           {depositDue ? (
             <div className="choices" role="radiogroup" aria-label="What to pay">
               <label className="choice">
-                <input type="radio" name="purpose" checked={purpose === "deposit"} onChange={() => setPurpose("deposit")} />
+                <input
+                  type="radio"
+                  name="purpose"
+                  checked={purpose === "deposit"}
+                  onChange={() => setPurpose("deposit")}
+                />
                 <span className="choice-title">Deposit</span>
                 <span className="choice-meta">
                   <Price minor={order.depositRequiredMinor - order.amountPaidMinor} currency={order.currency} />
@@ -168,13 +202,22 @@ export function PaymentPanel({ order, accessToken, online, onSettled }: { order:
             </div>
           ) : (
             <p>
-              Amount due: <strong><Price minor={amount} currency={order.currency} /></strong>
+              Amount due:{" "}
+              <strong>
+                <Price minor={amount} currency={order.currency} />
+              </strong>
             </p>
           )}
           <div className="choices" role="radiogroup" aria-label="Payment method">
             {methods.data?.methods.map((m) => (
               <label key={m.provider} className={`choice ${styles.method}`}>
-                <input type="radio" name="provider" value={m.provider} checked={provider === m.provider} onChange={() => setProvider(m.provider)} />
+                <input
+                  type="radio"
+                  name="provider"
+                  value={m.provider}
+                  checked={provider === m.provider}
+                  onChange={() => setProvider(m.provider)}
+                />
                 <PaymentMark provider={m.provider} size={34} />
                 <span className="choice-title">{m.name}</span>
               </label>
@@ -183,15 +226,31 @@ export function PaymentPanel({ order, accessToken, online, onSettled }: { order:
           <div className="field">
             <label htmlFor="msisdn">Mobile Money number</label>
             <div className="input-group">
-              <span className="input-addon" style={{ borderLeft: "1px solid var(--line-strong)", borderRight: 0, borderRadius: "2px 0 0 2px" }}>
+              <span
+                className="input-addon"
+                style={{ borderLeft: "1px solid var(--line-strong)", borderRight: 0, borderRadius: "2px 0 0 2px" }}
+              >
                 +{b.countryCode}
               </span>
-              <input id="msisdn" className="input" inputMode="tel" autoComplete="tel-national" value={msisdn} onChange={(e) => setMsisdn(e.target.value)} required style={{ borderRadius: "0 2px 2px 0" }} />
+              <input
+                id="msisdn"
+                className="input"
+                inputMode="tel"
+                autoComplete="tel-national"
+                value={msisdn}
+                onChange={(e) => setMsisdn(e.target.value)}
+                required
+                style={{ borderRadius: "0 2px 2px 0" }}
+              />
             </div>
             <span className="hint">The number that will approve the payment. We never ask for your PIN.</span>
           </div>
           <button className="btn btn-primary" type="submit" disabled={busy || !provider || !msisdn}>
-            {busy ? <span className="spinner" aria-hidden /> : null} Pay <Price minor={purpose === "full" ? order.totalMinor - order.amountPaidMinor : amount} currency={order.currency} />
+            {busy ? <span className="spinner" aria-hidden /> : null} Pay{" "}
+            <Price
+              minor={purpose === "full" ? order.totalMinor - order.amountPaidMinor : amount}
+              currency={order.currency}
+            />
           </button>
         </form>
       )}

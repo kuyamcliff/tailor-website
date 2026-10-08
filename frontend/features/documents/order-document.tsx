@@ -12,7 +12,12 @@ import type { MeasurementField, MeasurementVersion, Order } from "@/lib/types";
 import { useConfig } from "@/components/providers/config";
 import styles from "./document.module.css";
 
-const titles = { summary: "Order summary", invoice: "Invoice", receipt: "Receipt", measurements: "Measurement sheet" } as const;
+const titles = {
+  summary: "Order summary",
+  invoice: "Invoice",
+  receipt: "Receipt",
+  measurements: "Measurement sheet",
+} as const;
 
 // Documents are rendered from the order's stored snapshot (prices, items, measurement version), so
 // they never change when the catalog does. Use the browser's print dialog to save as PDF.
@@ -25,17 +30,36 @@ export function OrderDocument({ id, kind }: { id: string; kind: keyof typeof tit
     enabled: token !== null,
     queryFn: () => api<{ order: Order }>(`/orders/${id}`, { accessToken: token || undefined }),
   });
-  const fields = useQuery({ queryKey: ["fields-all"], queryFn: () => api<MeasurementField[]>("/measurements/fields"), enabled: kind === "measurements" });
+  const fields = useQuery({
+    queryKey: ["fields-all"],
+    queryFn: () => api<MeasurementField[]>("/measurements/fields"),
+    enabled: kind === "measurements",
+  });
   const mv = useQuery({
     queryKey: ["doc-mv", order.data?.order.measurementVersionId],
     enabled: kind === "measurements" && Boolean(order.data?.order.measurementVersionId),
-    queryFn: () => api<{ version: MeasurementVersion }>(`/orders/${id}/measurements`, { accessToken: token || undefined }).catch(() => null),
+    queryFn: () =>
+      api<{ version: MeasurementVersion }>(`/orders/${id}/measurements`, { accessToken: token || undefined }).catch(
+        () => null,
+      ),
   });
-  if (order.isLoading || token === null) return <div className="container section-tight"><div className="skeleton" style={{ height: 400 }} /></div>;
-  if (!order.data) return <div className="container section-tight"><p className="notice notice-danger">This document could not be opened.</p></div>;
+  if (order.isLoading || token === null)
+    return (
+      <div className="container section-tight">
+        <div className="skeleton" style={{ height: 400 }} />
+      </div>
+    );
+  if (!order.data)
+    return (
+      <div className="container section-tight">
+        <p className="notice notice-danger">This document could not be opened.</p>
+      </div>
+    );
   const o = order.data.order;
   const money = (m: number) => formatMoney(m, o.currency);
-  const paid = o.payments.filter((p) => p.status === "succeeded" || p.status === "partially_refunded" || p.status === "refunded");
+  const paid = o.payments.filter(
+    (p) => p.status === "succeeded" || p.status === "partially_refunded" || p.status === "refunded",
+  );
   return (
     <div className={styles.page}>
       <div className={`no-print ${styles.toolbar}`}>
@@ -50,7 +74,11 @@ export function OrderDocument({ id, kind }: { id: string; kind: keyof typeof tit
             <p>{[b.address.line1, b.address.line2, b.address.city, b.address.country].filter(Boolean).join(", ")}</p>
             <p>{[b.phone, b.email].filter(Boolean).join(" · ")}</p>
             {b.legalName || b.registrationNumber || b.taxId ? (
-              <p>{[b.legalName, b.registrationNumber && `RCCM ${b.registrationNumber}`, b.taxId && `NIU ${b.taxId}`].filter(Boolean).join(" · ")}</p>
+              <p>
+                {[b.legalName, b.registrationNumber && `RCCM ${b.registrationNumber}`, b.taxId && `NIU ${b.taxId}`]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </p>
             ) : null}
           </div>
           <div className={styles.meta}>
@@ -68,7 +96,13 @@ export function OrderDocument({ id, kind }: { id: string; kind: keyof typeof tit
           </div>
           <div>
             <h2>{o.fulfillmentMethod === "pickup" ? "Pickup" : "Delivery"}</h2>
-            {o.deliveryAddress ? <p>{[o.deliveryAddress.line1, o.deliveryAddress.line2, o.deliveryAddress.city].filter(Boolean).join(", ")}</p> : <p>Collect from the studio</p>}
+            {o.deliveryAddress ? (
+              <p>
+                {[o.deliveryAddress.line1, o.deliveryAddress.line2, o.deliveryAddress.city].filter(Boolean).join(", ")}
+              </p>
+            ) : (
+              <p>Collect from the studio</p>
+            )}
             {o.dueDate ? <p>Expected {formatDate(o.dueDate)}</p> : null}
           </div>
         </section>
@@ -125,15 +159,45 @@ export function OrderDocument({ id, kind }: { id: string; kind: keyof typeof tit
               </tbody>
             </table>
             <dl className={styles.totals}>
-              <div><dt>Subtotal</dt><dd>{money(o.subtotalMinor)}</dd></div>
-              {o.discountMinor ? <div><dt>Discount</dt><dd>-{money(o.discountMinor)}</dd></div> : null}
-              {o.deliveryMinor ? <div><dt>Delivery</dt><dd>{money(o.deliveryMinor)}</dd></div> : null}
-              {o.taxMinor ? <div><dt>{b.taxLabel}{b.pricesIncludeTax ? " included" : ""}</dt><dd>{money(o.taxMinor)}</dd></div> : null}
-              <div className={styles.grand}><dt>Total</dt><dd>{money(o.totalMinor)}</dd></div>
+              <div>
+                <dt>Subtotal</dt>
+                <dd>{money(o.subtotalMinor)}</dd>
+              </div>
+              {o.discountMinor ? (
+                <div>
+                  <dt>Discount</dt>
+                  <dd>-{money(o.discountMinor)}</dd>
+                </div>
+              ) : null}
+              {o.deliveryMinor ? (
+                <div>
+                  <dt>Delivery</dt>
+                  <dd>{money(o.deliveryMinor)}</dd>
+                </div>
+              ) : null}
+              {o.taxMinor ? (
+                <div>
+                  <dt>
+                    {b.taxLabel}
+                    {b.pricesIncludeTax ? " included" : ""}
+                  </dt>
+                  <dd>{money(o.taxMinor)}</dd>
+                </div>
+              ) : null}
+              <div className={styles.grand}>
+                <dt>Total</dt>
+                <dd>{money(o.totalMinor)}</dd>
+              </div>
               {kind !== "summary" ? (
                 <>
-                  <div><dt>Paid</dt><dd>{money(o.amountPaidMinor - o.amountRefundedMinor)}</dd></div>
-                  <div><dt>Balance due</dt><dd>{money(o.balanceMinor)}</dd></div>
+                  <div>
+                    <dt>Paid</dt>
+                    <dd>{money(o.amountPaidMinor - o.amountRefundedMinor)}</dd>
+                  </div>
+                  <div>
+                    <dt>Balance due</dt>
+                    <dd>{money(o.balanceMinor)}</dd>
+                  </div>
                 </>
               ) : null}
             </dl>
@@ -149,8 +213,17 @@ export function OrderDocument({ id, kind }: { id: string; kind: keyof typeof tit
                 <tbody>
                   {paid.map((p) => (
                     <tr key={p.id}>
-                      <td>{formatDate(p.succeededAt)} · {humanize(p.purpose)}{p.simulated ? " (test, no money moved)" : ""}</td>
-                      <td>{p.provider === "manual" ? "Paid at the atelier" : p.provider === "mtn" ? "MTN Mobile Money" : "Orange Money"}</td>
+                      <td>
+                        {formatDate(p.succeededAt)} · {humanize(p.purpose)}
+                        {p.simulated ? " (test, no money moved)" : ""}
+                      </td>
+                      <td>
+                        {p.provider === "manual"
+                          ? "Paid at the atelier"
+                          : p.provider === "mtn"
+                            ? "MTN Mobile Money"
+                            : "Orange Money"}
+                      </td>
                       <td className={styles.num}>{money(p.amountMinor - p.refundedMinor)}</td>
                     </tr>
                   ))}

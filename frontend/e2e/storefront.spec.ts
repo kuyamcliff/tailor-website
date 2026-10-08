@@ -3,7 +3,17 @@ import { noHorizontalOverflow, trackErrors } from "./helpers";
 
 test("home, shop and product pages load cleanly", async ({ page }) => {
   const t = trackErrors(page);
-  for (const path of ["/", "/shop", "/custom-tailor", "/our-work", "/about", "/contact", "/appointments", "/policies/privacy", "/policies/cookies"]) {
+  for (const path of [
+    "/",
+    "/shop",
+    "/custom-tailor",
+    "/our-work",
+    "/about",
+    "/contact",
+    "/appointments",
+    "/policies/privacy",
+    "/policies/cookies",
+  ]) {
     await page.goto(path, { waitUntil: "networkidle" });
     await expect(page.locator("h1").first()).toBeVisible();
     await noHorizontalOverflow(page);
@@ -15,7 +25,9 @@ test("guest checkout and a simulated MTN MoMo payment confirmed by the server", 
   const t = trackErrors(page);
   // Use the first product that is in stock (earlier runs may have used up a size).
   await page.goto("/shop");
-  const links = await page.locator("article a[href^='/shop/']").evaluateAll((as) => [...new Set(as.map((a) => a.getAttribute("href")))]);
+  const links = await page
+    .locator("article a[href^='/shop/']")
+    .evaluateAll((as) => [...new Set(as.map((a) => a.getAttribute("href")))]);
   let added = false;
   for (const href of links.slice(0, 8)) {
     await page.goto(href!);

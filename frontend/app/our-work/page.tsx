@@ -38,7 +38,13 @@ export default async function WorkPage({ searchParams }: { searchParams: Promise
       </header>
       <nav className={styles.filters} aria-label="Filter by category">
         {categories.map(([k, label]) => (
-          <Link key={k} href={k ? `/our-work?category=${k}` : "/our-work"} className={styles.filter} aria-current={valid === k ? "page" : undefined} scroll={false}>
+          <Link
+            key={k}
+            href={k ? `/our-work?category=${k}` : "/our-work"}
+            className={styles.filter}
+            aria-current={valid === k ? "page" : undefined}
+            scroll={false}
+          >
             {label}
           </Link>
         ))}
@@ -46,7 +52,9 @@ export default async function WorkPage({ searchParams }: { searchParams: Promise
       {projects.length === 0 ? (
         <div className="empty">
           <p className="display-3">Nothing here yet.</p>
-          <p className="muted">We are photographing recent work. In the meantime, visit the shop or start your own piece.</p>
+          <p className="muted">
+            We are photographing recent work. In the meantime, visit the shop or start your own piece.
+          </p>
           <Link href="/custom-tailor" className="btn btn-sm btn-primary">
             Create your outfit
           </Link>
@@ -56,7 +64,15 @@ export default async function WorkPage({ searchParams }: { searchParams: Promise
           {projects.map((p, i) => (
             <Link key={p.id} href={`/our-work/${p.slug}`} className={styles.item}>
               <div className={styles.media} style={{ aspectRatio: i % 3 === 0 ? "4 / 5" : "1 / 1" }}>
-                {p.media[0] ? <Image src={p.media[0].url} alt={p.media[0].alt} fill sizes="(max-width: 700px) 100vw, (max-width: 1100px) 50vw, 33vw" style={{ objectFit: "cover" }} /> : null}
+                {p.media[0] ? (
+                  <Image
+                    src={p.media[0].url}
+                    alt={p.media[0].alt}
+                    fill
+                    sizes="(max-width: 700px) 100vw, (max-width: 1100px) 50vw, 33vw"
+                    style={{ objectFit: "cover" }}
+                  />
+                ) : null}
                 <SampleTag show={p.media[0]?.sample} />
               </div>
               <span className="eyebrow tiny">{p.category}</span>

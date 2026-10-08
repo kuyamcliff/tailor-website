@@ -42,7 +42,15 @@ export function CheckoutForm() {
   const [zoneKey, setZoneKey] = useState(zones[0]?.key ?? "pickup");
   const zone = zones.find((z) => z.key === zoneKey);
   const [contact, setContact] = useState({ name: "", phone: "", email: "", preferredContact: "whatsapp" });
-  const [address, setAddress] = useState({ recipient: "", phone: "", line1: "", line2: "", city: "", region: "", notes: "" });
+  const [address, setAddress] = useState({
+    recipient: "",
+    phone: "",
+    line1: "",
+    line2: "",
+    city: "",
+    region: "",
+    notes: "",
+  });
   const [notes, setNotes] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [error, setError] = useState("");
@@ -61,7 +69,20 @@ export function CheckoutForm() {
       .then((list) => {
         setSaved(list);
         const d = list.find((a) => a.isDefault);
-        if (d) setAddress((a) => (a.line1 ? a : { recipient: d.recipient, phone: d.phone, line1: d.line1, line2: d.line2, city: d.city, region: d.region, notes: d.notes }));
+        if (d)
+          setAddress((a) =>
+            a.line1
+              ? a
+              : {
+                  recipient: d.recipient,
+                  phone: d.phone,
+                  line1: d.line1,
+                  line2: d.line2,
+                  city: d.city,
+                  region: d.region,
+                  notes: d.notes,
+                },
+          );
       })
       .catch(() => setSaved([]));
   }, [user?.customerId]);
@@ -76,12 +97,21 @@ export function CheckoutForm() {
     setRefreshing(true);
     try {
       const slugs = [...new Set(lines.map((l) => l.productSlug))];
-      const products = await Promise.all(slugs.map((s) => api<{ product: Product }>(`/products/${s}`).then((r) => r.product).catch(() => null)));
+      const products = await Promise.all(
+        slugs.map((s) =>
+          api<{ product: Product }>(`/products/${s}`)
+            .then((r) => r.product)
+            .catch(() => null),
+        ),
+      );
       for (const l of lines) {
         const p = products.find((x) => x?.slug === l.productSlug);
         const v = p?.variants.find((x) => x.id === l.variantId);
         if (!v || !v.available) remove(l.variantId);
-        else useCart.setState((s) => ({ lines: s.lines.map((x) => (x.variantId === l.variantId ? { ...x, unitPriceMinor: v.priceMinor } : x)) }));
+        else
+          useCart.setState((s) => ({
+            lines: s.lines.map((x) => (x.variantId === l.variantId ? { ...x, unitPriceMinor: v.priceMinor } : x)),
+          }));
       }
     } finally {
       setRefreshing(false);
@@ -104,7 +134,10 @@ export function CheckoutForm() {
             method: zone?.method,
             zoneKey,
             note: address.notes,
-            address: zone && zone.method !== "pickup" ? { ...address, label: "Delivery", country: cfg.business.address.country || "CM" } : null,
+            address:
+              zone && zone.method !== "pickup"
+                ? { ...address, label: "Delivery", country: cfg.business.address.country || "CM" }
+                : null,
           },
           notes,
           expectedTotalMinor: total,
@@ -120,7 +153,12 @@ export function CheckoutForm() {
       if (err instanceof ApiError) {
         setErrors(err.fields);
         setError(err.message);
-        if (err.code === "price_changed" || err.code === "out_of_stock" || err.code === "insufficient_stock" || err.code === "item_unavailable") {
+        if (
+          err.code === "price_changed" ||
+          err.code === "out_of_stock" ||
+          err.code === "insufficient_stock" ||
+          err.code === "item_unavailable"
+        ) {
           await refreshBag();
         }
       }
@@ -165,17 +203,48 @@ export function CheckoutForm() {
           <legend className="display-3">Your details</legend>
           <div className="form-grid cols-2">
             <Field label="Full name" error={err("contact.name")}>
-              {(p) => <input {...p} className="input" autoComplete="name" value={contact.name} onChange={(e) => setContact({ ...contact, name: e.target.value })} />}
+              {(p) => (
+                <input
+                  {...p}
+                  className="input"
+                  autoComplete="name"
+                  value={contact.name}
+                  onChange={(e) => setContact({ ...contact, name: e.target.value })}
+                />
+              )}
             </Field>
             <Field label="Phone" error={err("contact.phone")} hint="We use this to arrange delivery or pickup.">
-              {(p) => <input {...p} className="input" autoComplete="tel" inputMode="tel" value={contact.phone} onChange={(e) => setContact({ ...contact, phone: e.target.value })} />}
+              {(p) => (
+                <input
+                  {...p}
+                  className="input"
+                  autoComplete="tel"
+                  inputMode="tel"
+                  value={contact.phone}
+                  onChange={(e) => setContact({ ...contact, phone: e.target.value })}
+                />
+              )}
             </Field>
             <Field label="Email (optional)" error={err("contact.email")}>
-              {(p) => <input {...p} className="input" type="email" autoComplete="email" value={contact.email} onChange={(e) => setContact({ ...contact, email: e.target.value })} />}
+              {(p) => (
+                <input
+                  {...p}
+                  className="input"
+                  type="email"
+                  autoComplete="email"
+                  value={contact.email}
+                  onChange={(e) => setContact({ ...contact, email: e.target.value })}
+                />
+              )}
             </Field>
             <Field label="Contact me by" error={err("contact.preferredContact")}>
               {(p) => (
-                <select {...p} className="select" value={contact.preferredContact} onChange={(e) => setContact({ ...contact, preferredContact: e.target.value })}>
+                <select
+                  {...p}
+                  className="select"
+                  value={contact.preferredContact}
+                  onChange={(e) => setContact({ ...contact, preferredContact: e.target.value })}
+                >
                   <option value="whatsapp">WhatsApp</option>
                   <option value="phone">Phone call</option>
                   <option value="sms">SMS</option>
@@ -191,7 +260,13 @@ export function CheckoutForm() {
           <div className="choices" role="radiogroup" aria-label="Delivery method">
             {zones.map((z) => (
               <label key={z.key} className="choice">
-                <input type="radio" name="zone" value={z.key} checked={z.key === zoneKey} onChange={() => setZoneKey(z.key)} />
+                <input
+                  type="radio"
+                  name="zone"
+                  value={z.key}
+                  checked={z.key === zoneKey}
+                  onChange={() => setZoneKey(z.key)}
+                />
                 <span className="choice-title">{z.label}</span>
                 <span className="choice-meta">{z.feeMinor ? <Price minor={z.feeMinor} /> : "Free"}</span>
                 {z.description ? <span className="choice-meta">{z.description}</span> : null}
@@ -209,7 +284,16 @@ export function CheckoutForm() {
                   defaultValue=""
                   onChange={(e) => {
                     const d = saved.find((a) => a.id === e.target.value);
-                    if (d) setAddress({ recipient: d.recipient, phone: d.phone, line1: d.line1, line2: d.line2, city: d.city, region: d.region, notes: d.notes });
+                    if (d)
+                      setAddress({
+                        recipient: d.recipient,
+                        phone: d.phone,
+                        line1: d.line1,
+                        line2: d.line2,
+                        city: d.city,
+                        region: d.region,
+                        notes: d.notes,
+                      });
                   }}
                 >
                   <option value="">Choose a saved address</option>
@@ -225,22 +309,68 @@ export function CheckoutForm() {
           {zone && zone.method !== "pickup" ? (
             <div className="form-grid cols-2" style={{ marginTop: 16 }}>
               <Field label="Recipient" error={err("fulfillment.address.recipient")}>
-                {(p) => <input {...p} className="input" value={address.recipient} onChange={(e) => setAddress({ ...address, recipient: e.target.value })} />}
+                {(p) => (
+                  <input
+                    {...p}
+                    className="input"
+                    value={address.recipient}
+                    onChange={(e) => setAddress({ ...address, recipient: e.target.value })}
+                  />
+                )}
               </Field>
               <Field label="Recipient phone" error={err("fulfillment.address.phone")}>
-                {(p) => <input {...p} className="input" inputMode="tel" value={address.phone} onChange={(e) => setAddress({ ...address, phone: e.target.value })} />}
+                {(p) => (
+                  <input
+                    {...p}
+                    className="input"
+                    inputMode="tel"
+                    value={address.phone}
+                    onChange={(e) => setAddress({ ...address, phone: e.target.value })}
+                  />
+                )}
               </Field>
               <Field label="Street or landmark" error={err("fulfillment.address.line1")} className="span-2">
-                {(p) => <input {...p} className="input" autoComplete="address-line1" value={address.line1} onChange={(e) => setAddress({ ...address, line1: e.target.value })} />}
+                {(p) => (
+                  <input
+                    {...p}
+                    className="input"
+                    autoComplete="address-line1"
+                    value={address.line1}
+                    onChange={(e) => setAddress({ ...address, line1: e.target.value })}
+                  />
+                )}
               </Field>
               <Field label="Neighbourhood (optional)">
-                {(p) => <input {...p} className="input" autoComplete="address-line2" value={address.line2} onChange={(e) => setAddress({ ...address, line2: e.target.value })} />}
+                {(p) => (
+                  <input
+                    {...p}
+                    className="input"
+                    autoComplete="address-line2"
+                    value={address.line2}
+                    onChange={(e) => setAddress({ ...address, line2: e.target.value })}
+                  />
+                )}
               </Field>
               <Field label="City" error={err("fulfillment.address.city")}>
-                {(p) => <input {...p} className="input" autoComplete="address-level2" value={address.city} onChange={(e) => setAddress({ ...address, city: e.target.value })} />}
+                {(p) => (
+                  <input
+                    {...p}
+                    className="input"
+                    autoComplete="address-level2"
+                    value={address.city}
+                    onChange={(e) => setAddress({ ...address, city: e.target.value })}
+                  />
+                )}
               </Field>
               <Field label="Directions for the courier (optional)" className="span-2">
-                {(p) => <input {...p} className="input" value={address.notes} onChange={(e) => setAddress({ ...address, notes: e.target.value })} />}
+                {(p) => (
+                  <input
+                    {...p}
+                    className="input"
+                    value={address.notes}
+                    onChange={(e) => setAddress({ ...address, notes: e.target.value })}
+                  />
+                )}
               </Field>
             </div>
           ) : null}
@@ -249,7 +379,15 @@ export function CheckoutForm() {
         <fieldset className={styles.section}>
           <legend className="display-3">Notes</legend>
           <Field label="Anything we should know (optional)" error={err("notes")}>
-            {(p) => <textarea {...p} className="textarea" maxLength={2000} value={notes} onChange={(e) => setNotes(e.target.value)} />}
+            {(p) => (
+              <textarea
+                {...p}
+                className="textarea"
+                maxLength={2000}
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+              />
+            )}
           </Field>
         </fieldset>
       </div>
@@ -261,14 +399,20 @@ export function CheckoutForm() {
         <ul className={styles.items}>
           {lines.map((l) => (
             <li key={l.variantId}>
-              <span className={styles.thumb}>{l.image ? <Image src={l.image} alt="" fill sizes="56px" style={{ objectFit: "cover" }} /> : null}</span>
+              <span className={styles.thumb}>
+                {l.image ? <Image src={l.image} alt="" fill sizes="56px" style={{ objectFit: "cover" }} /> : null}
+              </span>
               <span>
                 <span className={styles.itemName}>{l.name}</span>
                 <span className="tiny muted">
                   Size {l.size} ·{" "}
                   <label>
                     <span className="visually-hidden">Quantity</span>
-                    <select className={styles.qty} value={l.quantity} onChange={(e) => setQuantity(l.variantId, Number(e.target.value))}>
+                    <select
+                      className={styles.qty}
+                      value={l.quantity}
+                      onChange={(e) => setQuantity(l.variantId, Number(e.target.value))}
+                    >
                       {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
                         <option key={n} value={n}>
                           Qty {n}
@@ -278,7 +422,10 @@ export function CheckoutForm() {
                   </label>
                 </span>
                 {l.requiresFitting ? (
-                  <span className="tiny" style={{ color: "var(--gold)", display: "flex", gap: 4, alignItems: "center" }}>
+                  <span
+                    className="tiny"
+                    style={{ color: "var(--gold)", display: "flex", gap: 4, alignItems: "center" }}
+                  >
                     <Ruler size={12} aria-hidden /> Fitting included
                   </span>
                 ) : null}
@@ -322,8 +469,15 @@ export function CheckoutForm() {
           {busy ? <span className="spinner" aria-hidden /> : <Lock size={15} aria-hidden />} Place order
         </button>
         <p className="tiny faint">
-          By placing an order you agree to our <Link href="/policies/terms" className="link">terms</Link> and{" "}
-          <Link href="/policies/delivery" className="link">delivery policy</Link>.
+          By placing an order you agree to our{" "}
+          <Link href="/policies/terms" className="link">
+            terms
+          </Link>{" "}
+          and{" "}
+          <Link href="/policies/delivery" className="link">
+            delivery policy
+          </Link>
+          .
         </p>
       </aside>
     </form>

@@ -23,8 +23,27 @@ export function OwnerSupport() {
         <OwnerList<SupportThread>
           endpoint="/owner/support"
           filters={[
-            { key: "status", label: "Status", type: "select", options: [["open", "Waiting for us"], ["pending", "Waiting for customer"], ["resolved", "Resolved"]] },
-            { key: "priority", label: "Priority", type: "select", options: [["urgent", "Urgent"], ["high", "High"], ["normal", "Normal"], ["low", "Low"]] },
+            {
+              key: "status",
+              label: "Status",
+              type: "select",
+              options: [
+                ["open", "Waiting for us"],
+                ["pending", "Waiting for customer"],
+                ["resolved", "Resolved"],
+              ],
+            },
+            {
+              key: "priority",
+              label: "Priority",
+              type: "select",
+              options: [
+                ["urgent", "Urgent"],
+                ["high", "High"],
+                ["normal", "Normal"],
+                ["low", "Low"],
+              ],
+            },
             { key: "unread", label: "Unread", type: "select", options: [["true", "Unread only"]] },
           ]}
           rowKey={(t) => t.id}
@@ -33,10 +52,27 @@ export function OwnerSupport() {
           columns={[
             { label: "Subject", cell: (t) => <>{t.unread ? <strong>{t.subject}</strong> : t.subject}</> },
             { label: "Customer", cell: (t) => t.customerName },
-            { label: "About", cell: (t) => [humanize(t.category), t.orderNumber, t.requestNumber].filter(Boolean).join(" · ") },
+            {
+              label: "About",
+              cell: (t) => [humanize(t.category), t.orderNumber, t.requestNumber].filter(Boolean).join(" · "),
+            },
             { label: "Priority", cell: (t) => (t.priority === "normal" ? "" : humanize(t.priority)) },
             { label: "Assigned", cell: (t) => t.assigneeName ?? "" },
-            { label: "Status", cell: (t) => <StatusBadge status={t.status} label={t.status === "open" ? "Waiting for us" : t.status === "pending" ? "Waiting for customer" : "Resolved"} /> },
+            {
+              label: "Status",
+              cell: (t) => (
+                <StatusBadge
+                  status={t.status}
+                  label={
+                    t.status === "open"
+                      ? "Waiting for us"
+                      : t.status === "pending"
+                        ? "Waiting for customer"
+                        : "Resolved"
+                  }
+                />
+              ),
+            },
             { label: "Last message", cell: (t) => formatDate(t.lastMessageAt, "short") },
           ]}
         />
@@ -91,12 +127,21 @@ export function OwnerSupportThread({ id }: { id: string }) {
   if (!t) return <p className="notice notice-danger">This conversation could not be loaded.</p>;
   return (
     <>
-      <PageHead title={t.subject} sub={`${t.number} · ${t.customerName} · ${humanize(t.category)}`} actions={<StatusBadge status={t.status} />} />
+      <PageHead
+        title={t.subject}
+        sub={`${t.number} · ${t.customerName} · ${humanize(t.category)}`}
+        actions={<StatusBadge status={t.status} />}
+      />
       <div className={styles.detail}>
         <div className="stack-lg">
           <ol className={thread.messages} aria-label="Messages">
             {(t.messages ?? []).map((m) => (
-              <li key={m.id} className={thread.message} data-author={m.authorType === "staff" ? "customer" : "staff"} style={m.internal ? { borderStyle: "dashed" } : undefined}>
+              <li
+                key={m.id}
+                className={thread.message}
+                data-author={m.authorType === "staff" ? "customer" : "staff"}
+                style={m.internal ? { borderStyle: "dashed" } : undefined}
+              >
                 <div className={thread.meta}>
                   <strong>
                     {m.authorType === "customer" ? t.customerName : (m.author ?? "Staff")}
@@ -127,7 +172,14 @@ export function OwnerSupportThread({ id }: { id: string }) {
               <label className="visually-hidden" htmlFor="owner-reply">
                 Reply
               </label>
-              <textarea id="owner-reply" className="textarea" rows={5} value={body} onChange={(e) => setBody(e.target.value)} placeholder={internal ? "Note for the team" : `Reply to ${t.customerName}`} />
+              <textarea
+                id="owner-reply"
+                className="textarea"
+                rows={5}
+                value={body}
+                onChange={(e) => setBody(e.target.value)}
+                placeholder={internal ? "Note for the team" : `Reply to ${t.customerName}`}
+              />
               <ImageUploader purpose="support" items={files} onChange={setFiles} max={4} label="Attach photos" />
               <div className="spread">
                 <label className="check">
@@ -163,7 +215,12 @@ export function OwnerSupportThread({ id }: { id: string }) {
               <>
                 <label className="field">
                   <span className="label">Status</span>
-                  <select className="select" value={t.status} disabled={busy} onChange={(e) => patch({ status: e.target.value }, "Status updated.")}>
+                  <select
+                    className="select"
+                    value={t.status}
+                    disabled={busy}
+                    onChange={(e) => patch({ status: e.target.value }, "Status updated.")}
+                  >
                     <option value="open">Waiting for us</option>
                     <option value="pending">Waiting for customer</option>
                     <option value="resolved">Resolved</option>
@@ -171,7 +228,12 @@ export function OwnerSupportThread({ id }: { id: string }) {
                 </label>
                 <label className="field">
                   <span className="label">Priority</span>
-                  <select className="select" value={t.priority} disabled={busy} onChange={(e) => patch({ priority: e.target.value }, "Priority updated.")}>
+                  <select
+                    className="select"
+                    value={t.priority}
+                    disabled={busy}
+                    onChange={(e) => patch({ priority: e.target.value }, "Priority updated.")}
+                  >
                     {["low", "normal", "high", "urgent"].map((p) => (
                       <option key={p} value={p}>
                         {humanize(p)}
@@ -183,11 +245,19 @@ export function OwnerSupportThread({ id }: { id: string }) {
                   {t.assigneeName ? `Assigned to ${t.assigneeName}` : "Not assigned"}
                 </p>
                 {t.assignedTo === user?.id ? (
-                  <button className="btn btn-sm" disabled={busy} onClick={() => patch({ unassign: true }, "Unassigned.")}>
+                  <button
+                    className="btn btn-sm"
+                    disabled={busy}
+                    onClick={() => patch({ unassign: true }, "Unassigned.")}
+                  >
                     Unassign me
                   </button>
                 ) : (
-                  <button className="btn btn-sm" disabled={busy} onClick={() => patch({ assignedTo: user?.id }, "Assigned to you.")}>
+                  <button
+                    className="btn btn-sm"
+                    disabled={busy}
+                    onClick={() => patch({ assignedTo: user?.id }, "Assigned to you.")}
+                  >
                     Assign to me
                   </button>
                 )}

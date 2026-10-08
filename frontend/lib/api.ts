@@ -97,7 +97,8 @@ export async function api<T>(path: string, opts: Options = {}): Promise<T> {
     data = null;
   }
   if (!res.ok) {
-    const err = (data as { error?: { code?: string; message?: string; fields?: Record<string, string> } } | null)?.error;
+    const err = (data as { error?: { code?: string; message?: string; fields?: Record<string, string> } } | null)
+      ?.error;
     throw new ApiError(
       res.status,
       err?.code ?? "error",
@@ -145,10 +146,17 @@ export function uploadImage(
       if (xhr.status >= 200 && xhr.status < 300) resolve(data as UploadResult);
       else {
         const err = (data as { error?: { code?: string; message?: string } } | null)?.error;
-        reject(new ApiError(xhr.status, err?.code ?? "upload_failed", err?.message ?? "The upload failed. Please try again."));
+        reject(
+          new ApiError(
+            xhr.status,
+            err?.code ?? "upload_failed",
+            err?.message ?? "The upload failed. Please try again.",
+          ),
+        );
       }
     };
-    xhr.onerror = () => reject(new ApiError(0, "network", "The upload was interrupted. Check your connection and retry."));
+    xhr.onerror = () =>
+      reject(new ApiError(0, "network", "The upload was interrupted. Check your connection and retry."));
     xhr.onabort = () => reject(new ApiError(0, "aborted", "Upload cancelled."));
     signal?.addEventListener("abort", () => xhr.abort());
     const form = new FormData();
@@ -157,7 +165,10 @@ export function uploadImage(
   });
 }
 
-export type AssetUpload = { file: { lod: string; url: string; bytes: number; sha256: string }; info: { nodes: string[]; morphTargets: string[]; meshes: number; materials: number } | null };
+export type AssetUpload = {
+  file: { lod: string; url: string; bytes: number; sha256: string };
+  info: { nodes: string[]; morphTargets: string[]; meshes: number; materials: number } | null;
+};
 
 // uploadAssetFile sends a GLB or KTX2 file to the staff asset store (content-addressed, validated server-side).
 export function uploadAssetFile(file: File, onProgress?: (fraction: number) => void): Promise<AssetUpload> {
@@ -176,8 +187,16 @@ export function uploadAssetFile(file: File, onProgress?: (fraction: number) => v
       }
       if (xhr.status >= 200 && xhr.status < 300) resolve(data as AssetUpload);
       else {
-        const err = (data as { error?: { code?: string; message?: string; fields?: Record<string, string> } } | null)?.error;
-        reject(new ApiError(xhr.status, err?.code ?? "upload_failed", err?.fields?.file ?? err?.message ?? "The upload failed.", err?.fields ?? {}));
+        const err = (data as { error?: { code?: string; message?: string; fields?: Record<string, string> } } | null)
+          ?.error;
+        reject(
+          new ApiError(
+            xhr.status,
+            err?.code ?? "upload_failed",
+            err?.fields?.file ?? err?.message ?? "The upload failed.",
+            err?.fields ?? {},
+          ),
+        );
       }
     };
     xhr.onerror = () => reject(new ApiError(0, "network", "The upload was interrupted."));

@@ -6,7 +6,15 @@ export function exponentOf(currency: string): number {
   return exponents[currency] ?? 2;
 }
 
-const symbols: Record<string, string> = { XAF: "FCFA", XOF: "FCFA", EUR: "€", USD: "$", GBP: "£", NGN: "₦", GHS: "GH₵" };
+const symbols: Record<string, string> = {
+  XAF: "FCFA",
+  XOF: "FCFA",
+  EUR: "€",
+  USD: "$",
+  GBP: "£",
+  NGN: "₦",
+  GHS: "GH₵",
+};
 
 // formatMoney groups digits by hand instead of using Intl currency formatting, because Node and
 // browsers disagree on separators and spacing, which breaks hydration. Example: "220 000 FCFA".
@@ -14,7 +22,9 @@ export function formatMoney(minor: number, currency = "XAF"): string {
   const exp = exponentOf(currency);
   const negative = minor < 0;
   const abs = Math.abs(Math.round(minor));
-  const whole = Math.floor(abs / 10 ** exp).toString().replace(/\B(?=(\d{3})+(?!\d))/g, "\u202f");
+  const whole = Math.floor(abs / 10 ** exp)
+    .toString()
+    .replace(/\B(?=(\d{3})+(?!\d))/g, "\u202f");
   const frac = exp ? "," + (abs % 10 ** exp).toString().padStart(exp, "0") : "";
   return `${negative ? "-" : ""}${whole}${frac}\u00a0${symbols[currency] ?? currency}`;
 }

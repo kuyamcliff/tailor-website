@@ -3,7 +3,13 @@
 import type { FitResult, FitRule } from "./fit";
 
 export type SocialLink = { network: "whatsapp" | "instagram" | "tiktok" | "facebook" | "youtube" | "x"; url: string };
-export type DeliveryZone = { key: string; method: "pickup" | "local_delivery" | "courier"; label: string; feeMinor: number; description: string };
+export type DeliveryZone = {
+  key: string;
+  method: "pickup" | "local_delivery" | "courier";
+  label: string;
+  feeMinor: number;
+  description: string;
+};
 
 export type Business = {
   name: string;
@@ -15,7 +21,15 @@ export type Business = {
   phone: string;
   whatsapp: string;
   email: string;
-  address: { line1: string; line2: string; city: string; region: string; country: string; postalCode: string; mapUrl: string };
+  address: {
+    line1: string;
+    line2: string;
+    city: string;
+    region: string;
+    country: string;
+    postalCode: string;
+    mapUrl: string;
+  };
   openingHours: { days: string; hours: string }[] | null;
   currency: string;
   locale: string;
@@ -55,7 +69,15 @@ export type Me = {
   csrfToken: string;
 };
 
-export type Media = { id: string; url: string; uploadId: string | null; alt: string; width: number | null; height: number | null; sample?: boolean };
+export type Media = {
+  id: string;
+  url: string;
+  uploadId: string | null;
+  alt: string;
+  width: number | null;
+  height: number | null;
+  sample?: boolean;
+};
 
 export type Variant = {
   id: string;
@@ -82,7 +104,14 @@ export type Product = {
   description?: string;
   category: { id: string; slug: string; name: string } | null;
   garmentTypeKey: string | null;
-  fabric: { key: string; name: string; composition: string; weightGsm: number | null; careInstructions: string; swatchUrl: string | null } | null;
+  fabric: {
+    key: string;
+    name: string;
+    composition: string;
+    weightGsm: number | null;
+    careInstructions: string;
+    swatchUrl: string | null;
+  } | null;
   fitNotes?: string;
   care?: string;
   measurementInfo?: string;
@@ -111,7 +140,14 @@ export type Facets = {
   price: { min: number | null; max: number | null };
 };
 
-export type FabricColor = { id: string; key: string; name: string; hex: string; swatchUrl: string | null; stockStatus: string };
+export type FabricColor = {
+  id: string;
+  key: string;
+  name: string;
+  hex: string;
+  swatchUrl: string | null;
+  stockStatus: string;
+};
 
 export type Fabric = {
   id: string;
@@ -218,7 +254,10 @@ export type Asset = {
   status: string;
   files: AssetFile[];
   bodyCompat: Record<string, unknown>;
-  supportedOptions: { baseHidden?: string[]; renders?: Record<string, string>; bodyModel?: string } & Record<string, unknown>;
+  supportedOptions: { baseHidden?: string[]; renders?: Record<string, string>; bodyModel?: string } & Record<
+    string,
+    unknown
+  >;
   textureSetVersion: string;
   license: { source?: string; license?: string; author?: string };
   productionQuality: boolean;
@@ -249,13 +288,35 @@ export type DesignSnapshot = {
     unit?: string;
     priceMinor: number;
   }[];
-  fabric: { key: string; name: string; colorKey: string; colorName: string; colorHex: string; priceImpactMinor: number; stockStatus: string; pbr: Pbr } | null;
+  fabric: {
+    key: string;
+    name: string;
+    colorKey: string;
+    colorName: string;
+    colorHex: string;
+    priceImpactMinor: number;
+    stockStatus: string;
+    pbr: Pbr;
+  } | null;
   baseline: { type: string; label?: string };
   fitPreference: string;
   bodyModel: string;
-  measurements: { versionId: string | null; source: string; unit: string; heightMm: number | null; valuesMm: Record<string, number> } | null;
+  measurements: {
+    versionId: string | null;
+    source: string;
+    unit: string;
+    heightMm: number | null;
+    valuesMm: Record<string, number>;
+  } | null;
   fit: FitResult;
-  price: { currency: string; baseMinor: number; optionsMinor: number; fabricMinor: number; totalMinor: number; estimate: boolean };
+  price: {
+    currency: string;
+    baseMinor: number;
+    optionsMinor: number;
+    fabricMinor: number;
+    totalMinor: number;
+    estimate: boolean;
+  };
   notes: string;
   warnings: string[];
   builtAt: string;
@@ -290,9 +351,21 @@ export type PortfolioProject = {
   sortOrder: number;
 };
 
-export type Testimonial = { id: string; customerName: string; quote: string; context: string; publishedAt: string | null };
+export type Testimonial = {
+  id: string;
+  customerName: string;
+  quote: string;
+  context: string;
+  publishedAt: string | null;
+};
 
-export type HistoryItem = { oldStatus: string | null; newStatus: string; actor: string; note: string | null; createdAt: string };
+export type HistoryItem = {
+  oldStatus: string | null;
+  newStatus: string;
+  actor: string;
+  note: string | null;
+  createdAt: string;
+};
 
 export type OrderItem = {
   id: string;
@@ -367,7 +440,14 @@ export type Order = {
   history: HistoryItem[];
   notes: { id: string; visibility: string; body: string; author: string | null; createdAt: string }[];
   payments: PaymentSummary[];
-  fittings: { id: string; appointmentId: string | null; notes?: string; customerNotes: string; adjustments: { area: string; change: string }[]; createdAt: string }[];
+  fittings: {
+    id: string;
+    appointmentId: string | null;
+    notes?: string;
+    customerNotes: string;
+    adjustments: { area: string; change: string }[];
+    createdAt: string;
+  }[];
   appointments: { id: string; number: string; type: string; status: string; startsAt: string; endsAt: string }[];
   createdAt: string;
   updatedAt: string;
@@ -497,8 +577,25 @@ export type RequestView = {
   infoRequested: string | null;
   internalNotes?: string;
   supportThreadId: string | null;
-  references: { uploadId: string; tag: string; note: string; url: string; thumb: string; removed: boolean; width: number | null; height: number | null }[];
-  quotes: { id: string; number: string; status: string; totalMinor: number | null; currency: string | null; expiresAt: string | null; updatedAt: string }[];
+  references: {
+    uploadId: string;
+    tag: string;
+    note: string;
+    url: string;
+    thumb: string;
+    removed: boolean;
+    width: number | null;
+    height: number | null;
+  }[];
+  quotes: {
+    id: string;
+    number: string;
+    status: string;
+    totalMinor: number | null;
+    currency: string | null;
+    expiresAt: string | null;
+    updatedAt: string;
+  }[];
   history: HistoryItem[];
   orderId: string | null;
   version: number;

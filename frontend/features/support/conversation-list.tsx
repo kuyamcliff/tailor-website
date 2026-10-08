@@ -16,7 +16,11 @@ export function ConversationList() {
   const { user, loading } = useSession();
   const hydrated = useHydrated();
   const links: SavedLink[] = hydrated ? savedLinks().filter((l) => l.kind === "support") : [];
-  const q = useQuery({ queryKey: ["my-support"], enabled: Boolean(user?.customerId), queryFn: () => api<SupportThread[]>("/me/support") });
+  const q = useQuery({
+    queryKey: ["my-support"],
+    enabled: Boolean(user?.customerId),
+    queryFn: () => api<SupportThread[]>("/me/support"),
+  });
 
   if (loading) return null;
   if (user?.customerId) {
@@ -67,7 +71,11 @@ export function ConversationList() {
         </ul>
       ) : (
         <p className="muted small">
-          Messages you send from this device appear here. <Link className="link" href="/account/sign-in?next=/support">Sign in</Link> to see every conversation on your account.
+          Messages you send from this device appear here.{" "}
+          <Link className="link" href="/account/sign-in?next=/support">
+            Sign in
+          </Link>{" "}
+          to see every conversation on your account.
         </p>
       )}
     </section>

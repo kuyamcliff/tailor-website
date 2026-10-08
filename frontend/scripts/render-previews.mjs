@@ -18,15 +18,29 @@ const page = await browser.newPage({ viewport: { width: 1600, height: 1100 }, de
 await page.goto(`${base}/studio?garment=suit`, { waitUntil: "networkidle" });
 await page.waitForSelector("canvas");
 // Capture only the stage: hide the site chrome and the studio panel and controls.
-await page.addStyleTag({ content: "header, footer, aside, [role=group], .skip-link { visibility: hidden !important; } [class*=standin], [class*=controls] { visibility: hidden !important; }" });
+await page.addStyleTag({
+  content:
+    "header, footer, aside, [role=group], .skip-link { visibility: hidden !important; } [class*=standin], [class*=controls] { visibility: hidden !important; }",
+});
 await page.waitForTimeout(3000);
-for (const [key, label] of [["front", "Front"], ["45", "45°"], ["side", "Side"], ["back", "Back"]]) {
-  await page.locator(`[aria-label="View angle"] button`).filter({ hasText: new RegExp(`^${label}$`) }).dispatchEvent("click");
+for (const [key, label] of [
+  ["front", "Front"],
+  ["45", "45°"],
+  ["side", "Side"],
+  ["back", "Back"],
+]) {
+  await page
+    .locator(`[aria-label="View angle"] button`)
+    .filter({ hasText: new RegExp(`^${label}$`) })
+    .dispatchEvent("click");
   await page.evaluate(() => window.scrollTo(0, 0));
   await page.waitForTimeout(1500);
   const box = await page.locator("canvas").boundingBox();
   const w = Math.min(box.width, box.height * 0.8);
-  await page.screenshot({ path: join(out, `suit-${key}.png`), clip: { x: box.x + (box.width - w) / 2, y: box.y + 40, width: w, height: box.height - 110 } });
+  await page.screenshot({
+    path: join(out, `suit-${key}.png`),
+    clip: { x: box.x + (box.width - w) / 2, y: box.y + 40, width: w, height: box.height - 110 },
+  });
   console.log("rendered", key);
 }
 await browser.close();

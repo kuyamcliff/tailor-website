@@ -11,13 +11,25 @@ import type { MeasurementField, MeasurementVersion, RequestView } from "@/lib/ty
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Price } from "@/components/ui/price";
 import { useToast } from "@/components/providers/toast";
-import { MeasurementForm, measurePayload, stateFromMM, type MeasureState } from "@/features/measurements/measurement-form";
+import {
+  MeasurementForm,
+  measurePayload,
+  stateFromMM,
+  type MeasureState,
+} from "@/features/measurements/measurement-form";
 import { PageHead } from "./owner-shell";
 import styles from "./tables.module.css";
 
 type Resp = {
   request: RequestView;
-  messages: { id: string; author_type: string; author: string | null; body: string; internal: boolean; created_at: string }[];
+  messages: {
+    id: string;
+    author_type: string;
+    author: string | null;
+    body: string;
+    internal: boolean;
+    created_at: string;
+  }[];
   measurementFields: MeasurementField[];
 };
 
@@ -72,8 +84,24 @@ export function OwnerRequestDetail({ id }: { id: string }) {
       const lines = d
         ? [
             { kind: "garment", description: d.garment.name, quantity: 1, unitMinor: d.price.baseMinor },
-            ...d.selections.filter((x) => x.priceMinor > 0).map((x) => ({ kind: "customization", description: `${x.groupName}: ${x.valueName ?? x.number}`, quantity: 1, unitMinor: x.priceMinor })),
-            ...(d.fabric && d.price.fabricMinor ? [{ kind: "fabric", description: `${d.fabric.name}, ${d.fabric.colorName}`, quantity: 1, unitMinor: d.price.fabricMinor }] : []),
+            ...d.selections
+              .filter((x) => x.priceMinor > 0)
+              .map((x) => ({
+                kind: "customization",
+                description: `${x.groupName}: ${x.valueName ?? x.number}`,
+                quantity: 1,
+                unitMinor: x.priceMinor,
+              })),
+            ...(d.fabric && d.price.fabricMinor
+              ? [
+                  {
+                    kind: "fabric",
+                    description: `${d.fabric.name}, ${d.fabric.colorName}`,
+                    quantity: 1,
+                    unitMinor: d.price.fabricMinor,
+                  },
+                ]
+              : []),
           ]
         : [{ kind: "garment", description: q.data!.request.garmentName, quantity: 1, unitMinor: 0 }];
       const res = await api<{ id: string }>(`/owner/requests/${id}/quotes`, { body: { lines, validDays: 14 } });
@@ -120,7 +148,11 @@ export function OwnerRequestDetail({ id }: { id: string }) {
                 {r.occasionNote ? `: ${r.occasionNote}` : ""}
               </dd>
               <dt>Needed by</dt>
-              <dd>{r.desiredDate ? `${formatDate(r.desiredDate)} (${humanize(r.dateFlexibility).toLowerCase()})` : "No date given"}</dd>
+              <dd>
+                {r.desiredDate
+                  ? `${formatDate(r.desiredDate)} (${humanize(r.dateFlexibility).toLowerCase()})`
+                  : "No date given"}
+              </dd>
               <dt>Urgency</dt>
               <dd>{humanize(r.urgency)}</dd>
               <dt>Cut and fit</dt>
@@ -128,7 +160,13 @@ export function OwnerRequestDetail({ id }: { id: string }) {
                 {humanize(r.bodyModel)}, {r.fitPreference}
               </dd>
               <dt>Fabric</dt>
-              <dd>{r.fabricMode === "catalog" ? `${r.fabricName ?? r.fabricKey}${r.colorKey ? `, ${humanize(r.colorKey)}` : ""}` : r.fabricMode === "reference" ? "From the customer's photo" : "Recommend one"}</dd>
+              <dd>
+                {r.fabricMode === "catalog"
+                  ? `${r.fabricName ?? r.fabricKey}${r.colorKey ? `, ${humanize(r.colorKey)}` : ""}`
+                  : r.fabricMode === "reference"
+                    ? "From the customer's photo"
+                    : "Recommend one"}
+              </dd>
               {r.notes ? (
                 <>
                   <dt>Notes</dt>
@@ -212,7 +250,11 @@ export function OwnerRequestDetail({ id }: { id: string }) {
               ) : null}
             </div>
             <p className="small muted" style={{ margin: 0 }}>
-              {r.measurementMode === "in_store" ? "The customer asked to be measured at the studio." : r.measurementMode === "saved_profile" ? "From the customer's saved profile." : "Entered by the customer."}
+              {r.measurementMode === "in_store"
+                ? "The customer asked to be measured at the studio."
+                : r.measurementMode === "saved_profile"
+                  ? "From the customer's saved profile."
+                  : "Entered by the customer."}
             </p>
             {verifying ? (
               <VerifyForm
@@ -227,7 +269,13 @@ export function OwnerRequestDetail({ id }: { id: string }) {
             ) : (
               <div className={styles.split}>
                 {r.measurements ? <Values title="Customer" v={r.measurements} label={label} /> : null}
-                {r.verifiedMeasurements ? <Values title={`Verified by ${r.verifiedMeasurements.verifiedBy ?? "staff"}`} v={r.verifiedMeasurements} label={label} /> : null}
+                {r.verifiedMeasurements ? (
+                  <Values
+                    title={`Verified by ${r.verifiedMeasurements.verifiedBy ?? "staff"}`}
+                    v={r.verifiedMeasurements}
+                    label={label}
+                  />
+                ) : null}
               </div>
             )}
           </section>
@@ -312,7 +360,9 @@ export function OwnerRequestDetail({ id }: { id: string }) {
                     <Link className="list-row small" href={`/owner/quotes/${x.id}`}>
                       <span>{x.number}</span>
                       <span className="row">
-                        {x.totalMinor !== null ? <Price minor={x.totalMinor} currency={x.currency ?? undefined} /> : null}
+                        {x.totalMinor !== null ? (
+                          <Price minor={x.totalMinor} currency={x.currency ?? undefined} />
+                        ) : null}
                         <StatusBadge status={x.status} />
                       </span>
                     </Link>
@@ -325,7 +375,12 @@ export function OwnerRequestDetail({ id }: { id: string }) {
               </p>
             )}
             {!["converted", "closed"].includes(r.status) ? (
-              <button className="btn btn-primary btn-sm" disabled={busy} onClick={createQuote} style={{ justifySelf: "start" }}>
+              <button
+                className="btn btn-primary btn-sm"
+                disabled={busy}
+                onClick={createQuote}
+                style={{ justifySelf: "start" }}
+              >
                 Draft a quote
               </button>
             ) : null}
@@ -336,7 +391,12 @@ export function OwnerRequestDetail({ id }: { id: string }) {
               <h2 id="status-h" className={styles.h2}>
                 Status
               </h2>
-              <select className="select" aria-label="New status" value={status} onChange={(e) => setStatus(e.target.value)}>
+              <select
+                className="select"
+                aria-label="New status"
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+              >
                 <option value="">Change status</option>
                 {transitions[r.status]!.map((s) => (
                   <option key={s} value={s}>
@@ -347,10 +407,23 @@ export function OwnerRequestDetail({ id }: { id: string }) {
               {status ? (
                 <>
                   <label className="field">
-                    <span className="label">{status === "need_information" ? "What do you need from the customer?" : "Message to the customer (optional)"}</span>
-                    <textarea className="textarea" rows={3} value={message} onChange={(e) => setMessage(e.target.value)} />
+                    <span className="label">
+                      {status === "need_information"
+                        ? "What do you need from the customer?"
+                        : "Message to the customer (optional)"}
+                    </span>
+                    <textarea
+                      className="textarea"
+                      rows={3}
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                    />
                   </label>
-                  <button className="btn btn-sm" disabled={busy} onClick={() => update({ status, message }, "Status updated.")}>
+                  <button
+                    className="btn btn-sm"
+                    disabled={busy}
+                    onClick={() => update({ status, message }, "Status updated.")}
+                  >
                     Update status
                   </button>
                 </>
@@ -362,9 +435,19 @@ export function OwnerRequestDetail({ id }: { id: string }) {
             <h2 id="notes-h" className={styles.h2}>
               Internal notes
             </h2>
-            <textarea className="textarea" rows={5} aria-label="Internal notes" value={notes ?? r.internalNotes ?? ""} onChange={(e) => setNotes(e.target.value)} />
+            <textarea
+              className="textarea"
+              rows={5}
+              aria-label="Internal notes"
+              value={notes ?? r.internalNotes ?? ""}
+              onChange={(e) => setNotes(e.target.value)}
+            />
             {notes !== null && notes !== (r.internalNotes ?? "") ? (
-              <button className="btn btn-sm" disabled={busy} onClick={() => update({ internalNotes: notes }, "Notes saved.")}>
+              <button
+                className="btn btn-sm"
+                disabled={busy}
+                onClick={() => update({ internalNotes: notes }, "Notes saved.")}
+              >
                 Save notes
               </button>
             ) : (
@@ -410,9 +493,21 @@ function Values({ title, v, label }: { title: string; v: MeasurementVersion; lab
   );
 }
 
-function VerifyForm({ requestId, fields, start, onDone }: { requestId: string; fields: MeasurementField[]; start: MeasurementVersion | null; onDone: () => void }) {
+function VerifyForm({
+  requestId,
+  fields,
+  start,
+  onDone,
+}: {
+  requestId: string;
+  fields: MeasurementField[];
+  start: MeasurementVersion | null;
+  onDone: () => void;
+}) {
   const toast = useToast();
-  const [state, setState] = useState<MeasureState>(() => (start ? stateFromMM(start.valuesMm, start.heightMm, start.unit) : { unit: "cm", height: "", values: {} }));
+  const [state, setState] = useState<MeasureState>(() =>
+    start ? stateFromMM(start.valuesMm, start.heightMm, start.unit) : { unit: "cm", height: "", values: {} },
+  );
   const [notes, setNotes] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);

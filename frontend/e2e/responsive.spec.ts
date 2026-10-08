@@ -12,7 +12,10 @@ for (const path of pages) {
       await page.setViewportSize({ width: w, height: 900 });
       await page.goto(path, { waitUntil: "networkidle" });
       await noHorizontalOverflow(page);
-      await page.screenshot({ path: info.outputPath(`${path === "/" ? "home" : path.slice(1).replaceAll("/", "_")}-${w}.png`), fullPage: true });
+      await page.screenshot({
+        path: info.outputPath(`${path === "/" ? "home" : path.slice(1).replaceAll("/", "_")}-${w}.png`),
+        fullPage: true,
+      });
     }
   });
 }

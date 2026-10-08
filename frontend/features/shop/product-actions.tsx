@@ -10,7 +10,13 @@ export function ProductActions({ product }: { product: Product }) {
   const compared = useSaved((s) => s.compare.some((c) => c.id === product.id));
   const { toggleWish, toggleCompare } = useSaved();
   const toast = useToast();
-  const item = { type: "product" as const, id: product.id, slug: product.slug, name: product.name, image: product.media[0]?.url ?? null };
+  const item = {
+    type: "product" as const,
+    id: product.id,
+    slug: product.slug,
+    name: product.name,
+    image: product.media[0]?.url ?? null,
+  };
   return (
     <div className="row-wrap">
       <button className="btn btn-sm btn-ghost" aria-pressed={wished} onClick={() => toggleWish(item)}>

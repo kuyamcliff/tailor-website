@@ -28,20 +28,37 @@ export function ProductCard({ product, priority = false }: { product: Product; p
   const toast = useToast();
   const img = product.media[0];
   const alt = product.media[1];
-  const item = { type: "product" as const, id: product.id, slug: product.slug, name: product.name, image: img?.url ?? null };
+  const item = {
+    type: "product" as const,
+    id: product.id,
+    slug: product.slug,
+    name: product.name,
+    image: img?.url ?? null,
+  };
 
   return (
     <article className={styles.card}>
       <Link href={`/shop/${product.slug}`} className={styles.media} aria-label={product.name}>
         {img ? (
-          <Image src={img.url} alt={img.alt} fill sizes="(max-width: 640px) 50vw, (max-width: 1100px) 33vw, 25vw" priority={priority} className={styles.img} />
+          <Image
+            src={img.url}
+            alt={img.alt}
+            fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1100px) 33vw, 25vw"
+            priority={priority}
+            className={styles.img}
+          />
         ) : (
           <span className={styles.noImage}>{product.name}</span>
         )}
         <SampleTag show={img?.sample} position="bottom" />
-        {alt ? <Image src={alt.url} alt="" fill sizes="25vw" className={`${styles.img} ${styles.alt}`} aria-hidden /> : null}
+        {alt ? (
+          <Image src={alt.url} alt="" fill sizes="25vw" className={`${styles.img} ${styles.alt}`} aria-hidden />
+        ) : null}
         {product.availability !== "in_stock" ? (
-          <span className={`badge ${product.availability === "out_of_stock" ? "" : "badge-gold"} ${styles.flag}`}>{availabilityLabel[product.availability]}</span>
+          <span className={`badge ${product.availability === "out_of_stock" ? "" : "badge-gold"} ${styles.flag}`}>
+            {availabilityLabel[product.availability]}
+          </span>
         ) : null}
       </Link>
       <div className={styles.tools}>

@@ -5,7 +5,15 @@ import type { ContentBlocks, PublicConfig } from "@/lib/types";
 
 const Ctx = createContext<{ config: PublicConfig; content: ContentBlocks } | null>(null);
 
-export function ConfigProvider({ config, content, children }: { config: PublicConfig; content: ContentBlocks; children: React.ReactNode }) {
+export function ConfigProvider({
+  config,
+  content,
+  children,
+}: {
+  config: PublicConfig;
+  content: ContentBlocks;
+  children: React.ReactNode;
+}) {
   return <Ctx.Provider value={{ config, content }}>{children}</Ctx.Provider>;
 }
 

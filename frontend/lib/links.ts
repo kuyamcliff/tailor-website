@@ -3,7 +3,13 @@
 // Guests reach their requests, quotes, orders and bookings through private links with an access
 // token. We remember those links on this device so a guest can come back without searching email.
 
-export type SavedLink = { kind: "order" | "request" | "quote" | "appointment" | "support"; id: string; number: string; token: string; createdAt: number };
+export type SavedLink = {
+  kind: "order" | "request" | "quote" | "appointment" | "support";
+  id: string;
+  number: string;
+  token: string;
+  createdAt: number;
+};
 
 const KEY = "atelier.links";
 // In-memory copy so links keep working in this tab even when storage is unavailable.

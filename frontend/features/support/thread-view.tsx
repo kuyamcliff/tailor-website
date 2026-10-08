@@ -37,7 +37,10 @@ export function SupportThreadView({ id }: { id: string }) {
     setBusy(true);
     setError("");
     try {
-      await api(`/support/${id}/reply`, { body: { body, attachments: uploadedIds(files) }, accessToken: token || undefined });
+      await api(`/support/${id}/reply`, {
+        body: { body, attachments: uploadedIds(files) },
+        accessToken: token || undefined,
+      });
       setBody("");
       setFiles([]);
       toast("Message sent.");
@@ -49,7 +52,12 @@ export function SupportThreadView({ id }: { id: string }) {
     }
   }
 
-  if (token === null || q.isLoading) return <div className="container-narrow section-tight"><div className="skeleton" style={{ height: 360 }} /></div>;
+  if (token === null || q.isLoading)
+    return (
+      <div className="container-narrow section-tight">
+        <div className="skeleton" style={{ height: 360 }} />
+      </div>
+    );
   if (!t)
     return (
       <div className="container-narrow section-tight stack-lg">
@@ -90,7 +98,9 @@ export function SupportThreadView({ id }: { id: string }) {
         {(t.messages ?? []).map((m) => (
           <li key={m.id} className={styles.message} data-author={m.authorType}>
             <div className={styles.meta}>
-              <strong>{m.authorType === "customer" ? "You" : m.authorType === "staff" ? cfg.business.name : "Update"}</strong>
+              <strong>
+                {m.authorType === "customer" ? "You" : m.authorType === "staff" ? cfg.business.name : "Update"}
+              </strong>
               <time className="small muted" dateTime={m.createdAt}>
                 {formatDateTime(m.createdAt, cfg.business.timezone)}
               </time>
@@ -123,7 +133,14 @@ export function SupportThreadView({ id }: { id: string }) {
         <label className="visually-hidden" htmlFor="reply-body">
           Your message
         </label>
-        <textarea id="reply-body" className="textarea" value={body} onChange={(e) => setBody(e.target.value)} maxLength={5000} required />
+        <textarea
+          id="reply-body"
+          className="textarea"
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+          maxLength={5000}
+          required
+        />
         <ImageUploader purpose="support" items={files} onChange={setFiles} max={4} label="Attach photos" />
         <button className="btn btn-primary" type="submit" disabled={busy || !body.trim() || uploadsPending(files)}>
           {busy ? <span className="spinner" aria-hidden /> : null} Send

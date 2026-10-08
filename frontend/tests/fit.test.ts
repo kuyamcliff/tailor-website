@@ -5,8 +5,15 @@ import { estimateFit, type FitInput, type FitRule } from "@/lib/fit";
 
 // The same fixtures drive backend/internal/fit/fit_test.go, so the studio's live estimate and the
 // estimate saved on the server can never drift apart.
-type Case = { name: string; input: Omit<FitInput, "rules">; expect: { overall: string; zones: Record<string, [string, number | null]> }; rules?: FitRule[] };
-const fixtures = JSON.parse(readFileSync(path.join(__dirname, "../../backend/internal/fit/testdata/fixtures.json"), "utf8")) as { rules: FitRule[]; cases: Case[]; stretchCase: Case };
+type Case = {
+  name: string;
+  input: Omit<FitInput, "rules">;
+  expect: { overall: string; zones: Record<string, [string, number | null]> };
+  rules?: FitRule[];
+};
+const fixtures = JSON.parse(
+  readFileSync(path.join(__dirname, "../../backend/internal/fit/testdata/fixtures.json"), "utf8"),
+) as { rules: FitRule[]; cases: Case[]; stretchCase: Case };
 
 function check(c: Case, rules: FitRule[]) {
   const res = estimateFit({ ...c.input, rules });

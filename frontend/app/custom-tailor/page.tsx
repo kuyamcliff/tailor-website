@@ -10,13 +10,18 @@ import styles from "@/features/custom/landing.module.css";
 
 export const metadata: Metadata = {
   title: "Custom tailoring",
-  description: "Design a garment made to your measurements: choose the style and cloth, preview it in 3D, then request a quote.",
+  description:
+    "Design a garment made to your measurements: choose the style and cloth, preview it in 3D, then request a quote.",
   alternates: { canonical: "/custom-tailor" },
 };
 export const revalidate = 60;
 
 export default async function CustomTailorPage() {
-  const [cfg, content, garments] = await Promise.all([getConfig(), getContent(), serverApiOr<GarmentType[]>("/garments", [], 60)]);
+  const [cfg, content, garments] = await Promise.all([
+    getConfig(),
+    getContent(),
+    serverApiOr<GarmentType[]>("/garments", [], 60),
+  ]);
   const landing = block(content, "custom.landing");
   const faqs = block(content, "faqs");
   const studio = cfg.flags.studio;
@@ -37,7 +42,10 @@ export default async function CustomTailorPage() {
             const designable = studio && g.studioEnabled;
             return (
               <li key={g.key}>
-                <Link href={designable ? `/studio?garment=${g.key}` : `/custom-tailor/request?garment=${g.key}`} className={styles.row}>
+                <Link
+                  href={designable ? `/studio?garment=${g.key}` : `/custom-tailor/request?garment=${g.key}`}
+                  className={styles.row}
+                >
                   <span className={styles.name}>{g.name}</span>
                   <span className={styles.desc}>{g.description}</span>
                   <span className={styles.meta}>

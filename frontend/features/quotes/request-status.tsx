@@ -45,7 +45,12 @@ export function RequestStatus({ id }: { id: string }) {
     }
   }
 
-  if (q.isLoading || token === null) return <div className="container section-tight"><div className="skeleton" style={{ height: 420 }} /></div>;
+  if (q.isLoading || token === null)
+    return (
+      <div className="container section-tight">
+        <div className="skeleton" style={{ height: 420 }} />
+      </div>
+    );
   if (!q.data)
     return (
       <div className="container-narrow section-tight stack-lg">
@@ -62,19 +67,30 @@ export function RequestStatus({ id }: { id: string }) {
   const m = r.verifiedMeasurements ?? r.measurements;
 
   return (
-    <div className="container section-tight" style={{ display: "grid", gap: 32, gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 420px), 1fr))", alignItems: "start" }}>
+    <div
+      className="container section-tight"
+      style={{
+        display: "grid",
+        gap: 32,
+        gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 420px), 1fr))",
+        alignItems: "start",
+      }}
+    >
       <div className="stack-lg">
         {submitted ? (
           <p className="notice notice-success" role="status">
             <CheckCircle2 size={18} aria-hidden style={{ color: "var(--success)", flex: "none", marginTop: 2 }} />
             <span>
-              Thank you. Request <strong>{r.number}</strong> has been sent. Your tailor will review it and reply with a quote or questions. Keep this page bookmarked.
+              Thank you. Request <strong>{r.number}</strong> has been sent. Your tailor will review it and reply with a
+              quote or questions. Keep this page bookmarked.
             </span>
           </p>
         ) : null}
         <header className="stack-sm">
           <span className="eyebrow">Request {r.number}</span>
-          <h1 className="display-2">{r.garmentName} for {humanize(r.occasion).toLowerCase()}</h1>
+          <h1 className="display-2">
+            {r.garmentName} for {humanize(r.occasion).toLowerCase()}
+          </h1>
           <div className="row-wrap">
             <StatusBadge status={r.status} label={requestLabels[r.status]} />
             <span className="tiny muted">Sent {formatDate(r.createdAt)}</span>
@@ -90,7 +106,12 @@ export function RequestStatus({ id }: { id: string }) {
           <section className="panel panel-pad stack">
             <h2 className="display-3">Quotes</h2>
             {r.quotes.map((qt) => (
-              <Link key={qt.id} href={`/quotes/${qt.id}${tq}`} className="spread" style={{ padding: "10px 0", borderBottom: "1px solid var(--line)" }}>
+              <Link
+                key={qt.id}
+                href={`/quotes/${qt.id}${tq}`}
+                className="spread"
+                style={{ padding: "10px 0", borderBottom: "1px solid var(--line)" }}
+              >
                 <span>
                   Quote {qt.number}
                   <span className="tiny muted" style={{ display: "block" }}>
@@ -114,7 +135,14 @@ export function RequestStatus({ id }: { id: string }) {
           <label htmlFor="reply" className="title">
             Message your tailor
           </label>
-          <textarea id="reply" className="textarea" value={reply} onChange={(e) => setReply(e.target.value)} maxLength={5000} placeholder="Answer a question or add details" />
+          <textarea
+            id="reply"
+            className="textarea"
+            value={reply}
+            onChange={(e) => setReply(e.target.value)}
+            maxLength={5000}
+            placeholder="Answer a question or add details"
+          />
           <button className="btn btn-sm" disabled={busy || !reply.trim()}>
             Send
           </button>
@@ -125,9 +153,28 @@ export function RequestStatus({ id }: { id: string }) {
           <h2 className="display-3">Details</h2>
           <dl style={{ margin: 0, display: "grid", gap: 10 }}>
             {[
-              ["Fabric", r.fabricMode === "catalog" ? r.fabricName ?? r.fabricKey : r.fabricMode === "recommend" ? "Recommendation requested" : "From your reference"],
-              ["Measurements", r.measurementMode === "in_store" ? "To be taken at the studio" : r.verifiedMeasurements ? "Verified by your tailor" : "Provided by you"],
-              ["Desired date", r.desiredDate ? `${formatDate(r.desiredDate)} (${humanize(r.dateFlexibility).toLowerCase()})` : "Not set"],
+              [
+                "Fabric",
+                r.fabricMode === "catalog"
+                  ? (r.fabricName ?? r.fabricKey)
+                  : r.fabricMode === "recommend"
+                    ? "Recommendation requested"
+                    : "From your reference",
+              ],
+              [
+                "Measurements",
+                r.measurementMode === "in_store"
+                  ? "To be taken at the studio"
+                  : r.verifiedMeasurements
+                    ? "Verified by your tailor"
+                    : "Provided by you",
+              ],
+              [
+                "Desired date",
+                r.desiredDate
+                  ? `${formatDate(r.desiredDate)} (${humanize(r.dateFlexibility).toLowerCase()})`
+                  : "Not set",
+              ],
               ["Urgency", humanize(r.urgency)],
             ].map(([k, v]) => (
               <div key={k as string} className="spread" style={{ alignItems: "flex-start" }}>
@@ -139,7 +186,9 @@ export function RequestStatus({ id }: { id: string }) {
           {r.design ? (
             <div className="stack-sm">
               <h3 className="label">Design</h3>
-              <p className="small">{r.design.selections.map((s) => s.valueName ?? `${s.groupName} ${s.number}${s.unit ?? ""}`).join(", ")}</p>
+              <p className="small">
+                {r.design.selections.map((s) => s.valueName ?? `${s.groupName} ${s.number}${s.unit ?? ""}`).join(", ")}
+              </p>
               {r.designVersionId ? (
                 <Link className="link small" href={`/studio?designVersion=${r.designVersionId}`}>
                   Open in the studio
@@ -171,17 +220,35 @@ export function RequestStatus({ id }: { id: string }) {
         {r.references.length ? (
           <section className="panel panel-pad stack">
             <h2 className="display-3">References</h2>
-            <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fill, minmax(110px, 1fr))" }}>
+            <ul
+              style={{
+                listStyle: "none",
+                padding: 0,
+                margin: 0,
+                display: "grid",
+                gap: 10,
+                gridTemplateColumns: "repeat(auto-fill, minmax(110px, 1fr))",
+              }}
+            >
               {r.references.map((ref) => (
                 <li key={ref.uploadId} className="stack-sm">
-                  <span style={{ position: "relative", display: "block", aspectRatio: "1", background: "var(--surface-2)" }}>
+                  <span
+                    style={{ position: "relative", display: "block", aspectRatio: "1", background: "var(--surface-2)" }}
+                  >
                     {ref.removed ? (
-                      <span className="tiny muted" style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center" }}>
+                      <span
+                        className="tiny muted"
+                        style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center" }}
+                      >
                         Removed
                       </span>
                     ) : (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={`${ref.thumb}${access}`} alt={`Reference: ${ref.tag}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      <img
+                        src={`${ref.thumb}${access}`}
+                        alt={`Reference: ${ref.tag}`}
+                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                      />
                     )}
                   </span>
                   <span className="tiny muted">{humanize(ref.tag)}</span>

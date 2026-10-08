@@ -10,21 +10,36 @@ import { OwnerList } from "./owner-list";
 import { PageHead } from "./owner-shell";
 import styles from "./tables.module.css";
 
-type Member = { id: string; name: string; email: string | null; role: string; roleName: string; status: string; lastLoginAt: string | null; createdAt: string };
+type Member = {
+  id: string;
+  name: string;
+  email: string | null;
+  role: string;
+  roleName: string;
+  status: string;
+  lastLoginAt: string | null;
+  createdAt: string;
+};
 type Role = { key: string; name: string; permissions: string[] };
 
 export function OwnerStaff() {
   const qc = useQueryClient();
   const toast = useToast();
   const { user } = useSession();
-  const q = useQuery({ queryKey: ["owner", "staff"], queryFn: () => api<{ staff: Member[]; roles: Role[] }>("/owner/staff") });
+  const q = useQuery({
+    queryKey: ["owner", "staff"],
+    queryFn: () => api<{ staff: Member[]; roles: Role[] }>("/owner/staff"),
+  });
   const [form, setForm] = useState<{ name: string; email: string; role: string; password: string } | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const reload = () => qc.invalidateQueries({ queryKey: ["owner", "staff"] });
 
   async function update(m: Member, patch: Partial<Pick<Member, "role" | "status">>) {
     try {
-      await api(`/owner/staff/${m.id}`, { method: "PUT", body: { role: patch.role ?? m.role, status: patch.status ?? m.status } });
+      await api(`/owner/staff/${m.id}`, {
+        method: "PUT",
+        body: { role: patch.role ?? m.role, status: patch.status ?? m.status },
+      });
       toast("Updated.");
       await reload();
     } catch (e) {
@@ -50,7 +65,10 @@ export function OwnerStaff() {
         title="Staff"
         sub="Who can sign in to this dashboard and what each person can do."
         actions={
-          <button className="btn btn-primary btn-sm" onClick={() => setForm({ name: "", email: "", role: "tailor", password: "" })}>
+          <button
+            className="btn btn-primary btn-sm"
+            onClick={() => setForm({ name: "", email: "", role: "tailor", password: "" })}
+          >
             Add a person
           </button>
         }
@@ -65,7 +83,12 @@ export function OwnerStaff() {
             </label>
             <label className="field">
               <span className="label">Email</span>
-              <input className="input" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+              <input
+                className="input"
+                type="email"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+              />
               {errors.email ? <span className="error">{errors.email}</span> : null}
             </label>
             <label className="field">
@@ -80,7 +103,13 @@ export function OwnerStaff() {
             </label>
             <label className="field">
               <span className="label">Temporary password</span>
-              <input className="input" type="password" autoComplete="new-password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
+              <input
+                className="input"
+                type="password"
+                autoComplete="new-password"
+                value={form.password}
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
+              />
               <span className="hint">At least 10 characters.</span>
               {errors.password ? <span className="error">{errors.password}</span> : null}
             </label>
@@ -115,7 +144,14 @@ export function OwnerStaff() {
                 </td>
                 <td>{m.email}</td>
                 <td>
-                  <select className="select" aria-label={`${m.name} role`} value={m.role} disabled={m.id === user?.id} onChange={(e) => update(m, { role: e.target.value })} style={{ width: "auto" }}>
+                  <select
+                    className="select"
+                    aria-label={`${m.name} role`}
+                    value={m.role}
+                    disabled={m.id === user?.id}
+                    onChange={(e) => update(m, { role: e.target.value })}
+                    style={{ width: "auto" }}
+                  >
                     {roles.map((r) => (
                       <option key={r.key} value={r.key}>
                         {r.name}
@@ -124,7 +160,14 @@ export function OwnerStaff() {
                   </select>
                 </td>
                 <td>
-                  <select className="select" aria-label={`${m.name} access`} value={m.status} disabled={m.id === user?.id} onChange={(e) => update(m, { status: e.target.value })} style={{ width: "auto" }}>
+                  <select
+                    className="select"
+                    aria-label={`${m.name} access`}
+                    value={m.status}
+                    disabled={m.id === user?.id}
+                    onChange={(e) => update(m, { status: e.target.value })}
+                    style={{ width: "auto" }}
+                  >
                     <option value="active">Active</option>
                     <option value="disabled">Disabled</option>
                     {m.status === "locked" ? <option value="locked">Locked</option> : null}
@@ -153,7 +196,17 @@ export function OwnerStaff() {
   );
 }
 
-type AuditRow = { id: string; actorName: string | null; actorRole: string | null; action: string; objectType: string; objectId: string | null; before: unknown; after: unknown; createdAt: string };
+type AuditRow = {
+  id: string;
+  actorName: string | null;
+  actorRole: string | null;
+  action: string;
+  objectType: string;
+  objectId: string | null;
+  before: unknown;
+  after: unknown;
+  createdAt: string;
+};
 
 export function OwnerAudit() {
   return (
@@ -167,13 +220,29 @@ export function OwnerAudit() {
               key: "objectType",
               label: "Area",
               type: "select",
-              options: ["order", "payment", "quote", "request", "customer", "user", "upload", "measurement_profile", "asset_manifest", "feature_flag", "business_settings", "content_block"].map((x) => [x, humanize(x)]),
+              options: [
+                "order",
+                "payment",
+                "quote",
+                "request",
+                "customer",
+                "user",
+                "upload",
+                "measurement_profile",
+                "asset_manifest",
+                "feature_flag",
+                "business_settings",
+                "content_block",
+              ].map((x) => [x, humanize(x)]),
             },
           ]}
           rowKey={(r) => r.id}
           empty="No entries."
           columns={[
-            { label: "When", cell: (r) => formatDate(r.createdAt, "short") + " " + new Date(r.createdAt).toISOString().slice(11, 16) },
+            {
+              label: "When",
+              cell: (r) => formatDate(r.createdAt, "short") + " " + new Date(r.createdAt).toISOString().slice(11, 16),
+            },
             { label: "Who", cell: (r) => r.actorName ?? "System" },
             { label: "Action", cell: (r) => humanize(r.action.replaceAll(".", " ")) },
             { label: "On", cell: (r) => `${humanize(r.objectType)}${r.objectId ? ` ${r.objectId.slice(0, 8)}` : ""}` },

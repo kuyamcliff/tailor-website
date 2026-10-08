@@ -52,10 +52,29 @@ export function SignInForm() {
       </header>
       <FormError message={error} />
       <Field label="Email or phone">
-        {(p) => <input {...p} className="input" value={identifier} onChange={(e) => setIdentifier(e.target.value)} autoComplete="username" required />}
+        {(p) => (
+          <input
+            {...p}
+            className="input"
+            value={identifier}
+            onChange={(e) => setIdentifier(e.target.value)}
+            autoComplete="username"
+            required
+          />
+        )}
       </Field>
       <Field label="Password">
-        {(p) => <input {...p} className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" required />}
+        {(p) => (
+          <input
+            {...p}
+            className="input"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete="current-password"
+            required
+          />
+        )}
       </Field>
       <button className="btn btn-primary btn-block" type="submit" disabled={busy || !identifier || !password}>
         {busy ? <span className="spinner" aria-hidden /> : null} Sign in
@@ -76,12 +95,21 @@ export function SignUpForm() {
   const { signUp } = useSession();
   const router = useRouter();
   const next = useNext();
-  const [form, setForm] = useState({ name: "", email: "", phone: "", password: "", preferredContact: "whatsapp", marketingConsent: false });
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    password: "",
+    preferredContact: "whatsapp",
+    marketingConsent: false,
+  });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const set = (k: "name" | "email" | "phone" | "password" | "preferredContact") => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-    setForm((f) => ({ ...f, [k]: e.target.value }));
+  const set =
+    (k: "name" | "email" | "phone" | "password" | "preferredContact") =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+      setForm((f) => ({ ...f, [k]: e.target.value }));
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -108,16 +136,49 @@ export function SignUpForm() {
       </header>
       <FormError message={error} />
       <Field label="Full name" error={errors.name}>
-        {(p) => <input {...p} className="input" value={form.name} onChange={set("name")} autoComplete="name" required />}
+        {(p) => (
+          <input {...p} className="input" value={form.name} onChange={set("name")} autoComplete="name" required />
+        )}
       </Field>
       <Field label="Email" error={errors.email}>
-        {(p) => <input {...p} className="input" type="email" value={form.email} onChange={set("email")} autoComplete="email" required />}
+        {(p) => (
+          <input
+            {...p}
+            className="input"
+            type="email"
+            value={form.email}
+            onChange={set("email")}
+            autoComplete="email"
+            required
+          />
+        )}
       </Field>
       <Field label="Phone (optional)" error={errors.phone} hint="Used for order updates and mobile money.">
-        {(p) => <input {...p} className="input" type="tel" value={form.phone} onChange={set("phone")} autoComplete="tel" inputMode="tel" />}
+        {(p) => (
+          <input
+            {...p}
+            className="input"
+            type="tel"
+            value={form.phone}
+            onChange={set("phone")}
+            autoComplete="tel"
+            inputMode="tel"
+          />
+        )}
       </Field>
       <Field label="Password" error={errors.password} hint="At least 10 characters.">
-        {(p) => <input {...p} className="input" type="password" value={form.password} onChange={set("password")} autoComplete="new-password" minLength={10} required />}
+        {(p) => (
+          <input
+            {...p}
+            className="input"
+            type="password"
+            value={form.password}
+            onChange={set("password")}
+            autoComplete="new-password"
+            minLength={10}
+            required
+          />
+        )}
       </Field>
       <Field label="Preferred contact" error={errors.preferredContact}>
         {(p) => (
@@ -130,7 +191,11 @@ export function SignUpForm() {
         )}
       </Field>
       <label className="check">
-        <input type="checkbox" checked={form.marketingConsent} onChange={(e) => setForm((f) => ({ ...f, marketingConsent: e.target.checked }))} />
+        <input
+          type="checkbox"
+          checked={form.marketingConsent}
+          onChange={(e) => setForm((f) => ({ ...f, marketingConsent: e.target.checked }))}
+        />
         <span>Send me occasional news about new fabrics and collections.</span>
       </label>
       <p className="small muted">
@@ -191,7 +256,17 @@ export function ForgotPasswordForm() {
         <>
           <FormError message={error} />
           <Field label="Email">
-            {(p) => <input {...p} className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required />}
+            {(p) => (
+              <input
+                {...p}
+                className="input"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
+                required
+              />
+            )}
           </Field>
           <button className="btn btn-primary btn-block" type="submit" disabled={busy || !email}>
             {busy ? <span className="spinner" aria-hidden /> : null} Send reset link
@@ -259,10 +334,31 @@ export function ResetPasswordForm() {
         <>
           <FormError message={error} />
           <Field label="New password" hint="At least 10 characters.">
-            {(p) => <input {...p} className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" minLength={10} required />}
+            {(p) => (
+              <input
+                {...p}
+                className="input"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="new-password"
+                minLength={10}
+                required
+              />
+            )}
           </Field>
           <Field label="Repeat new password">
-            {(p) => <input {...p} className="input" type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} autoComplete="new-password" required />}
+            {(p) => (
+              <input
+                {...p}
+                className="input"
+                type="password"
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
+                autoComplete="new-password"
+                required
+              />
+            )}
           </Field>
           <button className="btn btn-primary btn-block" type="submit" disabled={busy || password.length < 10}>
             {busy ? <span className="spinner" aria-hidden /> : null} Save password

@@ -23,7 +23,6 @@ export const navItems = [
   { href: "/contact", label: "Contact" },
 ];
 
-
 export function Header() {
   const cfg = useConfig();
   const pathname = usePathname();
@@ -50,7 +49,6 @@ export function Header() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-
   const count = hydrated ? cartCount(lines) : 0;
   const accountHref = user ? (user.isStaff ? "/owner" : "/account") : "/account/sign-in";
   const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
@@ -63,7 +61,12 @@ export function Header() {
           <Wordmark name={name} logoUrl={cfg.business.logoUrl} />
           <nav className={styles.nav} aria-label="Main">
             {navItems.map((n) => (
-              <Link key={n.href} href={n.href} className={styles.navLink} aria-current={isActive(n.href) ? "page" : undefined}>
+              <Link
+                key={n.href}
+                href={n.href}
+                className={styles.navLink}
+                aria-current={isActive(n.href) ? "page" : undefined}
+              >
                 {n.label}
               </Link>
             ))}
@@ -76,15 +79,28 @@ export function Header() {
               <User size={20} aria-hidden />
               {user ? <span className={styles.signedIn} aria-hidden /> : null}
             </Link>
-            <Link href="/wishlist" className={`icon-btn ${styles.desktopOnly}`} aria-label={`Wishlist${hydrated && wishCount ? `, ${wishCount} items` : ""}`}>
+            <Link
+              href="/wishlist"
+              className={`icon-btn ${styles.desktopOnly}`}
+              aria-label={`Wishlist${hydrated && wishCount ? `, ${wishCount} items` : ""}`}
+            >
               <Heart size={20} aria-hidden />
               {hydrated && wishCount > 0 ? <span className={styles.count}>{wishCount}</span> : null}
             </Link>
-            <button className="icon-btn" onClick={() => setCartOpen(true)} aria-label={`Bag${count ? `, ${count} items` : ", empty"}`}>
+            <button
+              className="icon-btn"
+              onClick={() => setCartOpen(true)}
+              aria-label={`Bag${count ? `, ${count} items` : ", empty"}`}
+            >
               <ShoppingBag size={20} aria-hidden />
               {count > 0 ? <span className={styles.count}>{count}</span> : null}
             </button>
-            <button className={`icon-btn ${styles.menuBtn}`} onClick={() => setMenu(true)} aria-label="Open menu" aria-expanded={menu}>
+            <button
+              className={`icon-btn ${styles.menuBtn}`}
+              onClick={() => setMenu(true)}
+              aria-label="Open menu"
+              aria-expanded={menu}
+            >
               <Menu size={22} aria-hidden />
             </button>
           </div>
@@ -94,7 +110,12 @@ export function Header() {
       <Sheet open={menu} onClose={() => setMenu(false)} title="Menu" side="right" hideTitle>
         <nav aria-label="Mobile" className={styles.mobileNav}>
           {navItems.map((n) => (
-            <Link key={n.href} href={n.href} className={styles.mobileLink} aria-current={isActive(n.href) ? "page" : undefined}>
+            <Link
+              key={n.href}
+              href={n.href}
+              className={styles.mobileLink}
+              aria-current={isActive(n.href) ? "page" : undefined}
+            >
               {n.label}
             </Link>
           ))}
@@ -115,7 +136,14 @@ export function Header() {
           {cfg.business.social?.length ? (
             <div className="row-wrap">
               {cfg.business.social.map((s) => (
-                <a key={s.network} href={s.url} className="icon-btn" target="_blank" rel="noopener noreferrer" aria-label={socialTitle[s.network]}>
+                <a
+                  key={s.network}
+                  href={s.url}
+                  className="icon-btn"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={socialTitle[s.network]}
+                >
                   <SocialIcon network={s.network} />
                 </a>
               ))}
@@ -137,7 +165,14 @@ export function Header() {
             Search garments and fabrics
           </label>
           <div className="input-group">
-            <input id="site-search" className="input" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Navy suit, linen shirt..." autoComplete="off" />
+            <input
+              id="site-search"
+              className="input"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Navy suit, linen shirt..."
+              autoComplete="off"
+            />
             <button className="btn btn-primary" type="submit">
               Search
             </button>

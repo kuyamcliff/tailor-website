@@ -31,7 +31,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     title: p.name,
     description: p.summary || p.description?.slice(0, 160),
     alternates: { canonical: `/shop/${p.slug}` },
-    openGraph: { title: p.name, description: p.summary, images: p.media[0] ? [{ url: p.media[0].url, alt: p.media[0].alt }] : undefined },
+    openGraph: {
+      title: p.name,
+      description: p.summary,
+      images: p.media[0] ? [{ url: p.media[0].url, alt: p.media[0].alt }] : undefined,
+    },
   };
 }
 
@@ -55,7 +59,11 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         sku: v.sku,
         price: (v.priceMinor / 10 ** exponentOf(cfg.business.currency)).toFixed(exponentOf(cfg.business.currency)),
         priceCurrency: cfg.business.currency,
-        availability: v.available ? (v.madeToOrder && !v.lowStock ? "https://schema.org/PreOrder" : "https://schema.org/InStock") : "https://schema.org/OutOfStock",
+        availability: v.available
+          ? v.madeToOrder && !v.lowStock
+            ? "https://schema.org/PreOrder"
+            : "https://schema.org/InStock"
+          : "https://schema.org/OutOfStock",
         url: `${base}/shop/${p.slug}`,
       })),
     },
@@ -64,13 +72,29 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       "@type": "BreadcrumbList",
       itemListElement: [
         { "@type": "ListItem", position: 1, name: "Shop", item: `${base}/shop` },
-        ...(p.category ? [{ "@type": "ListItem", position: 2, name: p.category.name, item: `${base}/shop?category=${p.category.slug}` }] : []),
+        ...(p.category
+          ? [
+              {
+                "@type": "ListItem",
+                position: 2,
+                name: p.category.name,
+                item: `${base}/shop?category=${p.category.slug}`,
+              },
+            ]
+          : []),
         { "@type": "ListItem", position: p.category ? 3 : 2, name: p.name, item: `${base}/shop/${p.slug}` },
       ],
     },
   ];
   const details: [string, string | undefined][] = [
-    ["Fabric", p.fabric ? [p.fabric.name, p.fabric.composition, p.fabric.weightGsm ? `${p.fabric.weightGsm} g/m²` : ""].filter(Boolean).join(", ") : undefined],
+    [
+      "Fabric",
+      p.fabric
+        ? [p.fabric.name, p.fabric.composition, p.fabric.weightGsm ? `${p.fabric.weightGsm} g/m²` : ""]
+            .filter(Boolean)
+            .join(", ")
+        : undefined,
+    ],
     ["Fit", p.fitNotes],
     ["Care", p.care || p.fabric?.careInstructions],
     ["Sizing and measurements", p.measurementInfo],
@@ -135,7 +159,10 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           </div>
         </section>
       ) : null}
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
+      />
     </div>
   );
 }

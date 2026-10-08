@@ -5,7 +5,13 @@ import { persist, createJSONStorage } from "zustand/middleware";
 
 // Wishlist and comparison live on the device; the wishlist is merged into the account on sign-in.
 
-export type SavedItem = { type: "product" | "fabric" | "design"; id: string; slug?: string; name: string; image?: string | null };
+export type SavedItem = {
+  type: "product" | "fabric" | "design";
+  id: string;
+  slug?: string;
+  name: string;
+  image?: string | null;
+};
 
 type SavedState = {
   wishlist: SavedItem[];
@@ -26,7 +32,9 @@ export const useSaved = create<SavedState>()(
       compare: [],
       toggleWish: (item) =>
         set((s) => ({
-          wishlist: s.wishlist.some((w) => w.id === item.id) ? s.wishlist.filter((w) => w.id !== item.id) : [item, ...s.wishlist],
+          wishlist: s.wishlist.some((w) => w.id === item.id)
+            ? s.wishlist.filter((w) => w.id !== item.id)
+            : [item, ...s.wishlist],
         })),
       isWished: (id) => get().wishlist.some((w) => w.id === id),
       toggleCompare: (item) => {

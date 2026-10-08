@@ -6,7 +6,8 @@ type Parts = Partial<Record<Intl.DateTimeFormatPartTypes, string>>;
 
 function parts(d: Date, opts: Intl.DateTimeFormatOptions): Parts {
   const out: Parts = {};
-  for (const p of new Intl.DateTimeFormat("en-GB", { ...opts, hourCycle: "h23" }).formatToParts(d)) out[p.type] = p.value;
+  for (const p of new Intl.DateTimeFormat("en-GB", { ...opts, hourCycle: "h23" }).formatToParts(d))
+    out[p.type] = p.value;
   return out;
 }
 
@@ -20,7 +21,12 @@ function valid(iso: string | Date | null | undefined): Date | null {
 export function formatDate(iso: string | Date | null | undefined, style: "long" | "short" = "long", timeZone?: string) {
   const d = valid(iso);
   if (!d) return "";
-  const p = parts(d, { day: "numeric", month: style === "long" ? "long" : "short", year: style === "long" ? "numeric" : undefined, timeZone });
+  const p = parts(d, {
+    day: "numeric",
+    month: style === "long" ? "long" : "short",
+    year: style === "long" ? "numeric" : undefined,
+    timeZone,
+  });
   return [p.day, p.month, p.year].filter(Boolean).join(" ");
 }
 
@@ -28,7 +34,13 @@ export function formatDate(iso: string | Date | null | undefined, style: "long" 
 export function formatDay(iso: string | Date | null | undefined, timeZone?: string, long = false) {
   const d = valid(iso);
   if (!d) return "";
-  const p = parts(d, { weekday: long ? "long" : "short", day: "numeric", month: long ? "long" : "short", year: long ? "numeric" : undefined, timeZone });
+  const p = parts(d, {
+    weekday: long ? "long" : "short",
+    day: "numeric",
+    month: long ? "long" : "short",
+    year: long ? "numeric" : undefined,
+    timeZone,
+  });
   return [p.weekday, p.day, p.month, p.year].filter(Boolean).join(" ");
 }
 
@@ -56,18 +68,55 @@ export type Tone = "gold" | "success" | "warning" | "danger" | "info" | "";
 
 const tones: Record<string, Tone> = {
   // orders
-  submitted: "info", under_review: "info", awaiting_customer: "warning", deposit_paid: "gold", measurements_pending: "warning",
-  measurements_verified: "gold", material_pending: "warning", patterning: "gold", cutting: "gold", sewing: "gold", quality_check: "gold",
-  fitting_scheduled: "gold", fitting: "gold", alteration: "gold", ready: "success", dispatched: "success", delivered: "success",
-  completed: "success", cancelled: "danger", refunded: "danger",
+  submitted: "info",
+  under_review: "info",
+  awaiting_customer: "warning",
+  deposit_paid: "gold",
+  measurements_pending: "warning",
+  measurements_verified: "gold",
+  material_pending: "warning",
+  patterning: "gold",
+  cutting: "gold",
+  sewing: "gold",
+  quality_check: "gold",
+  fitting_scheduled: "gold",
+  fitting: "gold",
+  alteration: "gold",
+  ready: "success",
+  dispatched: "success",
+  delivered: "success",
+  completed: "success",
+  cancelled: "danger",
+  refunded: "danger",
   // payments
-  paid: "success", unpaid: "warning", partially_refunded: "warning", succeeded: "success", failed: "danger", expired: "danger",
-  pending: "warning", customer_action_required: "warning", processing: "info", created: "info",
+  paid: "success",
+  unpaid: "warning",
+  partially_refunded: "warning",
+  succeeded: "success",
+  failed: "danger",
+  expired: "danger",
+  pending: "warning",
+  customer_action_required: "warning",
+  processing: "info",
+  created: "info",
   // requests and quotes
-  new: "info", reviewing: "gold", need_information: "warning", quote_sent: "gold", accepted: "success", converted: "success", closed: "",
-  draft: "", sent: "gold", declined: "danger", changes_requested: "warning", withdrawn: "",
+  new: "info",
+  reviewing: "gold",
+  need_information: "warning",
+  quote_sent: "gold",
+  accepted: "success",
+  converted: "success",
+  closed: "",
+  draft: "",
+  sent: "gold",
+  declined: "danger",
+  changes_requested: "warning",
+  withdrawn: "",
   // appointments and support
-  booked: "gold", no_show: "danger", open: "warning", resolved: "success",
+  booked: "gold",
+  no_show: "danger",
+  open: "warning",
+  resolved: "success",
 };
 
 export function toneOf(status: string): Tone {
@@ -75,10 +124,19 @@ export function toneOf(status: string): Tone {
 }
 
 export const requestLabels: Record<string, string> = {
-  new: "Received", reviewing: "Being reviewed", need_information: "We need more information", quote_sent: "Quote sent",
-  accepted: "Accepted", converted: "Order created", closed: "Closed",
+  new: "Received",
+  reviewing: "Being reviewed",
+  need_information: "We need more information",
+  quote_sent: "Quote sent",
+  accepted: "Accepted",
+  converted: "Order created",
+  closed: "Closed",
 };
 
 export const paymentLabels: Record<string, string> = {
-  unpaid: "Not paid yet", deposit_paid: "Deposit paid", paid: "Paid in full", partially_refunded: "Partly refunded", refunded: "Refunded",
+  unpaid: "Not paid yet",
+  deposit_paid: "Deposit paid",
+  paid: "Paid in full",
+  partially_refunded: "Partly refunded",
+  refunded: "Refunded",
 };

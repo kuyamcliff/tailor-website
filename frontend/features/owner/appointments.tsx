@@ -43,7 +43,10 @@ export function OwnerAppointments() {
   to.setDate(to.getDate() + 7);
   const q = useQuery({
     queryKey: ["owner", "appointments", from.toISOString()],
-    queryFn: () => api<{ appointments: Appointment[]; blocks: Block[]; timezone: string }>(`/owner/appointments?from=${encodeURIComponent(from.toISOString())}&to=${encodeURIComponent(to.toISOString())}`),
+    queryFn: () =>
+      api<{ appointments: Appointment[]; blocks: Block[]; timezone: string }>(
+        `/owner/appointments?from=${encodeURIComponent(from.toISOString())}&to=${encodeURIComponent(to.toISOString())}`,
+      ),
   });
   const tz = q.data?.timezone;
   const days = Array.from({ length: 7 }, (_, i) => {
@@ -99,7 +102,9 @@ export function OwnerAppointments() {
           {days.map((d) => {
             const key = d.toDateString();
             const list = (q.data?.appointments ?? []).filter((a) => new Date(a.startsAt).toDateString() === key);
-            const blocks = (q.data?.blocks ?? []).filter((b) => new Date(b.startsAt) <= new Date(d.getTime() + 86400000) && new Date(b.endsAt) >= d);
+            const blocks = (q.data?.blocks ?? []).filter(
+              (b) => new Date(b.startsAt) <= new Date(d.getTime() + 86400000) && new Date(b.endsAt) >= d,
+            );
             return (
               <section key={key} aria-label={formatDay(d, tz, true)} className="stack-sm">
                 <h2 className={styles.h2}>{formatDay(d, tz)}</h2>
@@ -169,19 +174,45 @@ export function OwnerAppointments() {
 function Availability() {
   const qc = useQueryClient();
   const toast = useToast();
-  const q = useQuery({ queryKey: ["owner", "availability"], queryFn: () => api<{ rules: Rule[]; blocks: Block[] }>("/owner/availability") });
+  const q = useQuery({
+    queryKey: ["owner", "availability"],
+    queryFn: () => api<{ rules: Rule[]; blocks: Block[] }>("/owner/availability"),
+  });
   if (!q.data) return null;
-  return <AvailabilityForm key={JSON.stringify(q.data.rules)} rules={q.data.rules} blocks={q.data.blocks} onSaved={() => qc.invalidateQueries({ queryKey: ["owner"] })} toast={toast} />;
+  return (
+    <AvailabilityForm
+      key={JSON.stringify(q.data.rules)}
+      rules={q.data.rules}
+      blocks={q.data.blocks}
+      onSaved={() => qc.invalidateQueries({ queryKey: ["owner"] })}
+      toast={toast}
+    />
+  );
 }
 
-function AvailabilityForm({ rules: initial, blocks, onSaved, toast }: { rules: Rule[]; blocks: Block[]; onSaved: () => void; toast: ReturnType<typeof useToast> }) {
-  const [rules, setRules] = useState(initial.map((r) => ({ weekday: r.weekday, start: hhmm(r.startMinute), end: hhmm(r.endMinute) })));
+function AvailabilityForm({
+  rules: initial,
+  blocks,
+  onSaved,
+  toast,
+}: {
+  rules: Rule[];
+  blocks: Block[];
+  onSaved: () => void;
+  toast: ReturnType<typeof useToast>;
+}) {
+  const [rules, setRules] = useState(
+    initial.map((r) => ({ weekday: r.weekday, start: hhmm(r.startMinute), end: hhmm(r.endMinute) })),
+  );
   const [block, setBlock] = useState({ start: "", end: "", kind: "blocked", reason: "" });
   const [busy, setBusy] = useState(false);
   async function saveRules() {
     setBusy(true);
     try {
-      await api("/owner/availability/rules", { method: "PUT", body: rules.map((r) => ({ weekday: r.weekday, startMinute: toMin(r.start), endMinute: toMin(r.end) })) });
+      await api("/owner/availability/rules", {
+        method: "PUT",
+        body: rules.map((r) => ({ weekday: r.weekday, startMinute: toMin(r.start), endMinute: toMin(r.end) })),
+      });
       toast("Opening hours for bookings saved.");
       onSaved();
     } catch (e) {
@@ -193,7 +224,14 @@ function AvailabilityForm({ rules: initial, blocks, onSaved, toast }: { rules: R
   async function addBlock() {
     setBusy(true);
     try {
-      await api("/owner/availability/blocks", { body: { startsAt: new Date(block.start).toISOString(), endsAt: new Date(block.end).toISOString(), kind: block.kind, reason: block.reason } });
+      await api("/owner/availability/blocks", {
+        body: {
+          startsAt: new Date(block.start).toISOString(),
+          endsAt: new Date(block.end).toISOString(),
+          kind: block.kind,
+          reason: block.reason,
+        },
+      });
       toast("Time blocked.");
       setBlock({ start: "", end: "", kind: "blocked", reason: "" });
       onSaved();
@@ -218,22 +256,47 @@ function AvailabilityForm({ rules: initial, blocks, onSaved, toast }: { rules: R
         </p>
         {rules.map((r, i) => (
           <div key={i} className="row-wrap">
-            <select className="select" aria-label="Day" value={r.weekday} style={{ width: "auto" }} onChange={(e) => setRules((x) => x.map((y, j) => (j === i ? { ...y, weekday: Number(e.target.value) } : y)))}>
+            <select
+              className="select"
+              aria-label="Day"
+              value={r.weekday}
+              style={{ width: "auto" }}
+              onChange={(e) =>
+                setRules((x) => x.map((y, j) => (j === i ? { ...y, weekday: Number(e.target.value) } : y)))
+              }
+            >
               {weekdays.map((d, k) => (
                 <option key={d} value={k}>
                   {d}
                 </option>
               ))}
             </select>
-            <input className="input" type="time" aria-label="From" value={r.start} style={{ width: "auto" }} onChange={(e) => setRules((x) => x.map((y, j) => (j === i ? { ...y, start: e.target.value } : y)))} />
-            <input className="input" type="time" aria-label="To" value={r.end} style={{ width: "auto" }} onChange={(e) => setRules((x) => x.map((y, j) => (j === i ? { ...y, end: e.target.value } : y)))} />
+            <input
+              className="input"
+              type="time"
+              aria-label="From"
+              value={r.start}
+              style={{ width: "auto" }}
+              onChange={(e) => setRules((x) => x.map((y, j) => (j === i ? { ...y, start: e.target.value } : y)))}
+            />
+            <input
+              className="input"
+              type="time"
+              aria-label="To"
+              value={r.end}
+              style={{ width: "auto" }}
+              onChange={(e) => setRules((x) => x.map((y, j) => (j === i ? { ...y, end: e.target.value } : y)))}
+            />
             <button className="btn btn-ghost btn-sm" onClick={() => setRules((x) => x.filter((_, j) => j !== i))}>
               Remove
             </button>
           </div>
         ))}
         <div className="row-wrap">
-          <button className="btn btn-sm" onClick={() => setRules((x) => [...x, { weekday: 1, start: "09:00", end: "17:00" }])}>
+          <button
+            className="btn btn-sm"
+            onClick={() => setRules((x) => [...x, { weekday: 1, start: "09:00", end: "17:00" }])}
+          >
             Add window
           </button>
           <button className="btn btn-primary btn-sm" disabled={busy} onClick={saveRules}>
@@ -263,25 +326,48 @@ function AvailabilityForm({ rules: initial, blocks, onSaved, toast }: { rules: R
         <div className="form-grid cols-2">
           <label className="field">
             <span className="label">From</span>
-            <input className="input" type="datetime-local" value={block.start} onChange={(e) => setBlock({ ...block, start: e.target.value })} />
+            <input
+              className="input"
+              type="datetime-local"
+              value={block.start}
+              onChange={(e) => setBlock({ ...block, start: e.target.value })}
+            />
           </label>
           <label className="field">
             <span className="label">To</span>
-            <input className="input" type="datetime-local" value={block.end} onChange={(e) => setBlock({ ...block, end: e.target.value })} />
+            <input
+              className="input"
+              type="datetime-local"
+              value={block.end}
+              onChange={(e) => setBlock({ ...block, end: e.target.value })}
+            />
           </label>
           <label className="field">
             <span className="label">Type</span>
-            <select className="select" value={block.kind} onChange={(e) => setBlock({ ...block, kind: e.target.value })}>
+            <select
+              className="select"
+              value={block.kind}
+              onChange={(e) => setBlock({ ...block, kind: e.target.value })}
+            >
               <option value="blocked">Unavailable</option>
               <option value="holiday">Holiday</option>
             </select>
           </label>
           <label className="field">
             <span className="label">Reason (staff only)</span>
-            <input className="input" value={block.reason} onChange={(e) => setBlock({ ...block, reason: e.target.value })} />
+            <input
+              className="input"
+              value={block.reason}
+              onChange={(e) => setBlock({ ...block, reason: e.target.value })}
+            />
           </label>
         </div>
-        <button className="btn btn-sm" style={{ justifySelf: "start" }} disabled={busy || !block.start || !block.end} onClick={addBlock}>
+        <button
+          className="btn btn-sm"
+          style={{ justifySelf: "start" }}
+          disabled={busy || !block.start || !block.end}
+          onClick={addBlock}
+        >
           Block this time
         </button>
       </section>

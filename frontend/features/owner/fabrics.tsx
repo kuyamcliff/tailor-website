@@ -44,7 +44,20 @@ export function OwnerFabrics() {
         <ul className="list-rows">
           {(q.data ?? []).map((f) => (
             <li key={f.key}>
-              <button className="list-row" style={{ width: "100%", background: "none", border: 0, color: "inherit", font: "inherit", cursor: "pointer", textAlign: "left" }} onClick={() => setOpen(open === f.key ? null : f.key)} aria-expanded={open === f.key}>
+              <button
+                className="list-row"
+                style={{
+                  width: "100%",
+                  background: "none",
+                  border: 0,
+                  color: "inherit",
+                  font: "inherit",
+                  cursor: "pointer",
+                  textAlign: "left",
+                }}
+                onClick={() => setOpen(open === f.key ? null : f.key)}
+                aria-expanded={open === f.key}
+              >
                 <span className="row">
                   <span style={{ position: "relative", width: 40, height: 40, flex: "none" }}>
                     <FabricSwatch fabric={f} sizes="40px" round={false} />
@@ -53,11 +66,19 @@ export function OwnerFabrics() {
                     <strong>{f.name}</strong>
                     <span className="small muted">
                       {f.composition} · {f.colors.length} {f.colors.length === 1 ? "colour" : "colours"}
-                      {f.priceImpactMinor ? <> · + <Price minor={f.priceImpactMinor} /></> : null}
+                      {f.priceImpactMinor ? (
+                        <>
+                          {" "}
+                          · + <Price minor={f.priceImpactMinor} />
+                        </>
+                      ) : null}
                     </span>
                   </span>
                 </span>
-                <span className="small" style={{ color: f.stockStatus === "available" ? "var(--text-muted)" : "var(--warning)" }}>
+                <span
+                  className="small"
+                  style={{ color: f.stockStatus === "available" ? "var(--text-muted)" : "var(--warning)" }}
+                >
                   {f.active ? humanize(f.stockStatus) : "Not shown"}
                 </span>
               </button>
@@ -93,7 +114,9 @@ function FabricForm({ fabric: f, onDone }: { fabric: Fabric | null; onDone: () =
     active: f?.active ?? true,
     pbr: JSON.stringify(f?.pbr ?? {}, null, 2),
   });
-  const [colors, setColors] = useState(f?.colors.map((c) => ({ key: c.key, name: c.name, hex: c.hex })) ?? [{ key: "", name: "", hex: "#333333" }]);
+  const [colors, setColors] = useState(
+    f?.colors.map((c) => ({ key: c.key, name: c.name, hex: c.hex })) ?? [{ key: "", name: "", hex: "#333333" }],
+  );
   const [swatch, setSwatch] = useState<UploadItem[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
@@ -151,19 +174,74 @@ function FabricForm({ fabric: f, onDone }: { fabric: Fabric | null; onDone: () =
         <Field label="Name" error={errors.name}>
           {(a) => <input {...a} className="input" value={x.name} onChange={(e) => set("name", e.target.value)} />}
         </Field>
-        <Field label="Code" error={errors.key} hint={f ? "The code cannot be changed." : "Lowercase letters, numbers and hyphens."}>
-          {(a) => <input {...a} className="input" value={x.key} disabled={Boolean(f)} onChange={(e) => set("key", e.target.value)} />}
+        <Field
+          label="Code"
+          error={errors.key}
+          hint={f ? "The code cannot be changed." : "Lowercase letters, numbers and hyphens."}
+        >
+          {(a) => (
+            <input
+              {...a}
+              className="input"
+              value={x.key}
+              disabled={Boolean(f)}
+              onChange={(e) => set("key", e.target.value)}
+            />
+          )}
         </Field>
-        <Field label="Material">{(a) => <input {...a} className="input" value={x.materialType} onChange={(e) => set("materialType", e.target.value)} />}</Field>
-        <Field label="Composition">{(a) => <input {...a} className="input" value={x.composition} onChange={(e) => set("composition", e.target.value)} />}</Field>
-        <Field label="Weight (g/m²)">{(a) => <input {...a} className="input tabular" inputMode="numeric" value={x.weightGsm} onChange={(e) => set("weightGsm", e.target.value)} />}</Field>
-        <Field label="Season">{(a) => <input {...a} className="input" value={x.season} onChange={(e) => set("season", e.target.value)} />}</Field>
+        <Field label="Material">
+          {(a) => (
+            <input
+              {...a}
+              className="input"
+              value={x.materialType}
+              onChange={(e) => set("materialType", e.target.value)}
+            />
+          )}
+        </Field>
+        <Field label="Composition">
+          {(a) => (
+            <input
+              {...a}
+              className="input"
+              value={x.composition}
+              onChange={(e) => set("composition", e.target.value)}
+            />
+          )}
+        </Field>
+        <Field label="Weight (g/m²)">
+          {(a) => (
+            <input
+              {...a}
+              className="input tabular"
+              inputMode="numeric"
+              value={x.weightGsm}
+              onChange={(e) => set("weightGsm", e.target.value)}
+            />
+          )}
+        </Field>
+        <Field label="Season">
+          {(a) => <input {...a} className="input" value={x.season} onChange={(e) => set("season", e.target.value)} />}
+        </Field>
         <Field label={`Price added (${cfg.business.currency})`} error={errors.priceImpactMinor}>
-          {(a) => <input {...a} className="input tabular" inputMode="decimal" value={x.price} onChange={(e) => set("price", e.target.value)} />}
+          {(a) => (
+            <input
+              {...a}
+              className="input tabular"
+              inputMode="decimal"
+              value={x.price}
+              onChange={(e) => set("price", e.target.value)}
+            />
+          )}
         </Field>
         <Field label="Stock">
           {(a) => (
-            <select {...a} className="select" value={x.stockStatus} onChange={(e) => set("stockStatus", e.target.value)}>
+            <select
+              {...a}
+              className="select"
+              value={x.stockStatus}
+              onChange={(e) => set("stockStatus", e.target.value)}
+            >
               {stock.map(([k, l]) => (
                 <option key={k} value={k}>
                   {l}
@@ -172,17 +250,63 @@ function FabricForm({ fabric: f, onDone }: { fabric: Fabric | null; onDone: () =
             </select>
           )}
         </Field>
-        <Field label="Metres in stock (optional)">{(a) => <input {...a} className="input tabular" inputMode="decimal" value={x.stockMeters} onChange={(e) => set("stockMeters", e.target.value)} />}</Field>
-        <Field label="Warn below (metres)">{(a) => <input {...a} className="input tabular" inputMode="decimal" value={x.lowStockMeters} onChange={(e) => set("lowStockMeters", e.target.value)} />}</Field>
+        <Field label="Metres in stock (optional)">
+          {(a) => (
+            <input
+              {...a}
+              className="input tabular"
+              inputMode="decimal"
+              value={x.stockMeters}
+              onChange={(e) => set("stockMeters", e.target.value)}
+            />
+          )}
+        </Field>
+        <Field label="Warn below (metres)">
+          {(a) => (
+            <input
+              {...a}
+              className="input tabular"
+              inputMode="decimal"
+              value={x.lowStockMeters}
+              onChange={(e) => set("lowStockMeters", e.target.value)}
+            />
+          )}
+        </Field>
       </div>
-      <Field label="Feel and look">{(a) => <textarea {...a} className="textarea" rows={2} value={x.textureDescription} onChange={(e) => set("textureDescription", e.target.value)} />}</Field>
-      <Field label="Care">{(a) => <textarea {...a} className="textarea" rows={2} value={x.careInstructions} onChange={(e) => set("careInstructions", e.target.value)} />}</Field>
+      <Field label="Feel and look">
+        {(a) => (
+          <textarea
+            {...a}
+            className="textarea"
+            rows={2}
+            value={x.textureDescription}
+            onChange={(e) => set("textureDescription", e.target.value)}
+          />
+        )}
+      </Field>
+      <Field label="Care">
+        {(a) => (
+          <textarea
+            {...a}
+            className="textarea"
+            rows={2}
+            value={x.careInstructions}
+            onChange={(e) => set("careInstructions", e.target.value)}
+          />
+        )}
+      </Field>
       <fieldset style={{ border: 0, padding: 0, margin: 0 }}>
         <legend className="label">Suitable for (none ticked means all)</legend>
         <div className="row-wrap">
           {(garments.data ?? []).map((g) => (
             <label key={g.key} className="check">
-              <input type="checkbox" checked={x.suitable.includes(g.key)} onChange={(e) => set("suitable", e.target.checked ? [...x.suitable, g.key] : x.suitable.filter((k) => k !== g.key))} />
+              <input
+                type="checkbox"
+                checked={x.suitable.includes(g.key)}
+                onChange={(e) =>
+                  set("suitable", e.target.checked ? [...x.suitable, g.key] : x.suitable.filter((k) => k !== g.key))
+                }
+              />
               <span>{g.name}</span>
             </label>
           ))}
@@ -192,29 +316,70 @@ function FabricForm({ fabric: f, onDone }: { fabric: Fabric | null; onDone: () =
         <legend className="label">Colours</legend>
         {colors.map((c, i) => (
           <div key={i} className="row-wrap">
-            <input type="color" aria-label={`Colour ${i + 1}`} value={c.hex} onChange={(e) => setColors((cs) => cs.map((y, j) => (j === i ? { ...y, hex: e.target.value } : y)))} />
-            <input className="input" aria-label={`Colour ${i + 1} name`} placeholder="Name" value={c.name} onChange={(e) => setColors((cs) => cs.map((y, j) => (j === i ? { ...y, name: e.target.value } : y)))} style={{ width: 200 }} />
-            <input className="input" aria-label={`Colour ${i + 1} code`} placeholder="code" value={c.key} onChange={(e) => setColors((cs) => cs.map((y, j) => (j === i ? { ...y, key: e.target.value } : y)))} style={{ width: 160 }} />
+            <input
+              type="color"
+              aria-label={`Colour ${i + 1}`}
+              value={c.hex}
+              onChange={(e) => setColors((cs) => cs.map((y, j) => (j === i ? { ...y, hex: e.target.value } : y)))}
+            />
+            <input
+              className="input"
+              aria-label={`Colour ${i + 1} name`}
+              placeholder="Name"
+              value={c.name}
+              onChange={(e) => setColors((cs) => cs.map((y, j) => (j === i ? { ...y, name: e.target.value } : y)))}
+              style={{ width: 200 }}
+            />
+            <input
+              className="input"
+              aria-label={`Colour ${i + 1} code`}
+              placeholder="code"
+              value={c.key}
+              onChange={(e) => setColors((cs) => cs.map((y, j) => (j === i ? { ...y, key: e.target.value } : y)))}
+              style={{ width: 160 }}
+            />
             {colors.length > 1 ? (
-              <button className="icon-btn" aria-label={`Remove colour ${i + 1}`} onClick={() => setColors((cs) => cs.filter((_, j) => j !== i))}>
+              <button
+                className="icon-btn"
+                aria-label={`Remove colour ${i + 1}`}
+                onClick={() => setColors((cs) => cs.filter((_, j) => j !== i))}
+              >
                 <X size={16} aria-hidden />
               </button>
             ) : null}
           </div>
         ))}
         {errors.colors ? <p className="error small">{errors.colors}</p> : null}
-        <button className="btn btn-sm" style={{ justifySelf: "start" }} onClick={() => setColors((cs) => [...cs, { key: "", name: "", hex: "#333333" }])}>
+        <button
+          className="btn btn-sm"
+          style={{ justifySelf: "start" }}
+          onClick={() => setColors((cs) => [...cs, { key: "", name: "", hex: "#333333" }])}
+        >
           Add colour
         </button>
       </fieldset>
       <div className="stack-sm">
         <span className="label">Swatch photo</span>
-        <ImageUploader purpose="fabric" items={swatch} onChange={setSwatch} max={1} label={f?.swatchUrl ? "Replace the swatch photo" : "Upload a swatch photo"} />
+        <ImageUploader
+          purpose="fabric"
+          items={swatch}
+          onChange={setSwatch}
+          max={1}
+          label={f?.swatchUrl ? "Replace the swatch photo" : "Upload a swatch photo"}
+        />
       </div>
       <details>
         <summary className="small">Material settings for the 3D studio</summary>
-        <p className="tiny muted">Texture paths, repeat, roughness and sheen. Change only if you know the texture set.</p>
-        <textarea className="textarea tabular" rows={8} aria-label="Material settings" value={x.pbr} onChange={(e) => set("pbr", e.target.value)} />
+        <p className="tiny muted">
+          Texture paths, repeat, roughness and sheen. Change only if you know the texture set.
+        </p>
+        <textarea
+          className="textarea tabular"
+          rows={8}
+          aria-label="Material settings"
+          value={x.pbr}
+          onChange={(e) => set("pbr", e.target.value)}
+        />
         {errors.pbr ? <p className="error small">{errors.pbr}</p> : null}
       </details>
       <label className="check">
@@ -232,4 +397,3 @@ function FabricForm({ fabric: f, onDone }: { fabric: Fabric | null; onDone: () =
     </div>
   );
 }
-

@@ -90,7 +90,9 @@ export function OwnerShell({ children }: { children: React.ReactNode }) {
                   <li key={i.href}>
                     <Link href={i.href} aria-current={active(i.href) ? "page" : undefined}>
                       {i.label}
-                      {i.href === "/owner" && notices.data?.unread ? <span className={styles.count}>{notices.data.unread}</span> : null}
+                      {i.href === "/owner" && notices.data?.unread ? (
+                        <span className={styles.count}>{notices.data.unread}</span>
+                      ) : null}
                     </Link>
                   </li>
                 ))}

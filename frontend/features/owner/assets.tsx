@@ -44,7 +44,12 @@ export function OwnerAssets() {
   const standins = (q.data ?? []).filter((a) => a.status === "published" && !a.productionQuality);
 
   async function move(a: Asset, status: string) {
-    if (status === "published" && !a.productionQuality && !confirm("This version is marked as not production quality. Publish it anyway?")) return;
+    if (
+      status === "published" &&
+      !a.productionQuality &&
+      !confirm("This version is marked as not production quality. Publish it anyway?")
+    )
+      return;
     const note = status === "rejected" ? (prompt("Why is it rejected?") ?? "") : "";
     try {
       await api(`/owner/assets/${a.id}/status`, { body: { status, note } });
@@ -68,8 +73,9 @@ export function OwnerAssets() {
       />
       {standins.length ? (
         <p className="notice notice-warning">
-          {standins.length} published {standins.length === 1 ? "model is a development stand-in" : "models are development stand-ins"}. Replace them with professionally made, licensed models before
-          relying on the studio for sales.
+          {standins.length} published{" "}
+          {standins.length === 1 ? "model is a development stand-in" : "models are development stand-ins"}. Replace them
+          with professionally made, licensed models before relying on the studio for sales.
         </p>
       ) : null}
       {adding ? <NewVersion assets={q.data ?? []} onDone={() => setAdding(false)} /> : null}
@@ -79,7 +85,10 @@ export function OwnerAssets() {
         groups.map(([key, versions]) => (
           <section key={key} className="stack-sm" aria-label={key}>
             <h2 className={styles.h2}>
-              {key} {versions[0]?.garmentTypeKey ? <span className="muted">· {humanize(versions[0].garmentTypeKey)}</span> : null}
+              {key}{" "}
+              {versions[0]?.garmentTypeKey ? (
+                <span className="muted">· {humanize(versions[0].garmentTypeKey)}</span>
+              ) : null}
             </h2>
             <div className="table-wrap">
               <table className="table">
@@ -100,10 +109,19 @@ export function OwnerAssets() {
                     <tr key={a.id}>
                       <td className="tabular">v{a.version}</td>
                       <td>
-                        <StatusBadge status={a.status === "published" ? "succeeded" : a.status === "rejected" ? "failed" : "pending"} label={humanize(a.status)} />
+                        <StatusBadge
+                          status={
+                            a.status === "published" ? "succeeded" : a.status === "rejected" ? "failed" : "pending"
+                          }
+                          label={humanize(a.status)}
+                        />
                       </td>
-                      <td>{a.productionQuality ? "Production" : <span style={{ color: "var(--warning)" }}>Stand-in</span>}</td>
-                      <td className="small tabular">{a.files.map((f) => `${f.lod} ${(f.bytes / 1024 / 1024).toFixed(1)} MB`).join(" · ")}</td>
+                      <td>
+                        {a.productionQuality ? "Production" : <span style={{ color: "var(--warning)" }}>Stand-in</span>}
+                      </td>
+                      <td className="small tabular">
+                        {a.files.map((f) => `${f.lod} ${(f.bytes / 1024 / 1024).toFixed(1)} MB`).join(" · ")}
+                      </td>
                       <td className="small">
                         {a.license.source ?? ""}
                         {a.license.license ? <span className="muted"> · {a.license.license}</span> : null}
@@ -111,7 +129,11 @@ export function OwnerAssets() {
                       <td>
                         <div className="row-wrap">
                           {(next[a.status] ?? []).map((s) => (
-                            <button key={s} className={`btn btn-sm ${s === "rejected" || s === "archived" ? "btn-ghost" : ""}`} onClick={() => move(a, s)}>
+                            <button
+                              key={s}
+                              className={`btn btn-sm ${s === "rejected" || s === "archived" ? "btn-ghost" : ""}`}
+                              onClick={() => move(a, s)}
+                            >
                               {actionLabel[s] ?? humanize(s)}
                             </button>
                           ))}
@@ -153,7 +175,11 @@ function NewVersion({ assets, onDone }: { assets: Asset[]; onDone: () => void })
     setFiles((f) => f.map((x, j) => (j === i ? { ...x, up: null, progress: 0, error: "" } : x)));
     uploadAssetFile(file, (p) => setFiles((f) => f.map((x, j) => (j === i ? { ...x, progress: p } : x))))
       .then((up) => setFiles((f) => f.map((x, j) => (j === i ? { ...x, up, progress: 1 } : x))))
-      .catch((e) => setFiles((f) => f.map((x, j) => (j === i ? { ...x, error: e instanceof ApiError ? e.message : "Upload failed." } : x))));
+      .catch((e) =>
+        setFiles((f) =>
+          f.map((x, j) => (j === i ? { ...x, error: e instanceof ApiError ? e.message : "Upload failed." } : x)),
+        ),
+      );
   }
 
   async function create() {
@@ -168,7 +194,11 @@ function NewVersion({ assets, onDone }: { assets: Asset[]; onDone: () => void })
           garmentTypeKey: kind === "garment" ? garment || prev?.garmentTypeKey || null : null,
           files: ready.map((f) => ({ ...f.up!.file, lod: f.lod })),
           bodyCompat: prev?.bodyCompat ?? {},
-          supportedOptions: { ...(prev?.supportedOptions ?? {}), parts: ready[0]?.up?.info?.nodes ?? [], morphs: ready[0]?.up?.info?.morphTargets ?? [] },
+          supportedOptions: {
+            ...(prev?.supportedOptions ?? {}),
+            parts: ready[0]?.up?.info?.nodes ?? [],
+            morphs: ready[0]?.up?.info?.morphTargets ?? [],
+          },
           textureSetVersion: prev?.textureSetVersion ?? "",
           license: { source, license },
           productionQuality: production,
@@ -192,7 +222,13 @@ function NewVersion({ assets, onDone }: { assets: Asset[]; onDone: () => void })
       <div className="form-grid cols-2">
         <label className="field">
           <span className="label">Asset</span>
-          <input className="input" list="asset-keys" value={key} onChange={(e) => setKey(e.target.value)} placeholder="suit-standin, or a new name" />
+          <input
+            className="input"
+            list="asset-keys"
+            value={key}
+            onChange={(e) => setKey(e.target.value)}
+            placeholder="suit-standin, or a new name"
+          />
           <datalist id="asset-keys">
             {keys.map((k) => (
               <option key={k} value={k} />
@@ -211,7 +247,11 @@ function NewVersion({ assets, onDone }: { assets: Asset[]; onDone: () => void })
         {kind === "garment" ? (
           <label className="field">
             <span className="label">Garment</span>
-            <select className="select" value={garment || prev?.garmentTypeKey || ""} onChange={(e) => setGarment(e.target.value)}>
+            <select
+              className="select"
+              value={garment || prev?.garmentTypeKey || ""}
+              onChange={(e) => setGarment(e.target.value)}
+            >
               <option value="">Choose</option>
               {(garments.data ?? []).map((g) => (
                 <option key={g.key} value={g.key}>
@@ -225,14 +265,17 @@ function NewVersion({ assets, onDone }: { assets: Asset[]; onDone: () => void })
       {files.map((f, i) => (
         <div key={f.lod} className="stack-sm">
           <label className="field">
-            <span className="label">{f.lod === "high" ? "Detailed model (GLB)" : "Light model for phones (GLB, optional)"}</span>
+            <span className="label">
+              {f.lod === "high" ? "Detailed model (GLB)" : "Light model for phones (GLB, optional)"}
+            </span>
             <input type="file" accept=".glb,.ktx2,model/gltf-binary" onChange={(e) => upload(i, e.target.files?.[0])} />
           </label>
           {f.progress > 0 && f.progress < 1 ? <progress value={f.progress} max={1} /> : null}
           {f.error ? <span className="error small">{f.error}</span> : null}
           {f.up ? (
             <span className="small muted">
-              {(f.up.file.bytes / 1024 / 1024).toFixed(1)} MB · {f.up.info?.nodes.length ?? 0} parts · {f.up.info?.morphTargets.length ?? 0} shape keys
+              {(f.up.file.bytes / 1024 / 1024).toFixed(1)} MB · {f.up.info?.nodes.length ?? 0} parts ·{" "}
+              {f.up.info?.morphTargets.length ?? 0} shape keys
             </span>
           ) : null}
         </div>
@@ -241,11 +284,21 @@ function NewVersion({ assets, onDone }: { assets: Asset[]; onDone: () => void })
       <div className="form-grid cols-2">
         <label className="field">
           <span className="label">Where it came from</span>
-          <input className="input" value={source} onChange={(e) => setSource(e.target.value)} placeholder="Studio or artist, purchase reference" />
+          <input
+            className="input"
+            value={source}
+            onChange={(e) => setSource(e.target.value)}
+            placeholder="Studio or artist, purchase reference"
+          />
         </label>
         <label className="field">
           <span className="label">Licence</span>
-          <input className="input" value={license} onChange={(e) => setLicense(e.target.value)} placeholder="Commercial licence, work for hire" />
+          <input
+            className="input"
+            value={license}
+            onChange={(e) => setLicense(e.target.value)}
+            placeholder="Commercial licence, work for hire"
+          />
         </label>
       </div>
       {errors.license ? <span className="error small">{errors.license}</span> : null}
@@ -267,7 +320,8 @@ function NewVersion({ assets, onDone }: { assets: Asset[]; onDone: () => void })
       </div>
       {prev ? (
         <p className="tiny muted">
-          Body fit and option settings are copied from {prev.assetKey} v{prev.version}. Part names in the new model must match the option settings.
+          Body fit and option settings are copied from {prev.assetKey} v{prev.version}. Part names in the new model must
+          match the option settings.
         </p>
       ) : null}
     </section>

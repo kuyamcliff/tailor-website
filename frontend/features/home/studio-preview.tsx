@@ -34,12 +34,7 @@ export function StudioPreview() {
       <div className={styles.bar}>
         <div className={styles.views} role="group" aria-label="View angle">
           {views.map((v, i) => (
-            <button
-              key={v.key}
-              className={styles.view}
-              aria-pressed={i === view}
-              onClick={() => setView(i)}
-            >
+            <button key={v.key} className={styles.view} aria-pressed={i === view} onClick={() => setView(i)}>
               {v.label}
             </button>
           ))}

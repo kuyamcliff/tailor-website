@@ -16,7 +16,17 @@ import { OwnerList } from "./owner-list";
 import { PageHead } from "./owner-shell";
 import styles from "./tables.module.css";
 
-type Row = { id: string; number: string; status: string; customer: string; requestNumber: string | null; totalMinor: number | null; currency: string | null; expiresAt: string | null; updatedAt: string };
+type Row = {
+  id: string;
+  number: string;
+  status: string;
+  customer: string;
+  requestNumber: string | null;
+  totalMinor: number | null;
+  currency: string | null;
+  expiresAt: string | null;
+  updatedAt: string;
+};
 
 const statuses: [string, string][] = [
   ["draft", "Draft"],
@@ -43,7 +53,12 @@ export function OwnerQuotes() {
             { label: "Quote", cell: (r) => r.number },
             { label: "Customer", cell: (r) => r.customer },
             { label: "Request", cell: (r) => r.requestNumber ?? "" },
-            { label: "Total", cell: (r) => (r.totalMinor !== null ? <Price minor={r.totalMinor} currency={r.currency ?? undefined} /> : ""), className: "tabular" },
+            {
+              label: "Total",
+              cell: (r) =>
+                r.totalMinor !== null ? <Price minor={r.totalMinor} currency={r.currency ?? undefined} /> : "",
+              className: "tabular",
+            },
             { label: "Expires", cell: (r) => (r.expiresAt ? formatDate(r.expiresAt, "short") : "") },
             { label: "Status", cell: (r) => <StatusBadge status={r.status} /> },
             { label: "Updated", cell: (r) => formatDate(r.updatedAt, "short") },
@@ -83,10 +98,22 @@ function Editor({ quote }: { quote: Quote }) {
   const currency = cur?.currency ?? cfg.business.currency;
   const editable = ["draft", "sent", "changes_requested"].includes(quote.status);
   const [lines, setLines] = useState<EditLine[]>(
-    () => cur?.lines.map((l) => ({ kind: l.kind, description: l.description, quantity: String(l.quantity), unit: String(l.unitMinor / 10 ** exponentOf(cur?.currency ?? "XAF")) })) ?? [{ kind: "garment", description: "", quantity: "1", unit: "0" }],
+    () =>
+      cur?.lines.map((l) => ({
+        kind: l.kind,
+        description: l.description,
+        quantity: String(l.quantity),
+        unit: String(l.unitMinor / 10 ** exponentOf(cur?.currency ?? "XAF")),
+      })) ?? [{ kind: "garment", description: "", quantity: "1", unit: "0" }],
   );
   const [depositMode, setDepositMode] = useState<"percent" | "fixed">("percent");
-  const [depositPercent, setDepositPercent] = useState(() => String(cur && cur.totalMinor ? Math.round((cur.depositMinor / cur.totalMinor) * 100) : cfg.business.depositPercentBp / 100));
+  const [depositPercent, setDepositPercent] = useState(() =>
+    String(
+      cur && cur.totalMinor
+        ? Math.round((cur.depositMinor / cur.totalMinor) * 100)
+        : cfg.business.depositPercentBp / 100,
+    ),
+  );
   const [depositFixed, setDepositFixed] = useState(() => String((cur?.depositMinor ?? 0) / 10 ** exponentOf(currency)));
   const [validDays, setValidDays] = useState(String(cfg.business.quoteValidityDays || 14));
   const [ready, setReady] = useState(cur?.estimatedReadyDate?.slice(0, 10) ?? "");
@@ -109,14 +136,24 @@ function Editor({ quote }: { quote: Quote }) {
     }
     const taxable = sub - disc + del;
     const rate = cfg.business.taxRateBp;
-    const tax = cfg.business.pricesIncludeTax ? taxable - Math.round((taxable * 10000) / (10000 + rate)) : Math.round((taxable * rate) / 10000);
+    const tax = cfg.business.pricesIncludeTax
+      ? taxable - Math.round((taxable * 10000) / (10000 + rate))
+      : Math.round((taxable * rate) / 10000);
     const total = cfg.business.pricesIncludeTax ? taxable : taxable + tax;
-    const deposit = depositMode === "fixed" ? (toMinor(depositFixed, currency) ?? 0) : Math.round((total * (Number(depositPercent) || 0)) / 100);
+    const deposit =
+      depositMode === "fixed"
+        ? (toMinor(depositFixed, currency) ?? 0)
+        : Math.round((total * (Number(depositPercent) || 0)) / 100);
     return { sub, disc, del, tax, total, deposit };
   }, [lines, currency, cfg.business, depositMode, depositFixed, depositPercent]);
 
   const body = () => ({
-    lines: lines.map((l) => ({ kind: l.kind, description: l.description, quantity: Number(l.quantity) || 0, unitMinor: toMinor(l.unit, currency) ?? -1 })),
+    lines: lines.map((l) => ({
+      kind: l.kind,
+      description: l.description,
+      quantity: Number(l.quantity) || 0,
+      unitMinor: toMinor(l.unit, currency) ?? -1,
+    })),
     depositPercentBp: depositMode === "percent" ? Math.round((Number(depositPercent) || 0) * 100) : undefined,
     depositMinor: depositMode === "fixed" ? (toMinor(depositFixed, currency) ?? 0) : undefined,
     validDays: Number(validDays) || 14,
@@ -157,7 +194,15 @@ function Editor({ quote }: { quote: Quote }) {
   };
 
   const dirty =
-    JSON.stringify(lines) !== JSON.stringify(cur?.lines.map((l) => ({ kind: l.kind, description: l.description, quantity: String(l.quantity), unit: String(l.unitMinor / 10 ** exponentOf(cur?.currency ?? "XAF")) })) ?? []) ||
+    JSON.stringify(lines) !==
+      JSON.stringify(
+        cur?.lines.map((l) => ({
+          kind: l.kind,
+          description: l.description,
+          quantity: String(l.quantity),
+          unit: String(l.unitMinor / 10 ** exponentOf(cur?.currency ?? "XAF")),
+        })) ?? [],
+      ) ||
     notes !== (cur?.customerNotes ?? "") ||
     terms !== (cur?.terms ?? "");
 
@@ -213,12 +258,19 @@ function Editor({ quote }: { quote: Quote }) {
               </thead>
               <tbody>
                 {lines.map((l, i) => {
-                  const set = (k: keyof EditLine, v: string) => setLines((ls) => ls.map((x, j) => (j === i ? { ...x, [k]: v } : x)));
+                  const set = (k: keyof EditLine, v: string) =>
+                    setLines((ls) => ls.map((x, j) => (j === i ? { ...x, [k]: v } : x)));
                   const err = errors[`lines.${i}`];
                   return (
                     <tr key={i}>
                       <td style={{ minWidth: 170 }}>
-                        <select className="select" aria-label={`Line ${i + 1} type`} value={l.kind} disabled={!editable} onChange={(e) => set("kind", e.target.value)}>
+                        <select
+                          className="select"
+                          aria-label={`Line ${i + 1} type`}
+                          value={l.kind}
+                          disabled={!editable}
+                          onChange={(e) => set("kind", e.target.value)}
+                        >
                           {kinds.map(([k, lab]) => (
                             <option key={k} value={k}>
                               {lab}
@@ -227,22 +279,50 @@ function Editor({ quote }: { quote: Quote }) {
                         </select>
                       </td>
                       <td style={{ minWidth: 280, width: "100%" }}>
-                        <input className="input" aria-label={`Line ${i + 1} description`} aria-invalid={Boolean(err)} value={l.description} disabled={!editable} onChange={(e) => set("description", e.target.value)} />
+                        <input
+                          className="input"
+                          aria-label={`Line ${i + 1} description`}
+                          aria-invalid={Boolean(err)}
+                          value={l.description}
+                          disabled={!editable}
+                          onChange={(e) => set("description", e.target.value)}
+                        />
                         {err ? <span className="error tiny">{err}</span> : null}
                       </td>
                       <td style={{ minWidth: 72 }}>
-                        <input className="input tabular" aria-label={`Line ${i + 1} quantity`} inputMode="numeric" value={l.quantity} disabled={!editable} onChange={(e) => set("quantity", e.target.value)} />
+                        <input
+                          className="input tabular"
+                          aria-label={`Line ${i + 1} quantity`}
+                          inputMode="numeric"
+                          value={l.quantity}
+                          disabled={!editable}
+                          onChange={(e) => set("quantity", e.target.value)}
+                        />
                       </td>
                       <td style={{ minWidth: 140 }}>
-                        <input className="input tabular" aria-label={`Line ${i + 1} unit price`} inputMode="decimal" value={l.unit} disabled={!editable} onChange={(e) => set("unit", e.target.value)} />
+                        <input
+                          className="input tabular"
+                          aria-label={`Line ${i + 1} unit price`}
+                          inputMode="decimal"
+                          value={l.unit}
+                          disabled={!editable}
+                          onChange={(e) => set("unit", e.target.value)}
+                        />
                       </td>
                       <td className="tabular" style={{ whiteSpace: "nowrap" }}>
                         {l.kind === "discount" ? "- " : ""}
-                        <Price minor={(toMinor(l.unit, currency) ?? 0) * (Number(l.quantity) || 0)} currency={currency} />
+                        <Price
+                          minor={(toMinor(l.unit, currency) ?? 0) * (Number(l.quantity) || 0)}
+                          currency={currency}
+                        />
                       </td>
                       <td>
                         {editable && lines.length > 1 ? (
-                          <button className="icon-btn" aria-label={`Remove line ${i + 1}`} onClick={() => setLines((ls) => ls.filter((_, j) => j !== i))}>
+                          <button
+                            className="icon-btn"
+                            aria-label={`Remove line ${i + 1}`}
+                            onClick={() => setLines((ls) => ls.filter((_, j) => j !== i))}
+                          >
                             <Trash2 size={16} aria-hidden />
                           </button>
                         ) : null}
@@ -254,7 +334,13 @@ function Editor({ quote }: { quote: Quote }) {
             </table>
           </div>
           {editable ? (
-            <button className="btn btn-sm" style={{ justifySelf: "start" }} onClick={() => setLines((ls) => [...ls, { kind: "customization", description: "", quantity: "1", unit: "0" }])}>
+            <button
+              className="btn btn-sm"
+              style={{ justifySelf: "start" }}
+              onClick={() =>
+                setLines((ls) => [...ls, { kind: "customization", description: "", quantity: "1", unit: "0" }])
+              }
+            >
               Add line
             </button>
           ) : null}
@@ -263,11 +349,23 @@ function Editor({ quote }: { quote: Quote }) {
           <div className="form-grid cols-2">
             <label className="field">
               <span className="label">Message to the customer</span>
-              <textarea className="textarea" rows={4} value={notes} disabled={!editable} onChange={(e) => setNotes(e.target.value)} />
+              <textarea
+                className="textarea"
+                rows={4}
+                value={notes}
+                disabled={!editable}
+                onChange={(e) => setNotes(e.target.value)}
+              />
             </label>
             <label className="field">
               <span className="label">Terms for this quote</span>
-              <textarea className="textarea" rows={4} value={terms} disabled={!editable} onChange={(e) => setTerms(e.target.value)} />
+              <textarea
+                className="textarea"
+                rows={4}
+                value={terms}
+                disabled={!editable}
+                onChange={(e) => setTerms(e.target.value)}
+              />
             </label>
           </div>
         </div>
@@ -328,33 +426,71 @@ function Editor({ quote }: { quote: Quote }) {
             </h2>
             <div className="row-wrap">
               <label className="check">
-                <input type="radio" name="dep" checked={depositMode === "percent"} disabled={!editable} onChange={() => setDepositMode("percent")} />
+                <input
+                  type="radio"
+                  name="dep"
+                  checked={depositMode === "percent"}
+                  disabled={!editable}
+                  onChange={() => setDepositMode("percent")}
+                />
                 <span>Percent</span>
               </label>
               <label className="check">
-                <input type="radio" name="dep" checked={depositMode === "fixed"} disabled={!editable} onChange={() => setDepositMode("fixed")} />
+                <input
+                  type="radio"
+                  name="dep"
+                  checked={depositMode === "fixed"}
+                  disabled={!editable}
+                  onChange={() => setDepositMode("fixed")}
+                />
                 <span>Fixed amount</span>
               </label>
             </div>
             {depositMode === "percent" ? (
               <label className="field">
                 <span className="label">Deposit (%)</span>
-                <input className="input tabular" inputMode="decimal" value={depositPercent} disabled={!editable} onChange={(e) => setDepositPercent(e.target.value)} />
+                <input
+                  className="input tabular"
+                  inputMode="decimal"
+                  value={depositPercent}
+                  disabled={!editable}
+                  onChange={(e) => setDepositPercent(e.target.value)}
+                />
               </label>
             ) : (
               <label className="field">
                 <span className="label">Deposit ({currency})</span>
-                <input className="input tabular" inputMode="decimal" value={depositFixed} disabled={!editable} onChange={(e) => setDepositFixed(e.target.value)} />
+                <input
+                  className="input tabular"
+                  inputMode="decimal"
+                  value={depositFixed}
+                  disabled={!editable}
+                  onChange={(e) => setDepositFixed(e.target.value)}
+                />
               </label>
             )}
-            {errors.depositMinor || errors.depositPercentBp ? <p className="error small">{errors.depositMinor ?? errors.depositPercentBp}</p> : null}
+            {errors.depositMinor || errors.depositPercentBp ? (
+              <p className="error small">{errors.depositMinor ?? errors.depositPercentBp}</p>
+            ) : null}
             <label className="field">
               <span className="label">Valid for (days)</span>
-              <input className="input tabular" inputMode="numeric" value={validDays} disabled={!editable} onChange={(e) => setValidDays(e.target.value)} />
+              <input
+                className="input tabular"
+                inputMode="numeric"
+                value={validDays}
+                disabled={!editable}
+                onChange={(e) => setValidDays(e.target.value)}
+              />
             </label>
             <label className="field">
               <span className="label">Estimated ready date</span>
-              <input className="input" type="date" value={ready} disabled={!editable} onChange={(e) => setReady(e.target.value)} />
+              <input
+                className="input"
+                type="date"
+                value={ready}
+                disabled={!editable}
+                onChange={(e) => setReady(e.target.value)}
+              />
             </label>
             {cur ? (
               <p className="tiny muted" style={{ margin: 0 }}>
@@ -402,4 +538,3 @@ function Editor({ quote }: { quote: Quote }) {
     </>
   );
 }
-

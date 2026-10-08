@@ -10,7 +10,13 @@ type Session = {
   loading: boolean;
   refresh: () => Promise<Me | null>;
   signIn: (identifier: string, password: string) => Promise<Me>;
-  signUp: (input: { name: string; email: string; phone?: string; password: string; marketingConsent: boolean }) => Promise<Me>;
+  signUp: (input: {
+    name: string;
+    email: string;
+    phone?: string;
+    password: string;
+    marketingConsent: boolean;
+  }) => Promise<Me>;
   signOut: () => Promise<void>;
 };
 
@@ -83,7 +89,10 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     }
   }, [apply]);
 
-  const value = useMemo(() => ({ user, loading, refresh, signIn, signUp, signOut }), [user, loading, refresh, signIn, signUp, signOut]);
+  const value = useMemo(
+    () => ({ user, loading, refresh, signIn, signUp, signOut }),
+    [user, loading, refresh, signIn, signUp, signOut],
+  );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 

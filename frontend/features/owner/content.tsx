@@ -35,9 +35,13 @@ export function OwnerContent() {
   const [open, setOpen] = useState<string | null>(null);
   return (
     <>
-      <PageHead title="Pages and policies" sub="Words and images on the public site. Changes appear within a minute of saving." />
+      <PageHead
+        title="Pages and policies"
+        sub="Words and images on the public site. Changes appear within a minute of saving."
+      />
       <p className="notice small">
-        The policies are a starting point. Have them checked against the law where you trade before relying on them. Plain text only.
+        The policies are a starting point. Have them checked against the law where you trade before relying on them.
+        Plain text only.
       </p>
       {q.isLoading ? (
         <div className="skeleton" style={{ height: 320 }} />
@@ -47,7 +51,15 @@ export function OwnerContent() {
             <li key={b.key}>
               <button
                 className="list-row"
-                style={{ width: "100%", background: "none", border: 0, color: "inherit", font: "inherit", cursor: "pointer", textAlign: "left" }}
+                style={{
+                  width: "100%",
+                  background: "none",
+                  border: 0,
+                  color: "inherit",
+                  font: "inherit",
+                  cursor: "pointer",
+                  textAlign: "left",
+                }}
                 aria-expanded={open === b.key}
                 onClick={() => setOpen(open === b.key ? null : b.key)}
               >
@@ -71,7 +83,10 @@ function BlockEditor({ block, onDone }: { block: Block; onDone: () => void }) {
   async function save() {
     setBusy(true);
     try {
-      await api(`/owner/content/${block.key}`, { method: "PUT", body: { value, published: true, version: block.version } });
+      await api(`/owner/content/${block.key}`, {
+        method: "PUT",
+        body: { value, published: true, version: block.version },
+      });
       toast("Saved.");
       await qc.invalidateQueries({ queryKey: ["owner", "content"] });
       onDone();
@@ -99,7 +114,17 @@ function BlockEditor({ block, onDone }: { block: Block; onDone: () => void }) {
 const longKeys = new Set(["body", "subtitle", "a", "note", "description", "lede"]);
 
 // ValueEditor renders a form for any content block shape: text, lists of items and nested groups.
-function ValueEditor({ value, onChange, path, label }: { value: unknown; onChange: (v: unknown) => void; path: string; label?: string }) {
+function ValueEditor({
+  value,
+  onChange,
+  path,
+  label,
+}: {
+  value: unknown;
+  onChange: (v: unknown) => void;
+  path: string;
+  label?: string;
+}) {
   if (typeof value === "string") {
     const key = path.split(".").pop() ?? "";
     if (key === "image") return <ImageField label={label ?? "Image"} value={value} onChange={onChange} />;
@@ -108,7 +133,12 @@ function ValueEditor({ value, onChange, path, label }: { value: unknown; onChang
       <label className="field">
         <span className="label">{label ?? humanize(key)}</span>
         {long ? (
-          <textarea className="textarea" rows={Math.min(8, Math.max(2, Math.ceil(value.length / 90)))} value={value} onChange={(e) => onChange(e.target.value)} />
+          <textarea
+            className="textarea"
+            rows={Math.min(8, Math.max(2, Math.ceil(value.length / 90)))}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+          />
         ) : (
           <input className="input" value={value} onChange={(e) => onChange(e.target.value)} />
         )}
@@ -126,7 +156,12 @@ function ValueEditor({ value, onChange, path, label }: { value: unknown; onChang
     return (
       <label className="field">
         <span className="label">{label ?? humanize(path.split(".").pop() ?? "")}</span>
-        <input className="input tabular" inputMode="decimal" value={String(value)} onChange={(e) => onChange(Number(e.target.value) || 0)} />
+        <input
+          className="input tabular"
+          inputMode="decimal"
+          value={String(value)}
+          onChange={(e) => onChange(Number(e.target.value) || 0)}
+        />
       </label>
     );
   if (Array.isArray(value)) {
@@ -136,12 +171,21 @@ function ValueEditor({ value, onChange, path, label }: { value: unknown; onChang
         <legend className={styles.h2}>{label ?? humanize(path.split(".").pop() ?? "")}</legend>
         {value.map((item, i) => (
           <div key={i} className="stack-sm" style={{ borderLeft: "2px solid var(--line)", paddingLeft: 12 }}>
-            <ValueEditor value={item} path={`${path}.${i}`} label={`${i + 1}`} onChange={(v) => onChange(value.map((x, j) => (j === i ? v : x)))} />
+            <ValueEditor
+              value={item}
+              path={`${path}.${i}`}
+              label={`${i + 1}`}
+              onChange={(v) => onChange(value.map((x, j) => (j === i ? v : x)))}
+            />
             <div className="row-wrap">
               <button className="link small" disabled={i === 0} onClick={() => onChange(swap(value, i, i - 1))}>
                 Move up
               </button>
-              <button className="link small" disabled={i === value.length - 1} onClick={() => onChange(swap(value, i, i + 1))}>
+              <button
+                className="link small"
+                disabled={i === value.length - 1}
+                onClick={() => onChange(swap(value, i, i + 1))}
+              >
                 Move down
               </button>
               <button className="link small" onClick={() => onChange(value.filter((_, j) => j !== i))}>
@@ -151,7 +195,11 @@ function ValueEditor({ value, onChange, path, label }: { value: unknown; onChang
           </div>
         ))}
         {template !== undefined ? (
-          <button className="btn btn-sm" style={{ justifySelf: "start" }} onClick={() => onChange([...value, blank(template)])}>
+          <button
+            className="btn btn-sm"
+            style={{ justifySelf: "start" }}
+            onClick={() => onChange([...value, blank(template)])}
+          >
             Add another
           </button>
         ) : null}
@@ -162,7 +210,11 @@ function ValueEditor({ value, onChange, path, label }: { value: unknown; onChang
     const obj = value as Record<string, unknown>;
     return (
       <div className="stack-sm">
-        {label && !/^\d+$/.test(label) ? <p className={styles.h2} style={{ margin: 0 }}>{label}</p> : null}
+        {label && !/^\d+$/.test(label) ? (
+          <p className={styles.h2} style={{ margin: 0 }}>
+            {label}
+          </p>
+        ) : null}
         {Object.entries(obj).map(([k, v]) => (
           <ValueEditor key={k} value={v} path={`${path}.${k}`} onChange={(nv) => onChange({ ...obj, [k]: nv })} />
         ))}
@@ -179,7 +231,11 @@ function ImageField({ label, value, onChange }: { label: string; value: string; 
       <span className="label">{label}</span>
       {value ? (
         // eslint-disable-next-line @next/next/no-img-element -- owner preview
-        <img src={value} alt="" style={{ width: 200, height: 120, objectFit: "cover", border: "1px solid var(--line)" }} />
+        <img
+          src={value}
+          alt=""
+          style={{ width: 200, height: 120, objectFit: "cover", border: "1px solid var(--line)" }}
+        />
       ) : null}
       <ImageUploader
         purpose="content"
@@ -204,7 +260,8 @@ function blank(t: unknown): unknown {
   if (typeof t === "number") return 0;
   if (typeof t === "boolean") return false;
   if (Array.isArray(t)) return [];
-  if (t && typeof t === "object") return Object.fromEntries(Object.entries(t as Record<string, unknown>).map(([k, v]) => [k, blank(v)]));
+  if (t && typeof t === "object")
+    return Object.fromEntries(Object.entries(t as Record<string, unknown>).map(([k, v]) => [k, blank(v)]));
   return null;
 }
 

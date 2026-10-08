@@ -33,7 +33,11 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
   params.set("offset", String((page - 1) * PAGE));
   const [list, facets] = await Promise.all([
     serverApiOr<ListResponse<Product>>(`/products?${params}`, { items: [], total: 0, limit: PAGE, offset: 0 }, 30),
-    serverApiOr<Facets>("/products/facets", { categories: [], sizes: [], colors: [], fabrics: [], price: { min: null, max: null } }, 60),
+    serverApiOr<Facets>(
+      "/products/facets",
+      { categories: [], sizes: [], colors: [], fabrics: [], price: { min: null, max: null } },
+      60,
+    ),
   ]);
   const pages = Math.ceil(list.total / PAGE);
   const current = Object.fromEntries(keys.map((k) => [k, one(sp[k]) ?? ""])) as Record<(typeof keys)[number], string>;

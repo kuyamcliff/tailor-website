@@ -21,7 +21,13 @@ export function Footer({ config, content }: { config: PublicConfig; content: Con
             <ul className={styles.social} aria-label="Social media">
               {b.social.map((s) => (
                 <li key={s.network}>
-                  <a href={s.url} target="_blank" rel="noopener noreferrer" aria-label={`${name} on ${socialTitle[s.network]}`} className={styles.socialLink}>
+                  <a
+                    href={s.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`${name} on ${socialTitle[s.network]}`}
+                    className={styles.socialLink}
+                  >
                     <SocialIcon network={s.network} size={18} />
                   </a>
                 </li>
@@ -94,18 +100,39 @@ export function Footer({ config, content }: { config: PublicConfig; content: Con
         <div>
           <h2 className={styles.heading}>Atelier</h2>
           <ul className={styles.list}>
-            <li><Link href="/custom-tailor" className={styles.plain}>Custom tailoring</Link></li>
-            <li><Link href="/studio" className={styles.plain}>Fitting studio</Link></li>
-            <li><Link href="/shop" className={styles.plain}>Shop</Link></li>
-            <li><Link href="/our-work" className={styles.plain}>Our work</Link></li>
-            <li><Link href="/appointments" className={styles.plain}>Appointments</Link></li>
+            <li>
+              <Link href="/custom-tailor" className={styles.plain}>
+                Custom tailoring
+              </Link>
+            </li>
+            <li>
+              <Link href="/studio" className={styles.plain}>
+                Fitting studio
+              </Link>
+            </li>
+            <li>
+              <Link href="/shop" className={styles.plain}>
+                Shop
+              </Link>
+            </li>
+            <li>
+              <Link href="/our-work" className={styles.plain}>
+                Our work
+              </Link>
+            </li>
+            <li>
+              <Link href="/appointments" className={styles.plain}>
+                Appointments
+              </Link>
+            </li>
           </ul>
         </div>
       </div>
 
       {config.demoContent ? (
         <p className={`container small faint ${styles.demo}`}>
-          Photos marked &ldquo;Sample photo&rdquo; are licensed stock images used while this site is being set up. They do not show garments made by {name}.
+          Photos marked &ldquo;Sample photo&rdquo; are licensed stock images used while this site is being set up. They
+          do not show garments made by {name}.
         </p>
       ) : null}
       <div className={`container ${styles.bottom}`}>

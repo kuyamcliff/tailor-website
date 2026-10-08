@@ -9,7 +9,10 @@ import { useConfig } from "@/components/providers/config";
 import { exponentOf, toMinor } from "@/lib/money";
 import styles from "./filters.module.css";
 
-type Current = Record<"q" | "category" | "size" | "color" | "fabric" | "availability" | "minPrice" | "maxPrice" | "sort", string>;
+type Current = Record<
+  "q" | "category" | "size" | "color" | "fabric" | "availability" | "minPrice" | "maxPrice" | "sort",
+  string
+>;
 
 export function ShopFilters({ facets, current }: { facets: Facets; current: Current }) {
   const router = useRouter();
@@ -45,7 +48,13 @@ export function ShopFilters({ facets, current }: { facets: Facets; current: Curr
           Search
         </label>
         <div className="input-group" style={{ marginTop: 6 }}>
-          <input id="shop-q" className="input" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Linen, navy..." />
+          <input
+            id="shop-q"
+            className="input"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Linen, navy..."
+          />
           <button className="btn btn-sm" type="submit" style={{ minHeight: 48 }}>
             Go
           </button>
@@ -56,7 +65,13 @@ export function ShopFilters({ facets, current }: { facets: Facets; current: Curr
         <label htmlFor="shop-sort" className="label">
           Sort
         </label>
-        <select id="shop-sort" className="select" value={current.sort} onChange={(e) => apply({ sort: e.target.value })} style={{ marginTop: 6 }}>
+        <select
+          id="shop-sort"
+          className="select"
+          value={current.sort}
+          onChange={(e) => apply({ sort: e.target.value })}
+          style={{ marginTop: 6 }}
+        >
           <option value="">Featured</option>
           <option value="newest">Newest</option>
           <option value="price_asc">Price, low to high</option>
@@ -69,11 +84,22 @@ export function ShopFilters({ facets, current }: { facets: Facets; current: Curr
         <fieldset className={styles.group}>
           <legend className="label">Category</legend>
           <div className={styles.chips}>
-            <button type="button" className={styles.chip} aria-pressed={!current.category} onClick={() => apply({ category: "" })}>
+            <button
+              type="button"
+              className={styles.chip}
+              aria-pressed={!current.category}
+              onClick={() => apply({ category: "" })}
+            >
               All
             </button>
             {facets.categories.map((c) => (
-              <button key={c.slug} type="button" className={styles.chip} aria-pressed={current.category === c.slug} onClick={() => apply({ category: c.slug === current.category ? "" : c.slug })}>
+              <button
+                key={c.slug}
+                type="button"
+                className={styles.chip}
+                aria-pressed={current.category === c.slug}
+                onClick={() => apply({ category: c.slug === current.category ? "" : c.slug })}
+              >
                 {c.name}
               </button>
             ))}
@@ -86,7 +112,13 @@ export function ShopFilters({ facets, current }: { facets: Facets; current: Curr
           <legend className="label">Size</legend>
           <div className={styles.chips}>
             {facets.sizes.map((s) => (
-              <button key={s} type="button" className={styles.chip} aria-pressed={current.size === s} onClick={() => apply({ size: current.size === s ? "" : s })}>
+              <button
+                key={s}
+                type="button"
+                className={styles.chip}
+                aria-pressed={current.size === s}
+                onClick={() => apply({ size: current.size === s ? "" : s })}
+              >
                 {s}
               </button>
             ))}
@@ -99,7 +131,13 @@ export function ShopFilters({ facets, current }: { facets: Facets; current: Curr
           <legend className="label">Colour</legend>
           <div className={styles.chips}>
             {facets.colors.map((c) => (
-              <button key={c} type="button" className={styles.chip} aria-pressed={current.color === c} onClick={() => apply({ color: current.color === c ? "" : c })}>
+              <button
+                key={c}
+                type="button"
+                className={styles.chip}
+                aria-pressed={current.color === c}
+                onClick={() => apply({ color: current.color === c ? "" : c })}
+              >
                 {c}
               </button>
             ))}
@@ -112,7 +150,13 @@ export function ShopFilters({ facets, current }: { facets: Facets; current: Curr
           <legend className="label">Fabric</legend>
           <div className={styles.chips}>
             {facets.fabrics.map((f) => (
-              <button key={f.key} type="button" className={styles.chip} aria-pressed={current.fabric === f.key} onClick={() => apply({ fabric: current.fabric === f.key ? "" : f.key })}>
+              <button
+                key={f.key}
+                type="button"
+                className={styles.chip}
+                aria-pressed={current.fabric === f.key}
+                onClick={() => apply({ fabric: current.fabric === f.key ? "" : f.key })}
+              >
                 {f.name}
               </button>
             ))}
@@ -128,7 +172,13 @@ export function ShopFilters({ facets, current }: { facets: Facets; current: Curr
             ["in_stock", "In stock"],
             ["made_to_order", "Made to order"],
           ].map(([v, l]) => (
-            <button key={v} type="button" className={styles.chip} aria-pressed={current.availability === v} onClick={() => apply({ availability: v })}>
+            <button
+              key={v}
+              type="button"
+              className={styles.chip}
+              aria-pressed={current.availability === v}
+              onClick={() => apply({ availability: v })}
+            >
               {l}
             </button>
           ))}
@@ -147,9 +197,23 @@ export function ShopFilters({ facets, current }: { facets: Facets; current: Curr
       >
         <span className="label">Price ({cfg.business.currency})</span>
         <div className={styles.price}>
-          <input className="input" inputMode="decimal" aria-label="Minimum price" placeholder="Min" value={minP} onChange={(e) => setMinP(e.target.value)} />
+          <input
+            className="input"
+            inputMode="decimal"
+            aria-label="Minimum price"
+            placeholder="Min"
+            value={minP}
+            onChange={(e) => setMinP(e.target.value)}
+          />
           <span className="muted">to</span>
-          <input className="input" inputMode="decimal" aria-label="Maximum price" placeholder="Max" value={maxP} onChange={(e) => setMaxP(e.target.value)} />
+          <input
+            className="input"
+            inputMode="decimal"
+            aria-label="Maximum price"
+            placeholder="Max"
+            value={maxP}
+            onChange={(e) => setMaxP(e.target.value)}
+          />
         </div>
         <button className="btn btn-sm" type="submit">
           Apply price
@@ -183,7 +247,17 @@ export function ShopFilters({ facets, current }: { facets: Facets; current: Curr
         </button>
         {pending ? <span className="spinner" aria-label="Updating" /> : null}
       </div>
-      <Sheet open={open} onClose={() => setOpen(false)} title="Filter and sort" side="bottom" footer={<button className="btn btn-primary btn-block" onClick={() => setOpen(false)}>Show results</button>}>
+      <Sheet
+        open={open}
+        onClose={() => setOpen(false)}
+        title="Filter and sort"
+        side="bottom"
+        footer={
+          <button className="btn btn-primary btn-block" onClick={() => setOpen(false)}>
+            Show results
+          </button>
+        }
+      >
         {panel}
       </Sheet>
     </>

@@ -44,7 +44,11 @@ export function CompareView() {
   const rows: [string, (p: Product) => React.ReactNode][] = [
     ["Price", (p) => <Price minor={p.priceMinor} maxMinor={p.priceMaxMinor} />],
     ["Availability", (p) => availabilityLabel[p.availability]],
-    ["Fabric", (p) => (p.fabric ? `${p.fabric.name}${p.fabric.composition ? `, ${p.fabric.composition}` : ""}` : "Not specified")],
+    [
+      "Fabric",
+      (p) =>
+        p.fabric ? `${p.fabric.name}${p.fabric.composition ? `, ${p.fabric.composition}` : ""}` : "Not specified",
+    ],
     ["Sizes", (p) => p.sizes.join(", ")],
     ["Fitting included", (p) => (p.requiresFitting ? "Yes" : "No")],
     ["Can be customised", (p) => (p.customizable ? "Yes" : "No")],
@@ -64,10 +68,17 @@ export function CompareView() {
                 {items.map((p) => (
                   <th key={p.id} scope="col">
                     <Link href={`/shop/${p.slug}`} className={styles.head}>
-                      <span className={styles.thumb}>{p.media[0] ? <Image src={p.media[0].url} alt="" fill sizes="160px" style={{ objectFit: "cover" }} /> : null}</span>
+                      <span className={styles.thumb}>
+                        {p.media[0] ? (
+                          <Image src={p.media[0].url} alt="" fill sizes="160px" style={{ objectFit: "cover" }} />
+                        ) : null}
+                      </span>
                       <span className="serif">{p.name}</span>
                     </Link>
-                    <button className="btn btn-sm btn-ghost" onClick={() => toggleCompare({ type: "product", id: p.id, name: p.name })}>
+                    <button
+                      className="btn btn-sm btn-ghost"
+                      onClick={() => toggleCompare({ type: "product", id: p.id, name: p.name })}
+                    >
                       Remove
                     </button>
                   </th>
@@ -115,13 +126,19 @@ export function CompareView() {
               <tr>
                 <th scope="row">Fabric</th>
                 {ds.map((d) => (
-                  <td key={d.id}>{d.snapshot.fabric ? `${d.snapshot.fabric.name}, ${d.snapshot.fabric.colorName}` : "To be chosen"}</td>
+                  <td key={d.id}>
+                    {d.snapshot.fabric ? `${d.snapshot.fabric.name}, ${d.snapshot.fabric.colorName}` : "To be chosen"}
+                  </td>
                 ))}
               </tr>
               <tr>
                 <th scope="row">Details</th>
                 {ds.map((d) => (
-                  <td key={d.id}>{d.snapshot.selections.map((s) => s.valueName ?? `${s.groupName} ${s.number}${s.unit ?? ""}`).join(", ")}</td>
+                  <td key={d.id}>
+                    {d.snapshot.selections
+                      .map((s) => s.valueName ?? `${s.groupName} ${s.number}${s.unit ?? ""}`)
+                      .join(", ")}
+                  </td>
                 ))}
               </tr>
               <tr>

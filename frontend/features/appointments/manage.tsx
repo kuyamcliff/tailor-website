@@ -22,7 +22,11 @@ export function ManageAppointment({ id }: { id: string }) {
   const [mode, setMode] = useState<"view" | "reschedule">("view");
   const [slot, setSlot] = useState("");
   const [busy, setBusy] = useState(false);
-  const q = useQuery({ queryKey: ["appt", id, token], enabled: token !== null, queryFn: () => api<Resp>(`/appointments/${id}`, { accessToken: token || undefined }) });
+  const q = useQuery({
+    queryKey: ["appt", id, token],
+    enabled: token !== null,
+    queryFn: () => api<Resp>(`/appointments/${id}`, { accessToken: token || undefined }),
+  });
   const a = q.data?.appointment;
   const tz = q.data?.timezone ?? cfg.business.timezone;
   const slots = useQuery({
@@ -34,7 +38,10 @@ export function ManageAppointment({ id }: { id: string }) {
   async function change(action: "cancel" | "reschedule") {
     setBusy(true);
     try {
-      await api(`/appointments/${id}/change`, { body: { action, startsAt: action === "reschedule" ? slot : undefined }, accessToken: token || undefined });
+      await api(`/appointments/${id}/change`, {
+        body: { action, startsAt: action === "reschedule" ? slot : undefined },
+        accessToken: token || undefined,
+      });
       toast(action === "cancel" ? "Your appointment has been cancelled." : "Your appointment has been moved.");
       setMode("view");
       await q.refetch();
@@ -46,7 +53,12 @@ export function ManageAppointment({ id }: { id: string }) {
     }
   }
 
-  if (q.isLoading || token === null) return <div className="container-narrow section-tight"><div className="skeleton" style={{ height: 320 }} /></div>;
+  if (q.isLoading || token === null)
+    return (
+      <div className="container-narrow section-tight">
+        <div className="skeleton" style={{ height: 320 }} />
+      </div>
+    );
   if (!a)
     return (
       <div className="container-narrow section-tight stack-lg">
@@ -95,7 +107,11 @@ export function ManageAppointment({ id }: { id: string }) {
               <button className="btn" onClick={() => setMode("reschedule")}>
                 Change time
               </button>
-              <button className="btn btn-danger" disabled={busy} onClick={() => confirm("Cancel this appointment?") && change("cancel")}>
+              <button
+                className="btn btn-danger"
+                disabled={busy}
+                onClick={() => confirm("Cancel this appointment?") && change("cancel")}
+              >
                 Cancel appointment
               </button>
             </div>
@@ -125,7 +141,10 @@ export function ManageAppointment({ id }: { id: string }) {
             </section>
           )
         ) : (
-          <p className="notice">Changes need at least {q.data!.cancelNoticeHours} hours notice. Please call or message us to change this appointment.</p>
+          <p className="notice">
+            Changes need at least {q.data!.cancelNoticeHours} hours notice. Please call or message us to change this
+            appointment.
+          </p>
         )
       ) : (
         <Link href="/appointments" className="btn">

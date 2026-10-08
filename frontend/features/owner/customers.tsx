@@ -14,7 +14,18 @@ import { OwnerList } from "./owner-list";
 import { PageHead } from "./owner-shell";
 import styles from "./tables.module.css";
 
-type Row = { id: string; name: string; phone: string | null; email: string | null; preferredContact: string; hasAccount: boolean; orders: number; requests: number; lastActivity: string | null; createdAt: string };
+type Row = {
+  id: string;
+  name: string;
+  phone: string | null;
+  email: string | null;
+  preferredContact: string;
+  hasAccount: boolean;
+  orders: number;
+  requests: number;
+  lastActivity: string | null;
+  createdAt: string;
+};
 
 export function OwnerCustomers() {
   return (
@@ -44,8 +55,23 @@ export function OwnerCustomers() {
 
 type Detail = {
   customer: Row & { internalNotes: string; marketingConsent: boolean };
-  orders: { id: string; number: string; status: string; payment_status: string; total_minor: number; currency: string; created_at: string }[];
-  requests: { id: string; number: string; status: string; garment_type_key: string; occasion: string; created_at: string }[];
+  orders: {
+    id: string;
+    number: string;
+    status: string;
+    payment_status: string;
+    total_minor: number;
+    currency: string;
+    created_at: string;
+  }[];
+  requests: {
+    id: string;
+    number: string;
+    status: string;
+    garment_type_key: string;
+    occasion: string;
+    created_at: string;
+  }[];
   appointments: { id: string; number: string; type: string; status: string; starts_at: string }[];
   support: { id: string; number: string; subject: string; status: string; last_message_at: string }[];
   designs: { id: string; name: string; garment_type_key: string; updated_at: string }[];
@@ -55,14 +81,20 @@ export function OwnerCustomer({ id }: { id: string }) {
   const qc = useQueryClient();
   const toast = useToast();
   const q = useQuery({ queryKey: ["owner", "customer", id], queryFn: () => api<Detail>(`/owner/customers/${id}`) });
-  const profiles = useQuery({ queryKey: ["owner", "customer-profiles", id], queryFn: () => api<MeasurementProfile[]>(`/owner/customers/${id}/measurement-profiles`) });
+  const profiles = useQuery({
+    queryKey: ["owner", "customer-profiles", id],
+    queryFn: () => api<MeasurementProfile[]>(`/owner/customers/${id}/measurement-profiles`),
+  });
   const [notes, setNotes] = useState<string | null>(null);
   if (q.isLoading) return <div className="skeleton" style={{ height: 420 }} />;
   if (!q.data) return <p className="notice notice-danger">This customer could not be loaded.</p>;
   const { customer: c } = q.data;
   async function saveNotes() {
     try {
-      await api(`/owner/customers/${id}`, { method: "PATCH", body: { internalNotes: notes ?? "", preferredContact: c.preferredContact } });
+      await api(`/owner/customers/${id}`, {
+        method: "PATCH",
+        body: { internalNotes: notes ?? "", preferredContact: c.preferredContact },
+      });
       toast("Notes saved.");
       setNotes(null);
       await qc.invalidateQueries({ queryKey: ["owner", "customer", id] });
@@ -72,7 +104,10 @@ export function OwnerCustomer({ id }: { id: string }) {
   }
   return (
     <>
-      <PageHead title={c.name} sub={`Customer since ${formatDate(c.createdAt)}${c.hasAccount ? " · has an account" : " · guest"}`} />
+      <PageHead
+        title={c.name}
+        sub={`Customer since ${formatDate(c.createdAt)}${c.hasAccount ? " · has an account" : " · guest"}`}
+      />
       <div className={styles.detail}>
         <div className="stack-lg">
           <Related title="Orders" empty="No orders.">
@@ -133,7 +168,10 @@ export function OwnerCustomer({ id }: { id: string }) {
                   <p className="small" style={{ margin: 0 }}>
                     <strong>{p.name}</strong>{" "}
                     <span className="muted">
-                      · {p.current ? `${humanize(p.current.source)}, ${formatDate(p.current.createdAt, "short")}` : "no measurements"}
+                      ·{" "}
+                      {p.current
+                        ? `${humanize(p.current.source)}, ${formatDate(p.current.createdAt, "short")}`
+                        : "no measurements"}
                     </span>
                   </p>
                   {p.current ? (
@@ -158,13 +196,21 @@ export function OwnerCustomer({ id }: { id: string }) {
             {c.phone ? <a href={`tel:+${c.phone}`}>+{c.phone}</a> : null}
             {c.email ? <a href={`mailto:${c.email}`}>{c.email}</a> : null}
             <span className="small muted">Prefers {humanize(c.preferredContact).toLowerCase()}</span>
-            <span className="small muted">{c.marketingConsent ? "Agreed to news and offers" : "No marketing consent"}</span>
+            <span className="small muted">
+              {c.marketingConsent ? "Agreed to news and offers" : "No marketing consent"}
+            </span>
           </section>
           <section className="panel panel-pad stack-sm" aria-labelledby="n-h">
             <h2 id="n-h" className={styles.h2}>
               Internal notes
             </h2>
-            <textarea className="textarea" rows={6} aria-label="Internal notes" value={notes ?? c.internalNotes} onChange={(e) => setNotes(e.target.value)} />
+            <textarea
+              className="textarea"
+              rows={6}
+              aria-label="Internal notes"
+              value={notes ?? c.internalNotes}
+              onChange={(e) => setNotes(e.target.value)}
+            />
             {notes !== null && notes !== c.internalNotes ? (
               <button className="btn btn-sm" onClick={saveNotes}>
                 Save notes

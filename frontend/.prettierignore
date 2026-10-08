@@ -1,5 +1,5 @@
 .next
 node_modules
-public
-playwright-report
+public/3d
 test-results
+playwright-report
