@@ -34,6 +34,7 @@ import (
 	"github.com/kuyamcliff/tailor-website/backend/internal/staff"
 	"github.com/kuyamcliff/tailor-website/backend/internal/support"
 	"github.com/kuyamcliff/tailor-website/backend/internal/uploads"
+	"github.com/kuyamcliff/tailor-website/backend/openapi"
 )
 
 type App struct {
@@ -124,6 +125,7 @@ func New(ctx context.Context, cfg config.Config, pool *pgxpool.Pool, log *slog.L
 		r.Use(limiter.Limit("global", 600, time.Minute))
 
 		// Public configuration and content
+		r.Get("/openapi.yaml", openapi.Serve)
 		r.Method(http.MethodGet, "/config", H(settingsH.PublicConfig))
 		r.Method(http.MethodGet, "/content", H(settingsH.PublicContent))
 

@@ -201,14 +201,20 @@ func (c *client) signIn(identifier, password string) {
 
 func ownerClient(t *testing.T) *client {
 	t.Helper()
-	email := "owner-" + uuid.NewString()[:8] + "@atelier.test"
-	_, err := shared.pool.Exec(context.Background(), `INSERT INTO users (email, password_hash, full_name, role) VALUES ($1, $2, 'Test Owner', 'owner')`,
-		email, mustHash(t, "owner-password-123"))
+	return staffClient(t, "owner")
+}
+
+// staffClient signs in a new staff member with the given role.
+func staffClient(t *testing.T, role string) *client {
+	t.Helper()
+	email := role + "-" + uuid.NewString()[:8] + "@atelier.test"
+	_, err := shared.pool.Exec(context.Background(), `INSERT INTO users (email, password_hash, full_name, role) VALUES ($1, $2, $3, $4)`,
+		email, mustHash(t, "staff-password-123"), "Test "+role, role)
 	if err != nil {
 		t.Fatal(err)
 	}
 	c := newClient(t)
-	c.signIn(email, "owner-password-123")
+	c.signIn(email, "staff-password-123")
 	return c
 }
 
