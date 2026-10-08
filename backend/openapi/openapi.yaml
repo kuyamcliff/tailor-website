@@ -1,0 +1,5139 @@
+openapi: 3.1.0
+info:
+  title: Atelier API
+  version: "1.0"
+  license:
+    name: MIT
+    identifier: MIT
+  summary: Storefront, bespoke requests, studio, payments and owner dashboard for the atelier.
+  description: |
+    JSON over HTTPS. Every path below is relative to `/api/v1`.
+
+    **Who is calling.** Requests are anonymous, or carry one of:
+    - a session cookie (`atelier_session`, set by sign in). State-changing requests from a session must
+      also send `X-CSRF-Token` with the token returned by `/auth/me`;
+    - a guest token (`X-Guest-Token`, 32 to 128 random characters kept by the browser) that owns
+      designs, uploads and requests made without an account;
+    - an access token (`X-Access-Token` header or `?token=`) from a confirmation link, which opens one
+      order, request, quote, appointment or support thread.
+
+    Owner endpoints need a staff session and the permission listed on each operation (`x-permissions`).
+
+    **Money** is always an integer in minor units with a currency code (`totalMinor`, `currency`).
+    **Times** are RFC 3339. **Measurements** are millimetres in responses; inputs say their unit.
+
+    **Errors** share one shape (`Error`). Validation errors are 422 with a message per field.
+
+    **Retries.** Operations that create orders, payments, requests, bookings and support threads require
+    an `Idempotency-Key` header; repeating a request with the same key returns the first result with 200
+    instead of creating a duplicate.
+
+    **Payments** are only ever marked paid from the provider's own answer, read by the server. Callback
+    bodies are not trusted, and the browser cannot set a payment's state.
+
+    This document is checked against the router in `backend/tests/openapi_test.go`: a route without an
+    entry here fails the build.
+servers:
+  - url: /api/v1
+tags:
+  - name: Site
+    description: Public configuration, content, portfolio and testimonials.
+  - name: Auth
+    description: Accounts, sessions and passwords.
+  - name: Catalog
+    description: Products and fabrics.
+  - name: Studio
+    description: Garments, 3D assets and saved designs.
+  - name: Measurements
+    description: Measurement fields, profiles, versions and photo estimates.
+  - name: Uploads
+    description: Images and their private or public delivery.
+  - name: Requests and quotes
+    description: Bespoke requests and the customer side of quotes.
+  - name: Orders and payments
+    description: Checkout, orders and Mobile Money payments.
+  - name: Appointments
+    description: Slots and bookings.
+  - name: Support
+    description: Help threads.
+  - name: Account
+    description: The signed-in customer's own data.
+  - name: "Owner: overview"
+    description: Dashboard, notifications and audit log.
+  - name: "Owner: requests and quotes"
+    description: Request pipeline and quote revisions.
+  - name: "Owner: orders"
+    description: Production stages, notes, tasks and fittings.
+  - name: "Owner: payments"
+    description: Payments, rechecks, manual payments and refunds.
+  - name: "Owner: customers"
+    description: Customers and their measurements.
+  - name: "Owner: appointments"
+    description: Calendar, availability and booking for customers.
+  - name: "Owner: support"
+    description: Support inbox.
+  - name: "Owner: catalogue"
+    description: Products, categories and fabrics.
+  - name: "Owner: garments and fit"
+    description: Garment types, options, measurement fields, fit rules and sizes.
+  - name: "Owner: 3D assets"
+    description: Asset files and the review and publish pipeline.
+  - name: "Owner: site"
+    description: Portfolio and testimonials.
+  - name: "Owner: settings"
+    description: Content blocks, business settings and feature switches.
+  - name: "Owner: staff"
+    description: Staff accounts and roles.
+components:
+  securitySchemes:
+    session:
+      type: apiKey
+      in: cookie
+      name: atelier_session
+      description: Session cookie from sign in. Send X-CSRF-Token on POST, PUT, PATCH and DELETE.
+    guestToken:
+      type: apiKey
+      in: header
+      name: X-Guest-Token
+    accessToken:
+      type: apiKey
+      in: header
+      name: X-Access-Token
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: 16 to 128 characters, unique per intended operation. Reuse it when retrying.
+      schema:
+        type: string
+        minLength: 16
+        maxLength: 128
+  responses:
+    Error:
+      description: Error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              examples: [validation_failed, not_found, slot_taken, feature_disabled, payment_in_progress]
+            message:
+              type: string
+              description: Safe to show to customers.
+            fields:
+              type: object
+              additionalProperties:
+                type: string
+    Money:
+      type: integer
+      description: Amount in minor units of the currency (XAF has none).
+    Contact:
+      type: object
+      required: [name, phone]
+      properties:
+        name: {type: string}
+        phone: {type: string, description: "Local or international format; stored as E.164 digits"}
+        email: {type: [string, "null"]}
+        preferredContact: {type: string, enum: [whatsapp, phone, sms, email]}
+    Address:
+      type: object
+      required: [recipient, phone, line1, city]
+      properties:
+        id: {type: string, format: uuid, readOnly: true}
+        label: {type: string}
+        recipient: {type: string}
+        phone: {type: string}
+        line1: {type: string}
+        line2: {type: string}
+        city: {type: string}
+        region: {type: string}
+        country: {type: string}
+        notes: {type: string}
+        isDefault: {type: boolean}
+    PublicConfig:
+      type: object
+      properties:
+        business:
+          type: object
+          description: Name, contact details, address, opening hours, currency, time zone, social links.
+        features:
+          type: object
+          additionalProperties: {type: boolean}
+          description: studio, appointments, customer_accounts, support_inbox, guest_checkout, online_payments, reference_analysis, photo_body_estimation.
+    MeResponse:
+      type: object
+      properties:
+        user:
+          oneOf:
+            - type: "null"
+            - type: object
+              properties:
+                id: {type: string, format: uuid}
+                name: {type: string}
+                email: {type: string}
+                role: {type: string}
+                isStaff: {type: boolean}
+                permissions: {type: array, items: {type: string}}
+                customerId: {type: [string, "null"], format: uuid}
+                csrfToken: {type: string}
+    SignUpRequest:
+      type: object
+      required: [name, email, password]
+      properties:
+        name: {type: string}
+        email: {type: string, format: email}
+        phone: {type: string}
+        password: {type: string, minLength: 10}
+        preferredContact: {type: string}
+        marketingConsent: {type: boolean}
+    SignInRequest:
+      type: object
+      required: [identifier, password]
+      properties:
+        identifier: {type: string, description: Email or phone}
+        password: {type: string}
+    PasswordResetRequest:
+      type: object
+      required: [email]
+      properties:
+        email: {type: string, format: email}
+    PasswordResetConfirm:
+      type: object
+      required: [token, password]
+      properties:
+        token: {type: string}
+        password: {type: string, minLength: 10}
+    ChangePasswordRequest:
+      type: object
+      required: [currentPassword, newPassword]
+      properties:
+        currentPassword: {type: string}
+        newPassword: {type: string, minLength: 10}
+    ProductList:
+      type: object
+      properties:
+        items: {type: array, items: {$ref: "#/components/schemas/Product"}}
+        total: {type: integer}
+        limit: {type: integer}
+        offset: {type: integer}
+    Product:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        slug: {type: string}
+        name: {type: string}
+        summary: {type: string}
+        priceMinor: {$ref: "#/components/schemas/Money"}
+        priceMaxMinor: {$ref: "#/components/schemas/Money"}
+        availability: {type: string, enum: [in_stock, low_stock, out_of_stock, made_to_order]}
+        category: {type: [object, "null"]}
+        media:
+          type: array
+          items:
+            type: object
+            properties:
+              url: {type: string}
+              alt: {type: string}
+              sample: {type: boolean, description: "True for licensed stock photos shown while real photography is pending"}
+        variants: {type: array, items: {type: object}}
+    Fabric:
+      type: object
+      properties:
+        key: {type: string}
+        name: {type: string}
+        composition: {type: string}
+        stockStatus: {type: string, enum: [available, low_stock, out_of_stock, discontinued, custom_order]}
+        priceImpactMinor: {$ref: "#/components/schemas/Money"}
+        colors: {type: array, items: {type: object, properties: {key: {type: string}, name: {type: string}, hex: {type: string}}}}
+        pbr: {type: object, description: "Studio material: colour, normal and roughness maps (WebP or KTX2), roughness, sheen, repeat"}
+        suitableGarments: {type: array, items: {type: string}}
+    MeasurementsInput:
+      type: object
+      properties:
+        unit: {type: string, enum: [cm, in]}
+        height: {type: [number, "null"]}
+        values: {type: object, additionalProperties: {type: number}, description: "Measurement key to value in the given unit"}
+    DesignConfig:
+      type: object
+      required: [garment, selections]
+      properties:
+        garment: {type: string}
+        selections: {type: object, description: "Option group key to choice key, or a number for range options"}
+        fabric: {type: string}
+        color: {type: string}
+        baseline: {type: string, description: "Standard size label, or empty for made to measure"}
+        fitPreference: {type: string, enum: [slim, regular, relaxed]}
+        bodyModel: {type: string, enum: [masculine, feminine]}
+        measurementVersionId: {type: [string, "null"], format: uuid}
+        measurements: {$ref: "#/components/schemas/MeasurementsInput"}
+        notes: {type: string}
+    SaveDesignRequest:
+      type: object
+      required: [name, config]
+      properties:
+        name: {type: string}
+        config: {$ref: "#/components/schemas/DesignConfig"}
+        expectedVersion: {type: [integer, "null"], description: "Rejects the save with 409 if the design changed elsewhere"}
+    Upload:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        purpose: {type: string}
+        visibility: {type: string, enum: [private, public]}
+        originalName: {type: string}
+        mime: {type: string}
+        bytes: {type: integer}
+        width: {type: integer}
+        height: {type: integer}
+        sha256: {type: string}
+        url: {type: string}
+        variants: {type: object, additionalProperties: {type: string}}
+        duplicate: {type: boolean, description: "The same file was already uploaded; that upload is returned"}
+    AnalysisRequest:
+      type: object
+      properties:
+        garment: {type: string}
+        tag: {type: string}
+    SubmitRequest:
+      type: object
+      required: [garment, occasion, measurementMode, fabricMode, contact]
+      properties:
+        garment: {type: string}
+        occasion: {type: string, enum: [wedding, work, ceremony, casual, everyday, photoshoot, graduation, other]}
+        occasionNote: {type: string}
+        measurementMode: {type: string, enum: [entered, saved, in_store]}
+        measurements: {$ref: "#/components/schemas/MeasurementsInput"}
+        measurementVersionId: {type: [string, "null"], format: uuid}
+        bodyModel: {type: string}
+        fitPreference: {type: string}
+        fabricMode: {type: string, enum: [catalog, recommend, reference]}
+        fabricKey: {type: string}
+        colorKey: {type: string}
+        designVersionId: {type: [string, "null"], format: uuid}
+        references:
+          type: array
+          items:
+            type: object
+            properties:
+              uploadId: {type: string, format: uuid}
+              tag: {type: string}
+              note: {type: string}
+        notes: {type: string}
+        desiredDate: {type: string, format: date}
+        dateFlexibility: {type: string}
+        urgency: {type: string}
+        contact: {$ref: "#/components/schemas/Contact"}
+    Created:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        number: {type: string}
+        accessToken: {type: string, description: "Opens this item without an account; also sent in the confirmation message"}
+    MessageBody:
+      type: object
+      required: [message]
+      properties:
+        message: {type: string}
+        attachments: {type: array, items: {type: string, format: uuid}}
+    DecisionInput:
+      type: object
+      required: [revisionId]
+      properties:
+        revisionId: {type: string, format: uuid, description: "The revision the customer saw; 409 if the atelier has changed it since"}
+        note: {type: string}
+    CheckoutRequest:
+      type: object
+      required: [items, contact, fulfillment]
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            required: [variantId, quantity]
+            properties:
+              variantId: {type: string, format: uuid}
+              quantity: {type: integer, minimum: 1}
+        contact: {$ref: "#/components/schemas/Contact"}
+        fulfillment:
+          type: object
+          required: [zoneKey]
+          properties:
+            method: {type: string, enum: [pickup, local_delivery, courier]}
+            zoneKey: {type: string}
+            address: {$ref: "#/components/schemas/Address"}
+            note: {type: string}
+        notes: {type: string}
+        expectedTotalMinor: {type: [integer, "null"], description: "409 if prices changed since the customer saw them"}
+    CheckoutResult:
+      type: object
+      properties:
+        orderId: {type: string, format: uuid}
+        number: {type: string}
+        accessToken: {type: string}
+        totalMinor: {$ref: "#/components/schemas/Money"}
+        currency: {type: string}
+    PaymentIntentRequest:
+      type: object
+      required: [orderId, provider, msisdn]
+      properties:
+        orderId: {type: string, format: uuid}
+        provider: {type: string, enum: [mtn, orange]}
+        msisdn: {type: string, description: "The Mobile Money number that will pay"}
+        purpose: {type: string, enum: [full, deposit, balance], description: "Chosen from the order when omitted"}
+    Payment:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        orderId: {type: string, format: uuid}
+        purpose: {type: string}
+        provider: {type: string}
+        providerName: {type: string}
+        amountMinor: {$ref: "#/components/schemas/Money"}
+        currency: {type: string}
+        status: {type: string, enum: [created, pending, customer_action_required, processing, succeeded, failed, expired, cancelled, refunded, partially_refunded]}
+        simulated: {type: boolean, description: "Development simulator; never counted as revenue and refused in production"}
+        failureMessage: {type: [string, "null"]}
+        payer: {type: string, description: "Masked number"}
+        expiresAt: {type: string, format: date-time}
+        succeededAt: {type: [string, "null"], format: date-time}
+        createdAt: {type: string, format: date-time}
+        existing: {type: boolean, description: "An in-flight payment for this order was returned instead of a new one"}
+    Slots:
+      type: object
+      properties:
+        slots: {type: array, items: {type: string, format: date-time}}
+        timezone: {type: string}
+        durationMinutes: {type: integer}
+        from: {type: string, format: date}
+        to: {type: string, format: date}
+    BookRequest:
+      type: object
+      required: [type, startsAt, contact]
+      properties:
+        type: {type: string, enum: [consultation, measuring, fitting, final_fitting, pickup, alteration, video_consultation, other]}
+        startsAt: {type: string, format: date-time}
+        contact: {$ref: "#/components/schemas/Contact"}
+        notes: {type: string}
+        orderId: {type: [string, "null"], format: uuid}
+        requestId: {type: [string, "null"], format: uuid}
+        orderToken: {type: string}
+    Appointment:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        number: {type: string}
+        type: {type: string}
+        typeLabel: {type: string}
+        status: {type: string, enum: [booked, cancelled, completed, no_show]}
+        startsAt: {type: string, format: date-time}
+        endsAt: {type: string, format: date-time}
+        location: {type: string}
+        canChange: {type: boolean}
+    AppointmentChange:
+      type: object
+      required: [action]
+      properties:
+        action: {type: string, enum: [reschedule, cancel]}
+        startsAt: {type: string, format: date-time}
+    SupportCreate:
+      type: object
+      required: [subject, category, message]
+      properties:
+        subject: {type: string}
+        category: {type: string, enum: [general, order_issue, measurement_help, payment_issue, appointment_issue, alteration_request, other]}
+        message: {type: string}
+        orderId: {type: [string, "null"], format: uuid}
+        attachments: {type: array, items: {type: string, format: uuid}}
+        contact: {$ref: "#/components/schemas/Contact"}
+    SupportReply:
+      type: object
+      required: [body]
+      properties:
+        body: {type: string}
+        attachments: {type: array, items: {type: string, format: uuid}}
+    ProfileInput:
+      type: object
+      required: [name, bodyModel, unit]
+      properties:
+        name: {type: string}
+        bodyModel: {type: string, enum: [masculine, feminine]}
+        unit: {type: string, enum: [cm, in]}
+        ageRange: {type: [string, "null"]}
+        fitPreference: {type: string, enum: [slim, regular, relaxed]}
+        isDefault: {type: boolean}
+    VersionInput:
+      allOf:
+        - $ref: "#/components/schemas/MeasurementsInput"
+        - type: object
+          properties:
+            source: {type: string, enum: [customer_entered, estimated]}
+            garment: {type: string, description: "Validate against this garment's required fields"}
+            notes: {type: string}
+    EstimateRequest:
+      type: object
+      required: [frontUploadId, sideUploadId, heightMm, weightKg, age, bodyModel, consent]
+      properties:
+        frontUploadId: {type: string, format: uuid, description: "An upload with purpose body_photo"}
+        sideUploadId: {type: string, format: uuid}
+        heightMm: {type: integer, minimum: 1200, maximum: 2300}
+        weightKg: {type: number, minimum: 30, maximum: 250}
+        age: {type: integer, minimum: 16, maximum: 100}
+        bodyModel: {type: string, enum: [masculine, feminine]}
+        consent: {type: boolean, const: true}
+    Estimate:
+      type: object
+      properties:
+        provider: {type: string}
+        heightMm: {type: integer}
+        valuesMm: {type: object, additionalProperties: {type: integer}}
+        flags: {type: array, items: {type: object}, description: "Combinations worth a second look"}
+paths:
+  /openapi.yaml:
+    get:
+      tags:
+        - "Site"
+      summary: "This API description (OpenAPI 3.1, YAML)"
+      operationId: "get_openapi_yaml"
+      security:
+        - {}
+      responses:
+        200:
+          description: "OpenAPI document"
+          content:
+            application/yaml:
+              schema:
+                type: "string"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /config:
+    get:
+      tags:
+        - "Site"
+      summary: "Public configuration: business details, currency, enabled features and payment methods"
+      operationId: "get_config"
+      security:
+        - {}
+        - session: []
+        - guestToken: []
+        - accessToken: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/PublicConfig"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /content:
+    get:
+      tags:
+        - "Site"
+      summary: "Published content blocks (home, services, FAQs, policies, footer)"
+      operationId: "get_content"
+      security:
+        - {}
+        - session: []
+        - guestToken: []
+        - accessToken: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /auth/me:
+    get:
+      tags:
+        - "Auth"
+      summary: "The signed-in user, or null"
+      operationId: "get_auth_me"
+      security:
+        - {}
+        - session: []
+        - guestToken: []
+        - accessToken: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/MeResponse"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /auth/signup:
+    post:
+      tags:
+        - "Auth"
+      summary: "Create a customer account and sign in"
+      operationId: "post_auth_signup"
+      security:
+        - {}
+        - session: []
+        - guestToken: []
+        - accessToken: []
+      x-rate-limit: "10 per minute per client (auth)"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/SignUpRequest"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/MeResponse"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /auth/signin:
+    post:
+      tags:
+        - "Auth"
+      summary: "Sign in with email or phone and password (locked after repeated failures)"
+      operationId: "post_auth_signin"
+      security:
+        - {}
+        - session: []
+        - guestToken: []
+        - accessToken: []
+      x-rate-limit: "10 per minute per client (auth)"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/SignInRequest"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/MeResponse"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /auth/signout:
+    post:
+      tags:
+        - "Auth"
+      summary: "Sign out and revoke this session"
+      operationId: "post_auth_signout"
+      security:
+        - {}
+        - session: []
+        - guestToken: []
+        - accessToken: []
+      responses:
+        204:
+          description: "Done"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /auth/password-reset:
+    post:
+      tags:
+        - "Auth"
+      summary: "Send a password reset link (always answers 204, so accounts cannot be discovered)"
+      operationId: "post_auth_password_reset"
+      security:
+        - {}
+        - session: []
+        - guestToken: []
+        - accessToken: []
+      x-rate-limit: "5 per 15 minutes per client (reset)"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/PasswordResetRequest"
+      responses:
+        204:
+          description: "Done"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /auth/password-reset/confirm:
+    post:
+      tags:
+        - "Auth"
+      summary: "Set a new password with a reset token; revokes all sessions"
+      operationId: "post_auth_password_reset_confirm"
+      security:
+        - {}
+        - session: []
+        - guestToken: []
+        - accessToken: []
+      x-rate-limit: "5 per 15 minutes per client (reset)"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/PasswordResetConfirm"
+      responses:
+        204:
+          description: "Done"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /auth/password:
+    post:
+      tags:
+        - "Auth"
+      summary: "Change password; other sessions are revoked"
+      operationId: "post_auth_password"
+      security:
+        - session: []
+      description: "Session requests must send the X-CSRF-Token header."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/ChangePasswordRequest"
+      responses:
+        204:
+          description: "Done"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /auth/sessions:
+    get:
+      tags:
+        - "Auth"
+      summary: "Signed-in devices"
+      operationId: "get_auth_sessions"
+      security:
+        - session: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /auth/sessions/revoke-others:
+    post:
+      tags:
+        - "Auth"
+      summary: "Sign out every other device"
+      operationId: "post_auth_sessions_revoke_others"
+      security:
+        - session: []
+      description: "Session requests must send the X-CSRF-Token header."
+      responses:
+        204:
+          description: "Done"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /products:
+    get:
+      tags:
+        - "Catalog"
+      summary: "Published products with search, filters, sort and paging (q, category, size, color, fabric, availability, minPrice, maxPrice, sort, limit, offset)"
+      operationId: "get_products"
+      security:
+        - {}
+        - session: []
+        - guestToken: []
+        - accessToken: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ProductList"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /products/facets:
+    get:
+      tags:
+        - "Catalog"
+      summary: "Filter values available in the shop"
+      operationId: "get_products_facets"
+      security:
+        - {}
+        - session: []
+        - guestToken: []
+        - accessToken: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/products/{slug}":
+    get:
+      tags:
+        - "Catalog"
+      summary: "One published product with variants, media and related products"
+      operationId: "get_products_slug"
+      parameters:
+        - name: "slug"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      security:
+        - {}
+        - session: []
+        - guestToken: []
+        - accessToken: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Product"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /fabrics:
+    get:
+      tags:
+        - "Catalog"
+      summary: "Active fabrics with colours, swatches, stock state and studio material settings"
+      operationId: "get_fabrics"
+      security:
+        - {}
+        - session: []
+        - guestToken: []
+        - accessToken: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "array"
+                items:
+                  "$ref": "#/components/schemas/Fabric"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/fabrics/{key}":
+    get:
+      tags:
+        - "Catalog"
+      summary: "One fabric"
+      operationId: "get_fabrics_key"
+      parameters:
+        - name: "key"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      security:
+        - {}
+        - session: []
+        - guestToken: []
+        - accessToken: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Fabric"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /garments:
+    get:
+      tags:
+        - "Studio"
+      summary: "Garment types customers can order"
+      operationId: "get_garments"
+      security:
+        - {}
+        - session: []
+        - guestToken: []
+        - accessToken: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/garments/{key}/studio":
+    get:
+      tags:
+        - "Studio"
+      summary: "Everything the studio needs for a garment: options, fit rules, sizes, measurement fields, published 3D assets"
+      operationId: "get_garments_key_studio"
+      parameters:
+        - name: "key"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      security:
+        - {}
+        - session: []
+        - guestToken: []
+        - accessToken: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/assets/{key}/versions/{version}":
+    get:
+      tags:
+        - "Studio"
+      summary: "An exact 3D asset version (saved designs reopen with the version they were made with)"
+      operationId: "get_assets_key_versions_version"
+      parameters:
+        - name: "key"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+        - name: "version"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      security:
+        - {}
+        - session: []
+        - guestToken: []
+        - accessToken: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/asset-files/{name}":
+    get:
+      tags:
+        - "Studio"
+      summary: "Content-addressed 3D model, texture or still render (immutable cache)"
+      operationId: "get_asset_files_name"
+      parameters:
+        - name: "name"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      security:
+        - {}
+      responses:
+        200:
+          description: "File"
+          content:
+            application/octet-stream:
+              schema:
+                type: "string"
+                format: "binary"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /measurements/fields:
+    get:
+      tags:
+        - "Measurements"
+      summary: "Measurement fields with instructions and valid ranges (?garment= limits them to one garment)"
+      operationId: "get_measurements_fields"
+      security:
+        - {}
+        - session: []
+        - guestToken: []
+        - accessToken: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /measurements/validate:
+    post:
+      tags:
+        - "Measurements"
+      summary: "Validate and convert measurements without saving; returns review flags"
+      operationId: "post_measurements_validate"
+      security:
+        - {}
+        - session: []
+        - guestToken: []
+        - accessToken: []
+      description: "Session requests must send the X-CSRF-Token header."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/MeasurementsInput"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /portfolio:
+    get:
+      tags:
+        - "Site"
+      summary: "Published portfolio projects (only with customer permission where people are shown)"
+      operationId: "get_portfolio"
+      security:
+        - {}
+        - session: []
+        - guestToken: []
+        - accessToken: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/portfolio/{slug}":
+    get:
+      tags:
+        - "Site"
+      summary: "One portfolio project"
+      operationId: "get_portfolio_slug"
+      parameters:
+        - name: "slug"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      security:
+        - {}
+        - session: []
+        - guestToken: []
+        - accessToken: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /testimonials:
+    get:
+      tags:
+        - "Site"
+      summary: "Published testimonials (each with recorded consent)"
+      operationId: "get_testimonials"
+      security:
+        - {}
+        - session: []
+        - guestToken: []
+        - accessToken: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /designs/evaluate:
+    post:
+      tags:
+        - "Studio"
+      summary: "Price and fit estimate for a configuration, computed on the server"
+      operationId: "post_designs_evaluate"
+      security:
+        - {}
+        - session: []
+        - guestToken: []
+        - accessToken: []
+      description: "Session requests must send the X-CSRF-Token header."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/DesignConfig"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /designs:
+    get:
+      tags:
+        - "Studio"
+      summary: "Saved designs of the signed-in customer or guest token"
+      operationId: "get_designs"
+      security:
+        - {}
+        - session: []
+        - guestToken: []
+        - accessToken: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+    post:
+      tags:
+        - "Studio"
+      summary: "Save a design as a new immutable version (expectedVersion guards against edits from two devices)"
+      operationId: "post_designs"
+      security:
+        - {}
+        - session: []
+        - guestToken: []
+        - accessToken: []
+      description: "Session requests must send the X-CSRF-Token header."
+      x-rate-limit: "60 per 10 minutes per client (designs)"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/SaveDesignRequest"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/designs/{id}":
+    get:
+      tags:
+        - "Studio"
+      summary: "One saved design with its snapshot"
+      operationId: "get_designs_id"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      security:
+        - {}
+        - session: []
+        - guestToken: []
+        - accessToken: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+    put:
+      tags:
+        - "Studio"
+      summary: "Save a design as a new immutable version (expectedVersion guards against edits from two devices)"
+      operationId: "put_designs_id"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      security:
+        - {}
+        - session: []
+        - guestToken: []
+        - accessToken: []
+      description: "Session requests must send the X-CSRF-Token header."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/SaveDesignRequest"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+    delete:
+      tags:
+        - "Studio"
+      summary: "Delete a saved design"
+      operationId: "delete_designs_id"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      security:
+        - {}
+        - session: []
+        - guestToken: []
+        - accessToken: []
+      description: "Session requests must send the X-CSRF-Token header."
+      responses:
+        204:
+          description: "Done"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/design-versions/{versionId}":
+    get:
+      tags:
+        - "Studio"
+      summary: "One design version snapshot"
+      operationId: "get_design_versions_versionId"
+      parameters:
+        - name: "versionId"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      security:
+        - {}
+        - session: []
+        - guestToken: []
+        - accessToken: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /uploads:
+    post:
+      tags:
+        - "Uploads"
+      summary: "Upload an image (multipart field file; ?purpose=reference|support|body_photo for customers, staff purposes need permissions). Content is checked, metadata stripped, derivatives made; customer files are private"
+      operationId: "post_uploads"
+      security:
+        - {}
+        - session: []
+        - guestToken: []
+        - accessToken: []
+      description: "Session requests must send the X-CSRF-Token header."
+      x-rate-limit: "60 per 10 minutes per client (uploads)"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: "object"
+              required:
+                - "file"
+              properties:
+                file:
+                  type: "string"
+                  format: "binary"
+      responses:
+        201:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Upload"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/uploads/{id}":
+    get:
+      tags:
+        - "Uploads"
+      summary: "Read an upload or a derivative (preview, thumb) if allowed"
+      operationId: "get_uploads_id"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      security:
+        - {}
+        - session: []
+        - guestToken: []
+        - accessToken: []
+      responses:
+        200:
+          description: "File"
+          content:
+            application/octet-stream:
+              schema:
+                type: "string"
+                format: "binary"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+    delete:
+      tags:
+        - "Uploads"
+      summary: "Delete your own upload"
+      operationId: "delete_uploads_id"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      security:
+        - {}
+        - session: []
+        - guestToken: []
+        - accessToken: []
+      description: "Session requests must send the X-CSRF-Token header."
+      responses:
+        204:
+          description: "Done"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/uploads/{id}/{variant}":
+    get:
+      tags:
+        - "Uploads"
+      summary: "Read an upload or a derivative (preview, thumb) if allowed"
+      operationId: "get_uploads_id_variant"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+        - name: "variant"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      security:
+        - {}
+        - session: []
+        - guestToken: []
+        - accessToken: []
+      responses:
+        200:
+          description: "File"
+          content:
+            application/octet-stream:
+              schema:
+                type: "string"
+                format: "binary"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/uploads/{id}/analysis":
+    post:
+      tags:
+        - "Uploads"
+      summary: "Garment hints for a reference image from the configured provider (503 when the feature is off)"
+      operationId: "post_uploads_id_analysis"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      security:
+        - {}
+        - session: []
+        - guestToken: []
+        - accessToken: []
+      description: "Session requests must send the X-CSRF-Token header."
+      x-rate-limit: "20 per 10 minutes per client (analysis)"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/AnalysisRequest"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /requests:
+    post:
+      tags:
+        - "Requests and quotes"
+      summary: "Submit a bespoke request (Idempotency-Key required; a replay returns the first result)"
+      operationId: "post_requests"
+      parameters:
+        - "$ref": "#/components/parameters/IdempotencyKey"
+      security:
+        - {}
+        - session: []
+        - guestToken: []
+        - accessToken: []
+      description: "Session requests must send the X-CSRF-Token header."
+      x-rate-limit: "20 per 10 minutes per client (submit)"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/SubmitRequest"
+      responses:
+        201:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Created"
+        200:
+          description: "Replay of an earlier request with the same Idempotency-Key"
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Created"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/requests/{id}":
+    get:
+      tags:
+        - "Requests and quotes"
+      summary: "A request with its messages, for its customer or access token holder"
+      operationId: "get_requests_id"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      security:
+        - {}
+        - session: []
+        - guestToken: []
+        - accessToken: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/requests/{id}/reply":
+    post:
+      tags:
+        - "Requests and quotes"
+      summary: "Reply to the atelier on a request"
+      operationId: "post_requests_id_reply"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      security:
+        - {}
+        - session: []
+        - guestToken: []
+        - accessToken: []
+      description: "Session requests must send the X-CSRF-Token header."
+      x-rate-limit: "20 per 10 minutes per client (submit)"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/MessageBody"
+      responses:
+        201:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/quotes/{id}":
+    get:
+      tags:
+        - "Requests and quotes"
+      summary: "A quote's current revision with payment schedule and terms"
+      operationId: "get_quotes_id"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      security:
+        - {}
+        - session: []
+        - guestToken: []
+        - accessToken: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/quotes/{id}/accept":
+    post:
+      tags:
+        - "Requests and quotes"
+      summary: "Accept a quote revision; creates the order from an immutable snapshot (accepting twice returns the same order)"
+      operationId: "post_quotes_id_accept"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      security:
+        - {}
+        - session: []
+        - guestToken: []
+        - accessToken: []
+      description: "Session requests must send the X-CSRF-Token header."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/DecisionInput"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/quotes/{id}/decline":
+    post:
+      tags:
+        - "Requests and quotes"
+      summary: "Decline a quote revision"
+      operationId: "post_quotes_id_decline"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      security:
+        - {}
+        - session: []
+        - guestToken: []
+        - accessToken: []
+      description: "Session requests must send the X-CSRF-Token header."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/DecisionInput"
+      responses:
+        204:
+          description: "Done"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/quotes/{id}/request-changes":
+    post:
+      tags:
+        - "Requests and quotes"
+      summary: "Ask for changes to a quote (also allowed after it expired)"
+      operationId: "post_quotes_id_request_changes"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      security:
+        - {}
+        - session: []
+        - guestToken: []
+        - accessToken: []
+      description: "Session requests must send the X-CSRF-Token header."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/DecisionInput"
+      responses:
+        204:
+          description: "Done"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /checkout:
+    post:
+      tags:
+        - "Orders and payments"
+      summary: "Place an order for products (Idempotency-Key required; stock checked on the server; expectedTotalMinor detects price changes)"
+      operationId: "post_checkout"
+      parameters:
+        - "$ref": "#/components/parameters/IdempotencyKey"
+      security:
+        - {}
+        - session: []
+        - guestToken: []
+        - accessToken: []
+      description: "Session requests must send the X-CSRF-Token header."
+      x-rate-limit: "20 per 10 minutes per client (submit)"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/CheckoutRequest"
+      responses:
+        201:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/CheckoutResult"
+        200:
+          description: "Replay of an earlier request with the same Idempotency-Key"
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/CheckoutResult"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/orders/{id}":
+    get:
+      tags:
+        - "Orders and payments"
+      summary: "An order with its timeline, payments, fittings and appointments (no internal notes)"
+      operationId: "get_orders_id"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      security:
+        - {}
+        - session: []
+        - guestToken: []
+        - accessToken: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/orders/{id}/measurements":
+    get:
+      tags:
+        - "Orders and payments"
+      summary: "The measurement version the order was made with"
+      operationId: "get_orders_id_measurements"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      security:
+        - {}
+        - session: []
+        - guestToken: []
+        - accessToken: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /payments/methods:
+    get:
+      tags:
+        - "Orders and payments"
+      summary: "Payment methods currently available"
+      operationId: "get_payments_methods"
+      security:
+        - {}
+        - session: []
+        - guestToken: []
+        - accessToken: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /payments/intent:
+    post:
+      tags:
+        - "Orders and payments"
+      summary: "Start a Mobile Money payment (Idempotency-Key required; an in-flight payment for the order is returned instead of charging twice)"
+      operationId: "post_payments_intent"
+      parameters:
+        - "$ref": "#/components/parameters/IdempotencyKey"
+      security:
+        - {}
+        - session: []
+        - guestToken: []
+        - accessToken: []
+      description: "Session requests must send the X-CSRF-Token header."
+      x-rate-limit: "20 per 10 minutes per client (payments)"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/PaymentIntentRequest"
+      responses:
+        201:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Payment"
+        200:
+          description: "Replay of an earlier request with the same Idempotency-Key"
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Payment"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/payments/{id}":
+    get:
+      tags:
+        - "Orders and payments"
+      summary: "A payment's status, re-checked with the provider while it is in flight"
+      operationId: "get_payments_id"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      security:
+        - {}
+        - session: []
+        - guestToken: []
+        - accessToken: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Payment"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/payments/{provider}/webhook":
+    post:
+      tags:
+        - "Orders and payments"
+      summary: "Provider callback. Authenticated by the signed reference in the URL; the body is never trusted, the status is re-read from the provider"
+      operationId: "post_payments_provider_webhook"
+      parameters:
+        - name: "provider"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      security:
+        - {}
+      x-rate-limit: "300 per minute per client (webhooks)"
+      responses:
+        200:
+          description: "Done"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+    put:
+      tags:
+        - "Orders and payments"
+      summary: "Provider callback. Authenticated by the signed reference in the URL; the body is never trusted, the status is re-read from the provider"
+      operationId: "put_payments_provider_webhook"
+      parameters:
+        - name: "provider"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      security:
+        - {}
+      x-rate-limit: "300 per minute per client (webhooks)"
+      responses:
+        200:
+          description: "Done"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /appointments/slots:
+    get:
+      tags:
+        - "Appointments"
+      summary: "Open slots for 14 days from ?from=YYYY-MM-DD for ?type="
+      operationId: "get_appointments_slots"
+      security:
+        - {}
+        - session: []
+        - guestToken: []
+        - accessToken: []
+      description: "Answers 503 (feature_disabled) while the `appointments` feature is switched off."
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Slots"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /appointments:
+    post:
+      tags:
+        - "Appointments"
+      summary: "Book a slot (Idempotency-Key required; double booking prevented in the database)"
+      operationId: "post_appointments"
+      parameters:
+        - "$ref": "#/components/parameters/IdempotencyKey"
+      security:
+        - {}
+        - session: []
+        - guestToken: []
+        - accessToken: []
+      description: "Session requests must send the X-CSRF-Token header. Answers 503 (feature_disabled) while the `appointments` feature is switched off."
+      x-rate-limit: "20 per 10 minutes per client (submit)"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/BookRequest"
+      responses:
+        201:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Created"
+        200:
+          description: "Replay of an earlier request with the same Idempotency-Key"
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Created"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/appointments/{id}":
+    get:
+      tags:
+        - "Appointments"
+      summary: "An appointment for its customer or access token holder"
+      operationId: "get_appointments_id"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      security:
+        - {}
+        - session: []
+        - guestToken: []
+        - accessToken: []
+      description: "Answers 503 (feature_disabled) while the `appointments` feature is switched off."
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Appointment"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/appointments/{id}/change":
+    post:
+      tags:
+        - "Appointments"
+      summary: "Move or cancel within the notice window"
+      operationId: "post_appointments_id_change"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      security:
+        - {}
+        - session: []
+        - guestToken: []
+        - accessToken: []
+      description: "Session requests must send the X-CSRF-Token header. Answers 503 (feature_disabled) while the `appointments` feature is switched off."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/AppointmentChange"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /support:
+    post:
+      tags:
+        - "Support"
+      summary: "Open a support thread (Idempotency-Key required)"
+      operationId: "post_support"
+      parameters:
+        - "$ref": "#/components/parameters/IdempotencyKey"
+      security:
+        - {}
+        - session: []
+        - guestToken: []
+        - accessToken: []
+      description: "Session requests must send the X-CSRF-Token header. Answers 503 (feature_disabled) while the `support_inbox` feature is switched off."
+      x-rate-limit: "20 per 10 minutes per client (submit)"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/SupportCreate"
+      responses:
+        201:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Created"
+        200:
+          description: "Replay of an earlier request with the same Idempotency-Key"
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Created"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/support/{id}":
+    get:
+      tags:
+        - "Support"
+      summary: "A thread with its customer-visible messages"
+      operationId: "get_support_id"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      security:
+        - {}
+        - session: []
+        - guestToken: []
+        - accessToken: []
+      description: "Answers 503 (feature_disabled) while the `support_inbox` feature is switched off."
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/support/{id}/reply":
+    post:
+      tags:
+        - "Support"
+      summary: "Reply on a thread"
+      operationId: "post_support_id_reply"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      security:
+        - {}
+        - session: []
+        - guestToken: []
+        - accessToken: []
+      description: "Session requests must send the X-CSRF-Token header. Answers 503 (feature_disabled) while the `support_inbox` feature is switched off."
+      x-rate-limit: "30 per 10 minutes per client (submit)"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/SupportReply"
+      responses:
+        201:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /me/profile:
+    get:
+      tags:
+        - "Account"
+      summary: "Profile and notification preferences"
+      operationId: "get_me_profile"
+      security:
+        - session: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+    put:
+      tags:
+        - "Account"
+      summary: "Update profile and preferences"
+      operationId: "put_me_profile"
+      security:
+        - session: []
+      description: "Session requests must send the X-CSRF-Token header."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /me/claim-guest:
+    post:
+      tags:
+        - "Account"
+      summary: "Attach designs, requests and uploads made as a guest on this device"
+      operationId: "post_me_claim_guest"
+      security:
+        - session: []
+      description: "Session requests must send the X-CSRF-Token header."
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /me/addresses:
+    get:
+      tags:
+        - "Account"
+      summary: "Saved addresses"
+      operationId: "get_me_addresses"
+      security:
+        - session: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+    post:
+      tags:
+        - "Account"
+      summary: "Create or update an address"
+      operationId: "post_me_addresses"
+      security:
+        - session: []
+      description: "Session requests must send the X-CSRF-Token header."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/Address"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Address"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/me/addresses/{id}":
+    put:
+      tags:
+        - "Account"
+      summary: "Create or update an address"
+      operationId: "put_me_addresses_id"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      security:
+        - session: []
+      description: "Session requests must send the X-CSRF-Token header."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/Address"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Address"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+    delete:
+      tags:
+        - "Account"
+      summary: "Delete an address"
+      operationId: "delete_me_addresses_id"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      security:
+        - session: []
+      description: "Session requests must send the X-CSRF-Token header."
+      responses:
+        204:
+          description: "Done"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /me/wishlist:
+    get:
+      tags:
+        - "Account"
+      summary: "Wishlist (products, fabrics, saved designs)"
+      operationId: "get_me_wishlist"
+      security:
+        - session: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+    post:
+      tags:
+        - "Account"
+      summary: "Add to the wishlist"
+      operationId: "post_me_wishlist"
+      security:
+        - session: []
+      description: "Session requests must send the X-CSRF-Token header."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+      responses:
+        201:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/me/wishlist/{id}":
+    delete:
+      tags:
+        - "Account"
+      summary: "Remove from the wishlist"
+      operationId: "delete_me_wishlist_id"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      security:
+        - session: []
+      description: "Session requests must send the X-CSRF-Token header."
+      responses:
+        204:
+          description: "Done"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /me/export:
+    get:
+      tags:
+        - "Account"
+      summary: "Download all personal data as JSON"
+      operationId: "get_me_export"
+      security:
+        - session: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /me/delete-account:
+    post:
+      tags:
+        - "Account"
+      summary: "Delete the account: personal data anonymized, private files removed, order records kept as required"
+      operationId: "post_me_delete_account"
+      security:
+        - session: []
+      description: "Session requests must send the X-CSRF-Token header."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+      responses:
+        204:
+          description: "Done"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /me/measurement-profiles:
+    get:
+      tags:
+        - "Measurements"
+      summary: "Measurement profiles with their current version"
+      operationId: "get_me_measurement_profiles"
+      security:
+        - session: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+    post:
+      tags:
+        - "Measurements"
+      summary: "Create a measurement profile"
+      operationId: "post_me_measurement_profiles"
+      security:
+        - session: []
+      description: "Session requests must send the X-CSRF-Token header."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/ProfileInput"
+      responses:
+        201:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/me/measurement-profiles/{id}":
+    put:
+      tags:
+        - "Measurements"
+      summary: "Rename or change a profile"
+      operationId: "put_me_measurement_profiles_id"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      security:
+        - session: []
+      description: "Session requests must send the X-CSRF-Token header."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/ProfileInput"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+    delete:
+      tags:
+        - "Measurements"
+      summary: "Delete a profile (orders keep their snapshot)"
+      operationId: "delete_me_measurement_profiles_id"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      security:
+        - session: []
+      description: "Session requests must send the X-CSRF-Token header."
+      responses:
+        204:
+          description: "Done"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/me/measurement-profiles/{id}/versions":
+    get:
+      tags:
+        - "Measurements"
+      summary: "Version history of a profile"
+      operationId: "get_me_measurement_profiles_id_versions"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      security:
+        - session: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+    post:
+      tags:
+        - "Measurements"
+      summary: "Save measurements as a new immutable version (source may be \"estimated\" for photo estimates)"
+      operationId: "post_me_measurement_profiles_id_versions"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      security:
+        - session: []
+      description: "Session requests must send the X-CSRF-Token header."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/VersionInput"
+      responses:
+        201:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /me/measurement-estimates:
+    get:
+      tags:
+        - "Measurements"
+      summary: "Whether measuring from photos is available and which provider processes the photos"
+      operationId: "get_me_measurement_estimates"
+      security:
+        - session: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+    post:
+      tags:
+        - "Measurements"
+      summary: "Estimate measurements from a front and a side body photo with consent; the photos are deleted afterwards"
+      operationId: "post_me_measurement_estimates"
+      security:
+        - session: []
+      description: "Session requests must send the X-CSRF-Token header."
+      x-rate-limit: "6 per hour per client (estimate)"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/EstimateRequest"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Estimate"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /me/orders:
+    get:
+      tags:
+        - "Account"
+      summary: "Orders of the signed-in customer"
+      operationId: "get_me_orders"
+      security:
+        - session: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /me/requests:
+    get:
+      tags:
+        - "Account"
+      summary: "Requests and quotes of the signed-in customer"
+      operationId: "get_me_requests"
+      security:
+        - session: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /me/appointments:
+    get:
+      tags:
+        - "Account"
+      summary: "Appointments of the signed-in customer"
+      operationId: "get_me_appointments"
+      security:
+        - session: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /me/support:
+    get:
+      tags:
+        - "Account"
+      summary: "Support threads of the signed-in customer"
+      operationId: "get_me_support"
+      security:
+        - session: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /me/notifications:
+    get:
+      tags:
+        - "Account"
+      summary: "In-app notifications"
+      operationId: "get_me_notifications"
+      security:
+        - session: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /me/notifications/read:
+    post:
+      tags:
+        - "Account"
+      summary: "Mark notifications read"
+      operationId: "post_me_notifications_read"
+      security:
+        - session: []
+      description: "Session requests must send the X-CSRF-Token header."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+      responses:
+        204:
+          description: "Done"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /owner/dashboard:
+    get:
+      tags:
+        - "Owner: overview"
+      summary: "What needs attention: new requests, orders, quotes, payments, today's appointments, overdue work, unread messages, low stock"
+      operationId: "get_owner_dashboard"
+      description: "Staff only."
+      security:
+        - session: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /owner/team:
+    get:
+      tags:
+        - "Owner: staff"
+      summary: "Active staff names for assignment pickers"
+      operationId: "get_owner_team"
+      description: "Staff only."
+      security:
+        - session: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /owner/analytics:
+    get:
+      tags:
+        - "Owner: overview"
+      summary: "Business analytics from real data for a period"
+      operationId: "get_owner_analytics"
+      description: "Staff only. Requires permission `analytics.read`."
+      x-permissions:
+        - "analytics.read"
+      security:
+        - session: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /owner/audit:
+    get:
+      tags:
+        - "Owner: overview"
+      summary: "Audit log (read only)"
+      operationId: "get_owner_audit"
+      description: "Staff only. Requires permission `audit.read`."
+      x-permissions:
+        - "audit.read"
+      security:
+        - session: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /owner/notifications:
+    get:
+      tags:
+        - "Owner: overview"
+      summary: "Staff notifications"
+      operationId: "get_owner_notifications"
+      description: "Staff only."
+      security:
+        - session: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /owner/notifications/read:
+    post:
+      tags:
+        - "Owner: overview"
+      summary: "Mark staff notifications read"
+      operationId: "post_owner_notifications_read"
+      description: "Staff only. Session requests must send the X-CSRF-Token header."
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+      responses:
+        204:
+          description: "Done"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /owner/requests:
+    get:
+      tags:
+        - "Owner: requests and quotes"
+      summary: "Requests with filters"
+      operationId: "get_owner_requests"
+      description: "Staff only. Requires permission `requests.read`."
+      x-permissions:
+        - "requests.read"
+      security:
+        - session: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/owner/requests/{id}":
+    get:
+      tags:
+        - "Owner: requests and quotes"
+      summary: "A request with references, measurements and messages"
+      operationId: "get_owner_requests_id"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      description: "Staff only. Requires permission `requests.read`."
+      x-permissions:
+        - "requests.read"
+      security:
+        - session: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+    patch:
+      tags:
+        - "Owner: requests and quotes"
+      summary: "Change a request's status in the pipeline, message the customer, internal notes"
+      operationId: "patch_owner_requests_id"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      description: "Staff only. Requires permission `requests.update`. Session requests must send the X-CSRF-Token header."
+      x-permissions:
+        - "requests.update"
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/owner/requests/{id}/verify-measurements":
+    post:
+      tags:
+        - "Owner: requests and quotes"
+      summary: "Record tailor-verified measurements for a request"
+      operationId: "post_owner_requests_id_verify_measurements"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      description: "Staff only. Requires permission `measurements.write`. Session requests must send the X-CSRF-Token header."
+      x-permissions:
+        - "measurements.write"
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/owner/requests/{id}/quotes":
+    post:
+      tags:
+        - "Owner: requests and quotes"
+      summary: "Draft a quote for a request"
+      operationId: "post_owner_requests_id_quotes"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      description: "Staff only. Requires permission `quotes.write`. Session requests must send the X-CSRF-Token header."
+      x-permissions:
+        - "quotes.write"
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /owner/quotes:
+    get:
+      tags:
+        - "Owner: requests and quotes"
+      summary: "Quotes"
+      operationId: "get_owner_quotes"
+      description: "Staff only. Requires permission `quotes.write`."
+      x-permissions:
+        - "quotes.write"
+      security:
+        - session: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/owner/quotes/{id}":
+    get:
+      tags:
+        - "Owner: requests and quotes"
+      summary: "A quote with all revisions"
+      operationId: "get_owner_quotes_id"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      description: "Staff only. Requires permission `quotes.write`."
+      x-permissions:
+        - "quotes.write"
+      security:
+        - session: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+    put:
+      tags:
+        - "Owner: requests and quotes"
+      summary: "Add a revision (back to draft)"
+      operationId: "put_owner_quotes_id"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      description: "Staff only. Requires permission `quotes.write`. Session requests must send the X-CSRF-Token header."
+      x-permissions:
+        - "quotes.write"
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/owner/quotes/{id}/send":
+    post:
+      tags:
+        - "Owner: requests and quotes"
+      summary: "Send or resend the current revision"
+      operationId: "post_owner_quotes_id_send"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      description: "Staff only. Requires permission `quotes.write`. Session requests must send the X-CSRF-Token header."
+      x-permissions:
+        - "quotes.write"
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/owner/quotes/{id}/withdraw":
+    post:
+      tags:
+        - "Owner: requests and quotes"
+      summary: "Withdraw a quote"
+      operationId: "post_owner_quotes_id_withdraw"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      description: "Staff only. Requires permission `quotes.write`. Session requests must send the X-CSRF-Token header."
+      x-permissions:
+        - "quotes.write"
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /owner/orders:
+    get:
+      tags:
+        - "Owner: orders"
+      summary: "Orders with filters (status, payment, garment, urgency, date, search)"
+      operationId: "get_owner_orders"
+      description: "Staff only. Requires permission `orders.read`."
+      x-permissions:
+        - "orders.read"
+      security:
+        - session: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/owner/orders/{id}":
+    get:
+      tags:
+        - "Owner: orders"
+      summary: "An order with everything, including internal notes and audit history"
+      operationId: "get_owner_orders_id"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      description: "Staff only. Requires permission `orders.read`."
+      x-permissions:
+        - "orders.read"
+      security:
+        - session: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+    patch:
+      tags:
+        - "Owner: orders"
+      summary: "Update due date, urgency, delivery state"
+      operationId: "patch_owner_orders_id"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      description: "Staff only. Requires permission `orders.update`. Session requests must send the X-CSRF-Token header."
+      x-permissions:
+        - "orders.update"
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/owner/orders/{id}/status":
+    post:
+      tags:
+        - "Owner: orders"
+      summary: "Change production stage (backwards moves need a note)"
+      operationId: "post_owner_orders_id_status"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      description: "Staff only. Requires permission `orders.update`. Session requests must send the X-CSRF-Token header."
+      x-permissions:
+        - "orders.update"
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/owner/orders/{id}/notes":
+    post:
+      tags:
+        - "Owner: orders"
+      summary: "Add a customer-visible or internal note"
+      operationId: "post_owner_orders_id_notes"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      description: "Staff only. Requires permission `orders.update`. Session requests must send the X-CSRF-Token header."
+      x-permissions:
+        - "orders.update"
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/owner/orders/{id}/tasks":
+    post:
+      tags:
+        - "Owner: orders"
+      summary: "Create or update a production task"
+      operationId: "post_owner_orders_id_tasks"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      description: "Staff only. Requires permission `orders.update`. Session requests must send the X-CSRF-Token header."
+      x-permissions:
+        - "orders.update"
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/owner/orders/{id}/fittings":
+    post:
+      tags:
+        - "Owner: orders"
+      summary: "Record a fitting and its adjustments"
+      operationId: "post_owner_orders_id_fittings"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      description: "Staff only. Requires permission `orders.update`. Session requests must send the X-CSRF-Token header."
+      x-permissions:
+        - "orders.update"
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/owner/orders/{id}/payments/manual":
+    post:
+      tags:
+        - "Owner: payments"
+      summary: "Record a cash or manual payment (Idempotency-Key required)"
+      operationId: "post_owner_orders_id_payments_manual"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+        - "$ref": "#/components/parameters/IdempotencyKey"
+      description: "Staff only. Requires permission `orders.update`, `payments.read`. Session requests must send the X-CSRF-Token header."
+      x-permissions:
+        - "orders.update"
+        - "payments.read"
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /owner/payments:
+    get:
+      tags:
+        - "Owner: payments"
+      summary: "Payments with filters"
+      operationId: "get_owner_payments"
+      description: "Staff only. Requires permission `payments.read`."
+      x-permissions:
+        - "payments.read"
+      security:
+        - session: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/owner/payments/{id}/recheck":
+    post:
+      tags:
+        - "Owner: payments"
+      summary: "Ask the provider for a payment's status now"
+      operationId: "post_owner_payments_id_recheck"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      description: "Staff only. Requires permission `payments.read`. Session requests must send the X-CSRF-Token header."
+      x-permissions:
+        - "payments.read"
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/owner/payments/{id}/refunds":
+    post:
+      tags:
+        - "Owner: payments"
+      summary: "Record a refund against a verified payment"
+      operationId: "post_owner_payments_id_refunds"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      description: "Staff only. Requires permission `payments.refund`. Session requests must send the X-CSRF-Token header."
+      x-permissions:
+        - "payments.refund"
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /owner/customers:
+    get:
+      tags:
+        - "Owner: customers"
+      summary: "Customers with search"
+      operationId: "get_owner_customers"
+      description: "Staff only. Requires permission `customers.read`."
+      x-permissions:
+        - "customers.read"
+      security:
+        - session: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/owner/customers/{id}":
+    get:
+      tags:
+        - "Owner: customers"
+      summary: "A customer with orders, requests, appointments, messages and designs"
+      operationId: "get_owner_customers_id"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      description: "Staff only. Requires permission `customers.read`."
+      x-permissions:
+        - "customers.read"
+      security:
+        - session: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+    patch:
+      tags:
+        - "Owner: customers"
+      summary: "Internal notes and preferred contact channel"
+      operationId: "patch_owner_customers_id"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      description: "Staff only. Requires permission `customers.update`. Session requests must send the X-CSRF-Token header."
+      x-permissions:
+        - "customers.update"
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/owner/customers/{id}/measurement-profiles":
+    get:
+      tags:
+        - "Owner: customers"
+      summary: "A customer's measurement profiles"
+      operationId: "get_owner_customers_id_measurement_profiles"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      description: "Staff only. Requires permission `customers.read`."
+      x-permissions:
+        - "customers.read"
+      security:
+        - session: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+    post:
+      tags:
+        - "Owner: customers"
+      summary: "Create a measurement profile for a customer"
+      operationId: "post_owner_customers_id_measurement_profiles"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      description: "Staff only. Requires permission `measurements.write`. Session requests must send the X-CSRF-Token header."
+      x-permissions:
+        - "measurements.write"
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/owner/measurement-profiles/{id}/versions":
+    get:
+      tags:
+        - "Owner: customers"
+      summary: "Versions of a profile"
+      operationId: "get_owner_measurement_profiles_id_versions"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      description: "Staff only. Requires permission `customers.read`."
+      x-permissions:
+        - "customers.read"
+      security:
+        - session: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+    post:
+      tags:
+        - "Owner: customers"
+      summary: "Save tailor-verified measurements"
+      operationId: "post_owner_measurement_profiles_id_versions"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      description: "Staff only. Requires permission `measurements.write`. Session requests must send the X-CSRF-Token header."
+      x-permissions:
+        - "measurements.write"
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/owner/measurement-versions/{id}":
+    get:
+      tags:
+        - "Owner: customers"
+      summary: "One measurement version"
+      operationId: "get_owner_measurement_versions_id"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      description: "Staff only. Requires permission `customers.read`."
+      x-permissions:
+        - "customers.read"
+      security:
+        - session: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /owner/appointments:
+    get:
+      tags:
+        - "Owner: appointments"
+      summary: "Appointments and closures in a date range"
+      operationId: "get_owner_appointments"
+      description: "Staff only. Requires permission `appointments.read`."
+      x-permissions:
+        - "appointments.read"
+      security:
+        - session: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+    post:
+      tags:
+        - "Owner: appointments"
+      summary: "Book for a customer (override allows times outside availability)"
+      operationId: "post_owner_appointments"
+      description: "Staff only. Requires permission `appointments.write`. Session requests must send the X-CSRF-Token header."
+      x-permissions:
+        - "appointments.write"
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/owner/appointments/{id}":
+    patch:
+      tags:
+        - "Owner: appointments"
+      summary: "Mark completed or no-show, assign staff, notes, location"
+      operationId: "patch_owner_appointments_id"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      description: "Staff only. Requires permission `appointments.write`. Session requests must send the X-CSRF-Token header."
+      x-permissions:
+        - "appointments.write"
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/owner/appointments/{id}/change":
+    post:
+      tags:
+        - "Owner: appointments"
+      summary: "Move or cancel an appointment"
+      operationId: "post_owner_appointments_id_change"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      description: "Staff only. Requires permission `appointments.write`. Session requests must send the X-CSRF-Token header."
+      x-permissions:
+        - "appointments.write"
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /owner/availability:
+    get:
+      tags:
+        - "Owner: appointments"
+      summary: "Bookable hours and closures"
+      operationId: "get_owner_availability"
+      description: "Staff only. Requires permission `appointments.read`."
+      x-permissions:
+        - "appointments.read"
+      security:
+        - session: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /owner/availability/rules:
+    put:
+      tags:
+        - "Owner: appointments"
+      summary: "Replace weekly bookable hours"
+      operationId: "put_owner_availability_rules"
+      description: "Staff only. Requires permission `appointments.write`. Session requests must send the X-CSRF-Token header."
+      x-permissions:
+        - "appointments.write"
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /owner/availability/blocks:
+    post:
+      tags:
+        - "Owner: appointments"
+      summary: "Close a period (holiday, blocked time)"
+      operationId: "post_owner_availability_blocks"
+      description: "Staff only. Requires permission `appointments.write`. Session requests must send the X-CSRF-Token header."
+      x-permissions:
+        - "appointments.write"
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/owner/availability/blocks/{id}":
+    delete:
+      tags:
+        - "Owner: appointments"
+      summary: "Remove a closure"
+      operationId: "delete_owner_availability_blocks_id"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      description: "Staff only. Requires permission `appointments.write`. Session requests must send the X-CSRF-Token header."
+      x-permissions:
+        - "appointments.write"
+      security:
+        - session: []
+      responses:
+        204:
+          description: "Done"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /owner/support:
+    get:
+      tags:
+        - "Owner: support"
+      summary: "Support threads with filters"
+      operationId: "get_owner_support"
+      description: "Staff only. Requires permission `support.read`."
+      x-permissions:
+        - "support.read"
+      security:
+        - session: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/owner/support/{id}":
+    get:
+      tags:
+        - "Owner: support"
+      summary: "A thread with internal notes"
+      operationId: "get_owner_support_id"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      description: "Staff only. Requires permission `support.read`."
+      x-permissions:
+        - "support.read"
+      security:
+        - session: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+    patch:
+      tags:
+        - "Owner: support"
+      summary: "Status, priority and assignment"
+      operationId: "patch_owner_support_id"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      description: "Staff only. Requires permission `support.write`. Session requests must send the X-CSRF-Token header."
+      x-permissions:
+        - "support.write"
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/owner/support/{id}/reply":
+    post:
+      tags:
+        - "Owner: support"
+      summary: "Reply to the customer or add an internal note"
+      operationId: "post_owner_support_id_reply"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      description: "Staff only. Requires permission `support.write`. Session requests must send the X-CSRF-Token header."
+      x-permissions:
+        - "support.write"
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /owner/products:
+    get:
+      tags:
+        - "Owner: catalogue"
+      summary: "Products"
+      operationId: "get_owner_products"
+      description: "Staff only. Requires permission `products.write`."
+      x-permissions:
+        - "products.write"
+      security:
+        - session: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+    post:
+      tags:
+        - "Owner: catalogue"
+      summary: "Create or update a product with variants and media"
+      operationId: "post_owner_products"
+      description: "Staff only. Requires permission `products.write`. Session requests must send the X-CSRF-Token header."
+      x-permissions:
+        - "products.write"
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/owner/products/{id}":
+    get:
+      tags:
+        - "Owner: catalogue"
+      summary: "A product"
+      operationId: "get_owner_products_id"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      description: "Staff only. Requires permission `products.write`."
+      x-permissions:
+        - "products.write"
+      security:
+        - session: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+    put:
+      tags:
+        - "Owner: catalogue"
+      summary: "Create or update a product with variants and media"
+      operationId: "put_owner_products_id"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      description: "Staff only. Requires permission `products.write`. Session requests must send the X-CSRF-Token header."
+      x-permissions:
+        - "products.write"
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /owner/categories:
+    get:
+      tags:
+        - "Owner: catalogue"
+      summary: "Product categories"
+      operationId: "get_owner_categories"
+      description: "Staff only. Requires permission `products.write`."
+      x-permissions:
+        - "products.write"
+      security:
+        - session: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+    post:
+      tags:
+        - "Owner: catalogue"
+      summary: "Create or rename a category"
+      operationId: "post_owner_categories"
+      description: "Staff only. Requires permission `products.write`. Session requests must send the X-CSRF-Token header."
+      x-permissions:
+        - "products.write"
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /owner/fabrics:
+    get:
+      tags:
+        - "Owner: catalogue"
+      summary: "Fabrics including archived"
+      operationId: "get_owner_fabrics"
+      description: "Staff only. Requires permission `fabrics.write`."
+      x-permissions:
+        - "fabrics.write"
+      security:
+        - session: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+    post:
+      tags:
+        - "Owner: catalogue"
+      summary: "Create or update a fabric, colours and material settings"
+      operationId: "post_owner_fabrics"
+      description: "Staff only. Requires permission `fabrics.write`. Session requests must send the X-CSRF-Token header."
+      x-permissions:
+        - "fabrics.write"
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /owner/garments:
+    get:
+      tags:
+        - "Owner: garments and fit"
+      summary: "Garment types"
+      operationId: "get_owner_garments"
+      description: "Staff only. Requires permission `garments.write`."
+      x-permissions:
+        - "garments.write"
+      security:
+        - session: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+    post:
+      tags:
+        - "Owner: garments and fit"
+      summary: "Create or update a garment type"
+      operationId: "post_owner_garments"
+      description: "Staff only. Requires permission `garments.write`. Session requests must send the X-CSRF-Token header."
+      x-permissions:
+        - "garments.write"
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/owner/garments/{key}":
+    get:
+      tags:
+        - "Owner: garments and fit"
+      summary: "A garment with options, fit rules, sizes and measurement fields"
+      operationId: "get_owner_garments_key"
+      parameters:
+        - name: "key"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      description: "Staff only. Requires permission `garments.write`."
+      x-permissions:
+        - "garments.write"
+      security:
+        - session: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/owner/garments/{key}/groups":
+    post:
+      tags:
+        - "Owner: garments and fit"
+      summary: "Create or update an option group"
+      operationId: "post_owner_garments_key_groups"
+      parameters:
+        - name: "key"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      description: "Staff only. Requires permission `garments.write`. Session requests must send the X-CSRF-Token header."
+      x-permissions:
+        - "garments.write"
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/owner/option-groups/{groupId}/values":
+    post:
+      tags:
+        - "Owner: garments and fit"
+      summary: "Create or update an option choice and the 3D parts it shows or hides"
+      operationId: "post_owner_option_groups_groupId_values"
+      parameters:
+        - name: "groupId"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      description: "Staff only. Requires permission `garments.write`. Session requests must send the X-CSRF-Token header."
+      x-permissions:
+        - "garments.write"
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/owner/garments/{key}/fit-rules":
+    put:
+      tags:
+        - "Owner: garments and fit"
+      summary: "Replace fit rules"
+      operationId: "put_owner_garments_key_fit_rules"
+      parameters:
+        - name: "key"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      description: "Staff only. Requires permission `fit_rules.write`. Session requests must send the X-CSRF-Token header."
+      x-permissions:
+        - "fit_rules.write"
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/owner/garments/{key}/measurement-fields":
+    put:
+      tags:
+        - "Owner: garments and fit"
+      summary: "Set which measurements a garment asks for"
+      operationId: "put_owner_garments_key_measurement_fields"
+      parameters:
+        - name: "key"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      description: "Staff only. Requires permission `fit_rules.write`. Session requests must send the X-CSRF-Token header."
+      x-permissions:
+        - "fit_rules.write"
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /owner/measurement-fields:
+    post:
+      tags:
+        - "Owner: garments and fit"
+      summary: "Create or update a measurement field"
+      operationId: "post_owner_measurement_fields"
+      description: "Staff only. Requires permission `fit_rules.write`. Session requests must send the X-CSRF-Token header."
+      x-permissions:
+        - "fit_rules.write"
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/owner/garments/{key}/sizes":
+    put:
+      tags:
+        - "Owner: garments and fit"
+      summary: "Replace standard sizes"
+      operationId: "put_owner_garments_key_sizes"
+      parameters:
+        - name: "key"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      description: "Staff only. Requires permission `garments.write`. Session requests must send the X-CSRF-Token header."
+      x-permissions:
+        - "garments.write"
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /owner/assets:
+    get:
+      tags:
+        - "Owner: 3D assets"
+      summary: "3D asset versions"
+      operationId: "get_owner_assets"
+      description: "Staff only. Requires permission `assets.write`."
+      x-permissions:
+        - "assets.write"
+      security:
+        - session: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+    post:
+      tags:
+        - "Owner: 3D assets"
+      summary: "Register a new asset version (never live until published)"
+      operationId: "post_owner_assets"
+      description: "Staff only. Requires permission `assets.write`. Session requests must send the X-CSRF-Token header."
+      x-permissions:
+        - "assets.write"
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /owner/assets/files:
+    post:
+      tags:
+        - "Owner: 3D assets"
+      summary: "Upload a GLB, KTX2 or still render (validated, stored by checksum)"
+      operationId: "post_owner_assets_files"
+      description: "Staff only. Requires permission `assets.write`. Session requests must send the X-CSRF-Token header."
+      x-permissions:
+        - "assets.write"
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: "object"
+              required:
+                - "file"
+              properties:
+                file:
+                  type: "string"
+                  format: "binary"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/owner/assets/{id}/status":
+    post:
+      tags:
+        - "Owner: 3D assets"
+      summary: "Move a version through review: validating, processed, preview, approved, published, archived"
+      operationId: "post_owner_assets_id_status"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      description: "Staff only. Requires permission `assets.write`. Session requests must send the X-CSRF-Token header."
+      x-permissions:
+        - "assets.write"
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /owner/portfolio:
+    get:
+      tags:
+        - "Owner: site"
+      summary: "Portfolio projects"
+      operationId: "get_owner_portfolio"
+      description: "Staff only. Requires permission `portfolio.write`."
+      x-permissions:
+        - "portfolio.write"
+      security:
+        - session: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+    post:
+      tags:
+        - "Owner: site"
+      summary: "Create or update a project (customer permission required to publish people)"
+      operationId: "post_owner_portfolio"
+      description: "Staff only. Requires permission `portfolio.write`. Session requests must send the X-CSRF-Token header."
+      x-permissions:
+        - "portfolio.write"
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/owner/portfolio/{id}":
+    put:
+      tags:
+        - "Owner: site"
+      summary: "Create or update a project (customer permission required to publish people)"
+      operationId: "put_owner_portfolio_id"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      description: "Staff only. Requires permission `portfolio.write`. Session requests must send the X-CSRF-Token header."
+      x-permissions:
+        - "portfolio.write"
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+    delete:
+      tags:
+        - "Owner: site"
+      summary: "Delete a project"
+      operationId: "delete_owner_portfolio_id"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      description: "Staff only. Requires permission `portfolio.write`. Session requests must send the X-CSRF-Token header."
+      x-permissions:
+        - "portfolio.write"
+      security:
+        - session: []
+      responses:
+        204:
+          description: "Done"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /owner/testimonials:
+    get:
+      tags:
+        - "Owner: site"
+      summary: "Testimonials"
+      operationId: "get_owner_testimonials"
+      description: "Staff only. Requires permission `testimonials.write`."
+      x-permissions:
+        - "testimonials.write"
+      security:
+        - session: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+    post:
+      tags:
+        - "Owner: site"
+      summary: "Create or update a testimonial (consent required to publish)"
+      operationId: "post_owner_testimonials"
+      description: "Staff only. Requires permission `testimonials.write`. Session requests must send the X-CSRF-Token header."
+      x-permissions:
+        - "testimonials.write"
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/owner/testimonials/{id}":
+    put:
+      tags:
+        - "Owner: site"
+      summary: "Create or update a testimonial (consent required to publish)"
+      operationId: "put_owner_testimonials_id"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      description: "Staff only. Requires permission `testimonials.write`. Session requests must send the X-CSRF-Token header."
+      x-permissions:
+        - "testimonials.write"
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+    delete:
+      tags:
+        - "Owner: site"
+      summary: "Delete a testimonial"
+      operationId: "delete_owner_testimonials_id"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      description: "Staff only. Requires permission `testimonials.write`. Session requests must send the X-CSRF-Token header."
+      x-permissions:
+        - "testimonials.write"
+      security:
+        - session: []
+      responses:
+        204:
+          description: "Done"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /owner/content:
+    get:
+      tags:
+        - "Owner: settings"
+      summary: "Content blocks"
+      operationId: "get_owner_content"
+      description: "Staff only. Requires permission `content.write`."
+      x-permissions:
+        - "content.write"
+      security:
+        - session: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/owner/content/{key}":
+    put:
+      tags:
+        - "Owner: settings"
+      summary: "Update a content block (plain text, no HTML)"
+      operationId: "put_owner_content_key"
+      parameters:
+        - name: "key"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      description: "Staff only. Requires permission `content.write`. Session requests must send the X-CSRF-Token header."
+      x-permissions:
+        - "content.write"
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /owner/settings/business:
+    get:
+      tags:
+        - "Owner: settings"
+      summary: "Business settings"
+      operationId: "get_owner_settings_business"
+      description: "Staff only. Requires permission `settings.write`."
+      x-permissions:
+        - "settings.write"
+      security:
+        - session: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+    put:
+      tags:
+        - "Owner: settings"
+      summary: "Update business settings"
+      operationId: "put_owner_settings_business"
+      description: "Staff only. Requires permission `settings.write`. Session requests must send the X-CSRF-Token header."
+      x-permissions:
+        - "settings.write"
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /owner/flags:
+    get:
+      tags:
+        - "Owner: settings"
+      summary: "Feature switches with the reason any cannot be turned on"
+      operationId: "get_owner_flags"
+      description: "Staff only. Requires permission `settings.write`."
+      x-permissions:
+        - "settings.write"
+      security:
+        - session: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/owner/flags/{key}":
+    put:
+      tags:
+        - "Owner: settings"
+      summary: "Turn a feature on or off (refused while its provider is not configured)"
+      operationId: "put_owner_flags_key"
+      parameters:
+        - name: "key"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      description: "Staff only. Requires permission `settings.write`. Session requests must send the X-CSRF-Token header."
+      x-permissions:
+        - "settings.write"
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  /owner/staff:
+    get:
+      tags:
+        - "Owner: staff"
+      summary: "Staff and roles"
+      operationId: "get_owner_staff"
+      description: "Staff only. Requires permission `staff.write`."
+      x-permissions:
+        - "staff.write"
+      security:
+        - session: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+    post:
+      tags:
+        - "Owner: staff"
+      summary: "Invite a staff member"
+      operationId: "post_owner_staff"
+      description: "Staff only. Requires permission `staff.write`. Session requests must send the X-CSRF-Token header."
+      x-permissions:
+        - "staff.write"
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"
+  "/owner/staff/{id}":
+    put:
+      tags:
+        - "Owner: staff"
+      summary: "Change role or status (revokes sessions on suspension)"
+      operationId: "put_owner_staff_id"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      description: "Staff only. Requires permission `staff.write`. Session requests must send the X-CSRF-Token header."
+      x-permissions:
+        - "staff.write"
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        4XX:
+          "$ref": "#/components/responses/Error"
+        5XX:
+          "$ref": "#/components/responses/Error"

@@ -15,6 +15,7 @@ import {
   stateFromMM,
   type MeasureState,
 } from "@/features/measurements/measurement-form";
+import { PhotoEstimate } from "@/features/measurements/photo-estimate";
 
 const sourceLabel: Record<MeasurementVersion["source"], string> = {
   customer_entered: "Entered by you",
@@ -252,6 +253,12 @@ function VersionEditor({ profile, onDone }: { profile: MeasurementProfile; onDon
   const [notes, setNotes] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
+  const photos = useQuery({
+    queryKey: ["me", "measurement-estimates"],
+    queryFn: () => api<{ available: boolean; provider?: string }>("/me/measurement-estimates"),
+  });
+  const [photoOpen, setPhotoOpen] = useState(false);
+  const [estimatedBy, setEstimatedBy] = useState("");
 
   async function save() {
     const local = measureErrors(state, fields.data ?? [], false);
@@ -262,7 +269,7 @@ function VersionEditor({ profile, onDone }: { profile: MeasurementProfile; onDon
       const r = await api<{ id: string; reviewFlags: { message: string }[] | null }>(
         `/me/measurement-profiles/${profile.id}/versions`,
         {
-          body: { garment, ...measurePayload(state), notes },
+          body: { garment, ...measurePayload(state), notes, source: estimatedBy ? "estimated" : undefined },
         },
       );
       toast(
@@ -299,6 +306,35 @@ function VersionEditor({ profile, onDone }: { profile: MeasurementProfile; onDon
           </select>
         )}
       </Field>
+      {photos.data?.available && !photoOpen && !estimatedBy ? (
+        <button
+          type="button"
+          className="btn btn-sm"
+          style={{ justifySelf: "start" }}
+          onClick={() => setPhotoOpen(true)}
+        >
+          Measure from photos
+        </button>
+      ) : null}
+      {photoOpen && photos.data?.provider ? (
+        <PhotoEstimate
+          provider={photos.data.provider}
+          bodyModel={profile.bodyModel}
+          onCancel={() => setPhotoOpen(false)}
+          onResult={(r) => {
+            const est = stateFromMM(r.valuesMm, r.heightMm, state.unit);
+            setState((s) => ({ ...s, height: est.height, values: { ...s.values, ...est.values } }));
+            setEstimatedBy(r.provider);
+            setPhotoOpen(false);
+          }}
+        />
+      ) : null}
+      {estimatedBy ? (
+        <p className="notice" role="status" style={{ margin: 0 }}>
+          Estimated from your photos by {estimatedBy}, and your photos have been deleted. Check each value against a
+          tape if you can. This version is saved as an estimate, and your tailor verifies it before cutting.
+        </p>
+      ) : null}
       {fields.isLoading ? (
         <div className="skeleton" style={{ height: 240 }} />
       ) : (

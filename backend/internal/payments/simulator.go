@@ -24,6 +24,7 @@ import (
 //	0005 DEV_DUPLICATE_CALLBACK  approved, callback delivered twice
 //	0006 DEV_DELAYED_CALLBACK    approved, no callback; only status polling finds it
 //	0007 DEV_CANCELLED           cancelled on the phone
+//	0008 DEV_EXPIRED             the provider reports the request timed out unanswered, callback sent
 //	other                        same as 0001
 type Simulator struct {
 	name    string
@@ -41,6 +42,7 @@ type simPayment struct {
 var Scenarios = map[string]string{
 	"0001": "DEV_SUCCESS", "0002": "DEV_PENDING", "0003": "DEV_FAILED", "0004": "DEV_UNAVAILABLE",
 	"0005": "DEV_DUPLICATE_CALLBACK", "0006": "DEV_DELAYED_CALLBACK", "0007": "DEV_CANCELLED",
+	"0008": "DEV_EXPIRED",
 }
 
 func NewSimulator(name string, delay time.Duration) *Simulator {
@@ -70,7 +72,7 @@ func (s *Simulator) Initiate(_ context.Context, in InitiateRequest) (Result, err
 		s.pending[in.Reference] = simPayment{scenario: sc, created: time.Now()}
 	}
 	s.mu.Unlock()
-	if sc == "DEV_SUCCESS" || sc == "DEV_DUPLICATE_CALLBACK" || sc == "DEV_FAILED" || sc == "DEV_CANCELLED" {
+	if sc == "DEV_SUCCESS" || sc == "DEV_DUPLICATE_CALLBACK" || sc == "DEV_FAILED" || sc == "DEV_CANCELLED" || sc == "DEV_EXPIRED" {
 		go s.callback(in.CallbackURL, in.Reference, sc == "DEV_DUPLICATE_CALLBACK")
 	}
 	return Result{Status: CustomerActionRequired, HTTPStatus: 202, ProviderTxID: "SIM-" + in.Reference[:8],
@@ -115,6 +117,9 @@ func (s *Simulator) Status(_ context.Context, reference, _ string) (Result, erro
 			FailureMessage: "There is not enough balance on this Mobile Money account."}, nil
 	case "DEV_CANCELLED":
 		return Result{Status: Cancelled, HTTPStatus: 200, FailureMessage: "The payment was declined on the phone."}, nil
+	case "DEV_EXPIRED":
+		return Result{Status: Expired, HTTPStatus: 200, FailureCode: "EXPIRED",
+			FailureMessage: "The payment request timed out before it was approved on the phone."}, nil
 	default:
 		return Result{Status: Succeeded, HTTPStatus: 200, ProviderTxID: tx}, nil
 	}

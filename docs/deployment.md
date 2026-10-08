@@ -17,6 +17,9 @@ Both services have Dockerfiles (`backend/Dockerfile`, built from the repository 
   Public images (products, portfolio, content) are served through the API with long cache headers;
   private uploads (references, support photos, body photos) are only served to their owner and staff.
 - SMTP for email (`EMAIL_PROVIDER=smtp`). The development log sender is refused in production.
+- Optional SMS: an Orange SMS API application (`SMS_PROVIDER=orange`, `ORANGE_SMS_*`) or a Twilio
+  account (`SMS_PROVIDER=twilio`, `TWILIO_*`). Without one, set `SMS_PROVIDER=disabled`; customers
+  still get email and in-app notices. A provider with missing values stays off and logs why.
 - HTTPS in front of both services (load balancer or reverse proxy). Set `TRUSTED_PROXY_HOPS` to the
   number of proxies so rate limits and logs see the real client address.
 
@@ -29,7 +32,7 @@ in the repository. The API refuses to start in production when:
 - `COOKIE_SECURE` is off,
 - `PUBLIC_SITE_URL` or `PUBLIC_API_URL` is not https,
 - `INTERNAL_API_KEY` is shorter than 32 characters,
-- `EMAIL_PROVIDER=log`.
+- `EMAIL_PROVIDER=log` or `SMS_PROVIDER=log`.
 
 Generate secrets with `openssl rand -base64 48` (callback secrets and the internal key).
 

@@ -151,6 +151,15 @@ export function OwnerAssets() {
   );
 }
 
+const renderViews: [string, string][] = [
+  ["front", "Front"],
+  ["45", "45 degrees"],
+  ["side", "Left side"],
+  ["135", "135 degrees"],
+  ["back", "Back"],
+  ["right", "Right side"],
+];
+
 function NewVersion({ assets, onDone }: { assets: Asset[]; onDone: () => void }) {
   const qc = useQueryClient();
   const toast = useToast();
@@ -162,6 +171,7 @@ function NewVersion({ assets, onDone }: { assets: Asset[]; onDone: () => void })
     { lod: "high", up: null, progress: 0, error: "" },
     { lod: "low", up: null, progress: 0, error: "" },
   ]);
+  const [renders, setRenders] = useState<Record<string, { url: string; error: string; busy: boolean }>>({});
   const [source, setSource] = useState("");
   const [license, setLicense] = useState("");
   const [production, setProduction] = useState(false);
@@ -182,6 +192,19 @@ function NewVersion({ assets, onDone }: { assets: Asset[]; onDone: () => void })
       );
   }
 
+  function uploadRender(view: string, file: File | undefined) {
+    if (!file) return;
+    setRenders((r) => ({ ...r, [view]: { url: "", error: "", busy: true } }));
+    uploadAssetFile(file, () => {})
+      .then((up) => setRenders((r) => ({ ...r, [view]: { url: up.file.url, error: "", busy: false } })))
+      .catch((e) =>
+        setRenders((r) => ({
+          ...r,
+          [view]: { url: "", error: e instanceof ApiError ? e.message : "Upload failed.", busy: false },
+        })),
+      );
+  }
+
   async function create() {
     setBusy(true);
     setErrors({});
@@ -198,6 +221,12 @@ function NewVersion({ assets, onDone }: { assets: Asset[]; onDone: () => void })
             ...(prev?.supportedOptions ?? {}),
             parts: ready[0]?.up?.info?.nodes ?? [],
             morphs: ready[0]?.up?.info?.morphTargets ?? [],
+            // Renders show this exact model, so the previous version's are never carried over.
+            renders: Object.fromEntries(
+              Object.entries(renders)
+                .filter(([, r]) => r.url)
+                .map(([v, r]) => [v, r.url]),
+            ),
           },
           textureSetVersion: prev?.textureSetVersion ?? "",
           license: { source, license },
@@ -281,6 +310,30 @@ function NewVersion({ assets, onDone }: { assets: Asset[]; onDone: () => void })
         </div>
       ))}
       {errors.files ? <span className="error small">{errors.files}</span> : null}
+      {kind === "garment" ? (
+        <fieldset className="stack-sm" style={{ border: 0, padding: 0, margin: 0 }}>
+          <legend className="label">Still renders (optional)</legend>
+          <p className="tiny muted" style={{ margin: 0 }}>
+            Pictures of this model on its body with default options, shown when a phone cannot display 3D. JPEG, PNG or
+            WebP, portrait, at least 800 pixels tall.
+          </p>
+          <div className="form-grid cols-2">
+            {renderViews.map(([view, label]) => (
+              <label key={view} className="field">
+                <span className="small">{label}</span>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={(e) => uploadRender(view, e.target.files?.[0])}
+                />
+                {renders[view]?.busy ? <span className="tiny muted">Uploading</span> : null}
+                {renders[view]?.url ? <span className="tiny muted">Uploaded</span> : null}
+                {renders[view]?.error ? <span className="error small">{renders[view]?.error}</span> : null}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      ) : null}
       <div className="form-grid cols-2">
         <label className="field">
           <span className="label">Where it came from</span>

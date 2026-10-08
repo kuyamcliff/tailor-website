@@ -20,3 +20,4 @@ backend/data/
 .DS_Store
 .idea/
 .vscode/
+frontend/public/3d/decoders/

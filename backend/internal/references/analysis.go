@@ -145,9 +145,6 @@ func (h Handler) Blocker(_ context.Context, key string) string {
 	if key == "reference_analysis" && h.Provider == nil {
 		return "Set AI_REFERENCE_PROVIDER and AI_REFERENCE_API_KEY on the server first."
 	}
-	if key == "photo_body_estimation" {
-		return "No body estimation provider is integrated yet."
-	}
 	return ""
 }
 

@@ -243,15 +243,6 @@ func newEmailSender(cfg config.EmailConfig, log *slog.Logger) Sender {
 	}
 }
 
-// newSMSSender returns the SMS adapter. No SMS vendor contract has been chosen yet, so only the
-// development log sender and the disabled sender exist; a vendor adapter plugs in here.
-func newSMSSender(cfg config.SMSConfig, log *slog.Logger) Sender {
-	if cfg.Provider == "log" {
-		return logSender{log: log, kind: "sms"}
-	}
-	return disabledSender{}
-}
-
 func nullable(s string) *string {
 	if s == "" {
 		return nil

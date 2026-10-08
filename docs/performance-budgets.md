@@ -20,8 +20,9 @@ The site reports these through `web-vitals` to `NEXT_PUBLIC_TELEMETRY_URL` when 
 |---|---|---|
 | Initial JavaScript per page (gzip) | 230 KB | 208 KB on home, shop and the dashboard; 214 KB on the studio |
 | three.js and the studio viewer (gzip, loaded only on /studio after the panel is interactive) | 300 KB | 268 KB |
-| Studio body + garment models, detailed | 3 MB | 0.8 + 1.4 MB (suit stand-in) |
-| Studio body + garment models, light (phones, "Lighter model") | 1.5 MB | 0.37 + 0.67 MB |
+| Studio body + garment models, detailed (Meshopt) | 3 MB | 0.24 + 0.43 MB (suit stand-in; 0.8 + 1.4 MB before compression) |
+| Studio body + garment models, light (Medium and Light levels) | 1.5 MB | 0.12 + 0.25 MB |
+| Still renders for the no-WebGL fallback (WebP, per angle) | 60 KB | 6 to 21 KB |
 | Fabric texture set (colour, normal, roughness and swatch, WebP, 1024 px) | 700 KB | about 650 KB |
 | Hero image (WebP via next/image, mobile width) | 150 KB | served responsive by next/image |
 
@@ -32,8 +33,9 @@ browsers download only the Latin files a page uses; no third-party font or scrip
 
 - three.js is imported only by `features/studio/viewer.tsx`, through `next/dynamic` with `ssr:
   false`. Never import it from shared components.
-- Phones and devices reporting 4 GB of memory or less get the light model and a lower pixel ratio
-  automatically; customers can switch with "Lighter model".
+- The studio picks one of four quality levels from the device and adjusts it from measured frame
+  times; it renders on demand rather than every frame (see `docs/3d-assets.md`). Customers can
+  choose a level under Preview > Detail.
 - Product and portfolio images go through `next/image` with explicit `sizes`.
 - Public API responses used by server components are cached briefly (`revalidate` 30 to 60 s).
 - Below-the-fold reveal animations only apply to elements that start off screen and are disabled

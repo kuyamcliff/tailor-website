@@ -11,18 +11,20 @@ const views = [
   { key: "front", label: "Front" },
   { key: "45", label: "45°" },
   { key: "side", label: "Side" },
+  { key: "135", label: "135°" },
   { key: "back", label: "Back" },
 ];
 
-export function StudioPreview() {
+export function StudioPreview({ renders }: { renders: Record<string, string> }) {
   const [view, setView] = useState(0);
   return (
     <div className={styles.frame}>
       <div className={styles.stage}>
         {views.map((v, i) => (
           <Image
+            unoptimized
             key={v.key}
-            src={`/3d/renders/suit-${v.key}.webp`}
+            src={renders[v.key] ?? `/3d/renders/suit-${v.key}.webp`}
             alt={i === view ? `Suit in the fitting studio, ${v.label} view` : ""}
             fill
             sizes="(max-width: 960px) 100vw, 50vw"
