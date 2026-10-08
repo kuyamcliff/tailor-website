@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -43,8 +44,10 @@ type Config struct {
 	ReferenceAnalysisProvider string
 	ReferenceAnalysisAPIKey   string
 	ReferenceAnalysisModel    string
-	BodyEstimationProvider    string
+	BodyEstimationProvider    string // disabled or bodygram
 	BodyEstimationAPIKey      string
+	BodygramOrgID             string
+	BodygramAPIURL            string
 
 	BootstrapOwnerEmail    string
 	BootstrapOwnerPassword string
@@ -94,8 +97,52 @@ type EmailConfig struct {
 }
 
 type SMSConfig struct {
-	Provider string // "disabled" or "log" until a real SMS contract is chosen
-	APIKey   string
+	Provider string // "disabled", "log" (development), "orange" or "twilio"
+
+	OrangeAPIURL        string // https://api.orange.com
+	OrangeClientID      string
+	OrangeClientSecret  string
+	OrangeSenderAddress string // country sender number without the plus, e.g. 2370000
+	OrangeSenderName    string // optional, must be approved by Orange
+
+	TwilioAPIURL              string // https://api.twilio.com
+	TwilioAccountSID          string
+	TwilioAuthToken           string
+	TwilioFrom                string // sender number or approved alphanumeric sender ID
+	TwilioMessagingServiceSID string // alternative to TwilioFrom
+}
+
+// OrangeConfigured reports whether the Orange SMS credentials are complete.
+func (c SMSConfig) OrangeConfigured() (bool, string) {
+	return complete(map[string]string{"ORANGE_SMS_CLIENT_ID": c.OrangeClientID, "ORANGE_SMS_CLIENT_SECRET": c.OrangeClientSecret,
+		"ORANGE_SMS_SENDER_ADDRESS": c.OrangeSenderAddress}, c.OrangeAPIURL, "ORANGE_SMS_API_URL")
+}
+
+// TwilioConfigured reports whether the Twilio credentials are complete.
+func (c SMSConfig) TwilioConfigured() (bool, string) {
+	from := c.TwilioFrom
+	if from == "" {
+		from = c.TwilioMessagingServiceSID
+	}
+	return complete(map[string]string{"TWILIO_ACCOUNT_SID": c.TwilioAccountSID, "TWILIO_AUTH_TOKEN": c.TwilioAuthToken,
+		"TWILIO_FROM or TWILIO_MESSAGING_SERVICE_SID": from}, c.TwilioAPIURL, "TWILIO_API_URL")
+}
+
+func complete(vals map[string]string, baseURL, urlName string) (bool, string) {
+	var missing []string
+	for k, v := range vals {
+		if v == "" {
+			missing = append(missing, k)
+		}
+	}
+	if len(missing) > 0 {
+		sort.Strings(missing)
+		return false, "missing " + strings.Join(missing, ", ")
+	}
+	if !strings.HasPrefix(baseURL, "https://") {
+		return false, urlName + " must use https"
+	}
+	return true, ""
 }
 
 func Load() (Config, error) {
@@ -149,14 +196,25 @@ func Load() (Config, error) {
 			SMTPPass: os.Getenv("SMTP_PASSWORD"),
 		},
 		SMS: SMSConfig{
-			Provider: get("SMS_PROVIDER", "log"),
-			APIKey:   os.Getenv("SMS_PROVIDER_API_KEY"),
+			Provider:                  get("SMS_PROVIDER", "log"),
+			OrangeAPIURL:              strings.TrimRight(get("ORANGE_SMS_API_URL", "https://api.orange.com"), "/"),
+			OrangeClientID:            os.Getenv("ORANGE_SMS_CLIENT_ID"),
+			OrangeClientSecret:        os.Getenv("ORANGE_SMS_CLIENT_SECRET"),
+			OrangeSenderAddress:       strings.TrimPrefix(os.Getenv("ORANGE_SMS_SENDER_ADDRESS"), "+"),
+			OrangeSenderName:          os.Getenv("ORANGE_SMS_SENDER_NAME"),
+			TwilioAPIURL:              strings.TrimRight(get("TWILIO_API_URL", "https://api.twilio.com"), "/"),
+			TwilioAccountSID:          os.Getenv("TWILIO_ACCOUNT_SID"),
+			TwilioAuthToken:           os.Getenv("TWILIO_AUTH_TOKEN"),
+			TwilioFrom:                os.Getenv("TWILIO_FROM"),
+			TwilioMessagingServiceSID: os.Getenv("TWILIO_MESSAGING_SERVICE_SID"),
 		},
 		ReferenceAnalysisProvider: get("AI_REFERENCE_PROVIDER", "disabled"),
 		ReferenceAnalysisAPIKey:   os.Getenv("AI_REFERENCE_API_KEY"),
 		ReferenceAnalysisModel:    os.Getenv("AI_REFERENCE_MODEL"),
 		BodyEstimationProvider:    get("BODY_ESTIMATION_PROVIDER", "disabled"),
 		BodyEstimationAPIKey:      os.Getenv("BODY_ESTIMATION_API_KEY"),
+		BodygramOrgID:             os.Getenv("BODYGRAM_ORG_ID"),
+		BodygramAPIURL:            strings.TrimRight(get("BODYGRAM_API_URL", "https://platform.bodygram.com"), "/"),
 		BootstrapOwnerEmail:       os.Getenv("BOOTSTRAP_OWNER_EMAIL"),
 		BootstrapOwnerPassword:    os.Getenv("BOOTSTRAP_OWNER_PASSWORD"),
 		BootstrapOwnerName:        get("BOOTSTRAP_OWNER_NAME", "Owner"),
@@ -176,6 +234,11 @@ func (c Config) Validate() error {
 	if c.DatabaseURL == "" {
 		errs = append(errs, errors.New("DATABASE_URL is required"))
 	}
+	switch c.SMS.Provider {
+	case "disabled", "log", "orange", "twilio":
+	default:
+		errs = append(errs, fmt.Errorf("SMS_PROVIDER must be disabled, log, orange or twilio, got %q", c.SMS.Provider))
+	}
 	if c.Storage.Driver != "local" && c.Storage.Driver != "s3" {
 		errs = append(errs, fmt.Errorf("STORAGE_DRIVER must be local or s3"))
 	}
@@ -194,6 +257,9 @@ func (c Config) Validate() error {
 		}
 		if c.Email.Provider == "log" {
 			errs = append(errs, errors.New("EMAIL_PROVIDER=log is not allowed in production; use smtp or disabled"))
+		}
+		if c.SMS.Provider == "log" {
+			errs = append(errs, errors.New("SMS_PROVIDER=log is not allowed in production; use orange, twilio or disabled"))
 		}
 	}
 	return errors.Join(errs...)

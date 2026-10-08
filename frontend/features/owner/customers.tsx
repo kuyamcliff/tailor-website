@@ -7,6 +7,7 @@ import { api, ApiError } from "@/lib/api";
 import { formatDate, humanize, paymentLabels, requestLabels } from "@/lib/format";
 import { formatLength } from "@/lib/units";
 import type { MeasurementProfile } from "@/lib/types";
+import { useSession } from "@/components/providers/session";
 import { useToast } from "@/components/providers/toast";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Price } from "@/components/ui/price";
@@ -78,6 +79,7 @@ type Detail = {
 };
 
 export function OwnerCustomer({ id }: { id: string }) {
+  const { user } = useSession();
   const qc = useQueryClient();
   const toast = useToast();
   const q = useQuery({ queryKey: ["owner", "customer", id], queryFn: () => api<Detail>(`/owner/customers/${id}`) });
@@ -107,6 +109,13 @@ export function OwnerCustomer({ id }: { id: string }) {
       <PageHead
         title={c.name}
         sub={`Customer since ${formatDate(c.createdAt)}${c.hasAccount ? " · has an account" : " · guest"}`}
+        actions={
+          user?.permissions.includes("appointments.write") ? (
+            <Link className="btn btn-sm" href={`/owner/appointments?book=1&customer=${id}`}>
+              Book an appointment
+            </Link>
+          ) : null
+        }
       />
       <div className={styles.detail}>
         <div className="stack-lg">

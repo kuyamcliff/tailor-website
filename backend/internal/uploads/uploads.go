@@ -19,6 +19,7 @@ import (
 	"path"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -193,8 +194,10 @@ func sanitizeName(n string) string {
 		}
 	}
 	s := b.String()
-	if len(s) > 120 {
-		s = s[:120]
+	// Cut at a character boundary so a long accented name stays valid UTF-8.
+	for len(s) > 120 {
+		_, size := utf8.DecodeLastRuneInString(s)
+		s = s[:len(s)-size]
 	}
 	return s
 }
@@ -217,6 +220,9 @@ func (s *Service) Create(w http.ResponseWriter, r *http.Request) error {
 	if customerPurposes[purpose] {
 		if purpose == "body_photo" && !s.Settings.Flag(ctx, "photo_body_estimation") {
 			return httpx.NewError(http.StatusServiceUnavailable, "feature_disabled", "Photo measurement estimation is not available.")
+		}
+		if purpose == "body_photo" && (p == nil || p.CustomerID == nil) {
+			return httpx.NewError(http.StatusUnauthorized, "sign_in_required", "Sign in to measure from photos.")
 		}
 	} else if perm, ok := staffPurposePerm[purpose]; !ok || purpose == "asset" {
 		return httpx.BadRequest("Unknown upload purpose.")
@@ -303,7 +309,8 @@ func (s *Service) Create(w http.ResponseWriter, r *http.Request) error {
 		if err == nil {
 			t := time.Now().AddDate(0, 0, biz.RetentionDays)
 			if purpose == "body_photo" {
-				t = time.Now().AddDate(0, 0, 30) // body photos are kept only as long as needed
+				// Body photos are deleted as soon as they are measured; unused ones go after a day.
+				t = time.Now().Add(24 * time.Hour)
 			}
 			retention = &t
 		}
@@ -523,6 +530,37 @@ func (s *Service) Delete(w http.ResponseWriter, r *http.Request) error {
 	}
 	w.WriteHeader(http.StatusNoContent)
 	return nil
+}
+
+// ReadOwned returns the display-size copy (metadata already stripped) of a customer's own upload
+// with the given purpose. Used to hand body photos to the estimation provider.
+func (s *Service) ReadOwned(ctx context.Context, id, customerID uuid.UUID, purpose string) ([]byte, error) {
+	rec, err := s.load(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if rec.deleted || rec.purpose != purpose || rec.customerID == nil || *rec.customerID != customerID {
+		return nil, ErrObjectNotFound
+	}
+	key := rec.derivatives["preview"]
+	if key == "" {
+		key = rec.storageKey
+	}
+	obj, err := s.Store.Get(ctx, key)
+	if err != nil {
+		return nil, err
+	}
+	defer obj.Close()
+	return io.ReadAll(io.LimitReader(obj, MaxImageBytes))
+}
+
+// PurgeOwned deletes a customer's own upload with the given purpose from storage at once.
+func (s *Service) PurgeOwned(ctx context.Context, id, customerID uuid.UUID, purpose string) error {
+	rec, err := s.load(ctx, id)
+	if err != nil || rec.deleted || rec.purpose != purpose || rec.customerID == nil || *rec.customerID != customerID {
+		return err
+	}
+	return s.purge(ctx, rec)
 }
 
 func (s *Service) purge(ctx context.Context, rec *record) error {

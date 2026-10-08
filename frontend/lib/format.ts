@@ -59,6 +59,34 @@ export function formatDateTime(iso: string | Date | null | undefined, timeZone?:
   return `${formatDay(d, timeZone, long)}, ${formatTime(d, timeZone)}`;
 }
 
+// zonedTimeToIso turns a wall-clock date and time in a time zone (the atelier's, not the browser's)
+// into an ISO instant: zonedTimeToIso("2026-10-08", "14:30", "Africa/Douala") is 13:30 UTC.
+export function zonedTimeToIso(date: string, time: string, timeZone: string): string | null {
+  const [y, mo, d] = date.split("-").map(Number);
+  const [h, mi] = time.split(":").map(Number);
+  if (!y || !mo || !d || h === undefined || mi === undefined || Number.isNaN(h) || Number.isNaN(mi)) return null;
+  const wall = Date.UTC(y, mo - 1, d, h, mi);
+  const offsetAt = (t: number) => {
+    const p = parts(new Date(t), {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      timeZone,
+    });
+    return (
+      Date.UTC(Number(p.year), Number(p.month) - 1, Number(p.day), Number(p.hour), Number(p.minute), Number(p.second)) -
+      t
+    );
+  };
+  // Two passes settle the offset across daylight saving changes.
+  let t = wall - offsetAt(wall);
+  t = wall - offsetAt(t);
+  return new Date(t).toISOString();
+}
+
 export function humanize(s: string) {
   const t = s.replaceAll("_", " ");
   return t.charAt(0).toUpperCase() + t.slice(1);

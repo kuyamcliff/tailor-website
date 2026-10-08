@@ -8,10 +8,14 @@
 // (see docs/3d-assets.md). Every asset is written to the manifest with productionQuality: false.
 //
 // Usage: node scripts/build-standin-assets.mjs
-// Output: public/3d/*.glb (high and low detail), public/3d/manifest.json
+// Output: public/3d/*.glb (high and low detail, Meshopt compressed), public/3d/manifest.json
 
 import { createHash } from "node:crypto";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { Logger, WebIO } from "@gltf-transform/core";
+import { EXTMeshoptCompression, KHRMeshQuantization } from "@gltf-transform/extensions";
+import { meshopt } from "@gltf-transform/functions";
+import { MeshoptEncoder, MeshoptDecoder } from "meshoptimizer";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -1047,6 +1051,48 @@ function baseMeasurements(B) {
   };
 }
 
+// Meshopt compression with quantization: the studio's loader decodes EXT_meshopt_compression, and it
+// roughly halves the download for the same geometry.
+await MeshoptEncoder.ready;
+await MeshoptDecoder.ready;
+const io = new WebIO()
+  .registerExtensions([EXTMeshoptCompression, KHRMeshQuantization])
+  .registerDependencies({ "meshopt.encoder": MeshoptEncoder, "meshopt.decoder": MeshoptDecoder });
+async function compress(glb) {
+  const doc = await io.readBinary(new Uint8Array(glb));
+  doc.setLogger(new Logger(Logger.Verbosity.ERROR));
+  await doc.transform(meshopt({ encoder: MeshoptEncoder, level: "medium" }));
+  return Buffer.from(await io.writeBinary(doc));
+}
+
+// Points on the figure where the studio pins each fit zone's result. Keys match fit rule zones.
+// The studio places them inside the height-scaled group, so they follow the body.
+function zoneAnchors(B) {
+  const r3 = (v) => v.map((n) => Math.round(n * 1000) / 1000);
+  const front = (y, ahead = 0.02) => {
+    const { rz, cz } = torsoAt(B, y, {});
+    return r3([0, y, cz + rz + ahead]);
+  };
+  const { origin, dir } = armFrame(B, 1, {});
+  const wrist = origin.map((o, i) => o + dir[i] * B.arm.len);
+  const legX = (B.leg.x0 + B.leg.x1) / 2;
+  return {
+    neck: r3([0, B.neck.y0 + 0.02, B.neck.r + 0.02]),
+    chest: front(B.bands.chest[0]),
+    bust: front(B.bands.chest[0]),
+    waist: front(B.bands.waist[0]),
+    hip: front(B.bands.hip[0]),
+    shoulders: r3([origin[0], B.arm.y + 0.04, 0.02]),
+    sleeve: r3([wrist[0] + 0.02, wrist[1], wrist[2] + 0.04]),
+    jacket_length: front(B.hemJacket),
+    shirt_length: front(B.hemJacket),
+    torso: front(B.bands.waist[0] - 0.04),
+    thigh: r3([legX, B.crotch - 0.1, 0.1]),
+    inseam: r3([legX, 0.08, 0.08]),
+    dress_length: r3([0, 0.12, 0.2]),
+  };
+}
+
 mkdirSync(OUT, { recursive: true });
 const files = {};
 for (const model of MODELS) {
@@ -1057,24 +1103,33 @@ for (const model of MODELS) {
     ["low", 1],
   ]) {
     const meshes = build(model.builder, B, q);
-    const glb = writeGLB(meshes, model.file);
+    const raw = writeGLB(meshes, model.file);
+    const glb = await compress(raw);
     const name = lod === "high" ? `${model.file}.glb` : `${model.file}-low.glb`;
     writeFileSync(join(OUT, name), glb);
+    const sha256 = createHash("sha256").update(glb).digest("hex");
     files[model.file].lods.push({
       lod,
-      url: `/3d/${name}`,
+      // /3d/ is served with an immutable cache header, so the URL carries the content hash.
+      url: `/3d/${name}?v=${sha256.slice(0, 12)}`,
       bytes: glb.length,
-      sha256: createHash("sha256").update(glb).digest("hex"),
+      sha256,
     });
     if (lod === "high") {
       files[model.file].parts = meshes.map((m) => m.name);
       for (const m of meshes) for (const t of m.targets ?? []) files[model.file].morphs.add(t.name);
     }
     console.log(
-      `${name}: ${(glb.length / 1024).toFixed(0)} KB, ${meshes.reduce((n, m) => n + m.vertexCount, 0)} vertices`,
+      `${name}: ${(glb.length / 1024).toFixed(0)} KB (${(raw.length / 1024).toFixed(0)} KB uncompressed), ${meshes.reduce((n, m) => n + m.vertexCount, 0)} vertices`,
     );
   }
 }
+
+// Still renders come from scripts/render-previews.mjs; keep the ones already recorded.
+const previous = existsSync(join(OUT, "manifest.json"))
+  ? JSON.parse(readFileSync(join(OUT, "manifest.json"), "utf8"))
+  : { assets: [] };
+const rendersFor = (key) => previous.assets.find((a) => a.assetKey === key)?.supportedOptions?.renders;
 
 const manifest = {
   generatedBy: "frontend/scripts/build-standin-assets.mjs",
@@ -1090,12 +1145,14 @@ const manifest = {
       heightM: BODIES[e.bodyModel].height,
       morphStepM: MORPH_STEP,
       baseMm: baseMeasurements(BODIES[e.bodyModel]),
+      zoneAnchors: zoneAnchors(BODIES[e.bodyModel]),
     },
     supportedOptions: {
       parts: files[e.file].parts,
       morphs: [...files[e.file].morphs],
       baseHidden: e.baseHidden ?? [],
       bodyModel: e.bodyModel,
+      ...(rendersFor(e.assetKey) ? { renders: rendersFor(e.assetKey) } : {}),
     },
     textureSetVersion: "ambientcg-cc0-1",
     license: {

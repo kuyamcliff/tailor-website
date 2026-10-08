@@ -10,15 +10,15 @@
       "files": [
         {
           "lod": "high",
-          "url": "/3d/body-masculine.glb",
-          "bytes": 834312,
-          "sha256": "cc656185f272fdbd7117419d403af8ce8df9220c96a85f089f5eb6bb1db1df45"
+          "url": "/3d/body-masculine.glb?v=5a35cc98eb23",
+          "bytes": 248188,
+          "sha256": "5a35cc98eb23628648fafd4565f2579db596c0478dbaf4fab592242d12009f3e"
         },
         {
           "lod": "low",
-          "url": "/3d/body-masculine-low.glb",
-          "bytes": 380348,
-          "sha256": "78ca8cfc6d3e236d93ebb19fc6429ac7131e1b5aee6e50351b65722b04348960"
+          "url": "/3d/body-masculine-low.glb?v=54cc94f0815e",
+          "bytes": 121816,
+          "sha256": "54cc94f0815ef8ec917e0e135fb49d5f89ebb2355d7eff69f5e875575428b153"
         }
       ],
       "bodyCompat": {
@@ -36,6 +36,73 @@
           "waist": 856,
           "hip": 998,
           "shoulder": 430
+        },
+        "zoneAnchors": {
+          "neck": [
+            0,
+            1.52,
+            0.075
+          ],
+          "chest": [
+            0,
+            1.32,
+            0.157
+          ],
+          "bust": [
+            0,
+            1.32,
+            0.157
+          ],
+          "waist": [
+            0,
+            1.1,
+            0.135
+          ],
+          "hip": [
+            0,
+            0.96,
+            0.143
+          ],
+          "shoulders": [
+            0.195,
+            1.45,
+            0.02
+          ],
+          "sleeve": [
+            0.318,
+            0.839,
+            0.041
+          ],
+          "jacket_length": [
+            0,
+            0.8,
+            0.12
+          ],
+          "shirt_length": [
+            0,
+            0.8,
+            0.12
+          ],
+          "torso": [
+            0,
+            1.06,
+            0.137
+          ],
+          "thigh": [
+            0.094,
+            0.76,
+            0.1
+          ],
+          "inseam": [
+            0.094,
+            0.08,
+            0.08
+          ],
+          "dress_length": [
+            0,
+            0.12,
+            0.2
+          ]
         }
       },
       "supportedOptions": {
@@ -68,15 +135,15 @@
       "files": [
         {
           "lod": "high",
-          "url": "/3d/body-feminine.glb",
-          "bytes": 833556,
-          "sha256": "c5f868930cd21c53ff352c54c70743ec734ccd446e94fdd3552f1e0d876b0550"
+          "url": "/3d/body-feminine.glb?v=06670313f71c",
+          "bytes": 251752,
+          "sha256": "06670313f71c7d4cf6127a2a7cfbaa1bde5697d8da643e2e7eaf10231ce98e5b"
         },
         {
           "lod": "low",
-          "url": "/3d/body-feminine-low.glb",
-          "bytes": 379784,
-          "sha256": "709038c59b5022b29dda2119d8330c086c773d9eb293615c2f4974fc8bedd326"
+          "url": "/3d/body-feminine-low.glb?v=bdf038801a38",
+          "bytes": 123080,
+          "sha256": "bdf038801a385ce90b88e391cdc73322bc4b1a85ae9f5fb592c8a460fab469ab"
         }
       ],
       "bodyCompat": {
@@ -94,6 +161,73 @@
           "waist": 737,
           "hip": 1014,
           "shoulder": 370
+        },
+        "zoneAnchors": {
+          "neck": [
+            0,
+            1.42,
+            0.067
+          ],
+          "chest": [
+            0,
+            1.22,
+            0.175
+          ],
+          "bust": [
+            0,
+            1.22,
+            0.175
+          ],
+          "waist": [
+            0,
+            1.04,
+            0.123
+          ],
+          "hip": [
+            0,
+            0.88,
+            0.143
+          ],
+          "shoulders": [
+            0.165,
+            1.355,
+            0.02
+          ],
+          "sleeve": [
+            0.291,
+            0.786,
+            0.041
+          ],
+          "jacket_length": [
+            0,
+            0.76,
+            0.115
+          ],
+          "shirt_length": [
+            0,
+            0.76,
+            0.115
+          ],
+          "torso": [
+            0,
+            1,
+            0.126
+          ],
+          "thigh": [
+            0.089,
+            0.7,
+            0.1
+          ],
+          "inseam": [
+            0.089,
+            0.08,
+            0.08
+          ],
+          "dress_length": [
+            0,
+            0.12,
+            0.2
+          ]
         }
       },
       "supportedOptions": {
@@ -128,15 +262,15 @@
       "files": [
         {
           "lod": "high",
-          "url": "/3d/suit.glb",
-          "bytes": 1395064,
-          "sha256": "b348606884474567df9b78e5fcc5b1d7016e2982003e3462a10868aaff56c127"
+          "url": "/3d/suit.glb?v=8afe4c96ba36",
+          "bytes": 438628,
+          "sha256": "8afe4c96ba36f540cbc6256ceda7a8a1f854e4f3afa9b6217fdc0316662f96fd"
         },
         {
           "lod": "low",
-          "url": "/3d/suit-low.glb",
-          "bytes": 688756,
-          "sha256": "bd14e26902cd79a52360360738efc74a675bc64b464c6313dc120212faeaf140"
+          "url": "/3d/suit-low.glb?v=89710ef54360",
+          "bytes": 255196,
+          "sha256": "89710ef54360c5781e6c5e4d72a4015aafdb2f9080ae6eb26306ccbb7d575aed"
         }
       ],
       "bodyCompat": {
@@ -154,6 +288,73 @@
           "waist": 856,
           "hip": 998,
           "shoulder": 430
+        },
+        "zoneAnchors": {
+          "neck": [
+            0,
+            1.52,
+            0.075
+          ],
+          "chest": [
+            0,
+            1.32,
+            0.157
+          ],
+          "bust": [
+            0,
+            1.32,
+            0.157
+          ],
+          "waist": [
+            0,
+            1.1,
+            0.135
+          ],
+          "hip": [
+            0,
+            0.96,
+            0.143
+          ],
+          "shoulders": [
+            0.195,
+            1.45,
+            0.02
+          ],
+          "sleeve": [
+            0.318,
+            0.839,
+            0.041
+          ],
+          "jacket_length": [
+            0,
+            0.8,
+            0.12
+          ],
+          "shirt_length": [
+            0,
+            0.8,
+            0.12
+          ],
+          "torso": [
+            0,
+            1.06,
+            0.137
+          ],
+          "thigh": [
+            0.094,
+            0.76,
+            0.1
+          ],
+          "inseam": [
+            0.094,
+            0.08,
+            0.08
+          ],
+          "dress_length": [
+            0,
+            0.12,
+            0.2
+          ]
         }
       },
       "supportedOptions": {
@@ -188,7 +389,15 @@
           "lapel_width"
         ],
         "baseHidden": [],
-        "bodyModel": "masculine"
+        "bodyModel": "masculine",
+        "renders": {
+          "45": "/3d/renders/suit-45.webp?v=bc85cddbc743",
+          "135": "/3d/renders/suit-135.webp?v=95702c4e4b98",
+          "front": "/3d/renders/suit-front.webp?v=09a22073b118",
+          "side": "/3d/renders/suit-side.webp?v=66818507d4ed",
+          "back": "/3d/renders/suit-back.webp?v=fdc84cbc270f",
+          "right": "/3d/renders/suit-right.webp?v=5c38572512f1"
+        }
       },
       "textureSetVersion": "ambientcg-cc0-1",
       "license": {
@@ -209,15 +418,15 @@
       "files": [
         {
           "lod": "high",
-          "url": "/3d/suit.glb",
-          "bytes": 1395064,
-          "sha256": "b348606884474567df9b78e5fcc5b1d7016e2982003e3462a10868aaff56c127"
+          "url": "/3d/suit.glb?v=8afe4c96ba36",
+          "bytes": 438628,
+          "sha256": "8afe4c96ba36f540cbc6256ceda7a8a1f854e4f3afa9b6217fdc0316662f96fd"
         },
         {
           "lod": "low",
-          "url": "/3d/suit-low.glb",
-          "bytes": 688756,
-          "sha256": "bd14e26902cd79a52360360738efc74a675bc64b464c6313dc120212faeaf140"
+          "url": "/3d/suit-low.glb?v=89710ef54360",
+          "bytes": 255196,
+          "sha256": "89710ef54360c5781e6c5e4d72a4015aafdb2f9080ae6eb26306ccbb7d575aed"
         }
       ],
       "bodyCompat": {
@@ -235,6 +444,73 @@
           "waist": 856,
           "hip": 998,
           "shoulder": 430
+        },
+        "zoneAnchors": {
+          "neck": [
+            0,
+            1.52,
+            0.075
+          ],
+          "chest": [
+            0,
+            1.32,
+            0.157
+          ],
+          "bust": [
+            0,
+            1.32,
+            0.157
+          ],
+          "waist": [
+            0,
+            1.1,
+            0.135
+          ],
+          "hip": [
+            0,
+            0.96,
+            0.143
+          ],
+          "shoulders": [
+            0.195,
+            1.45,
+            0.02
+          ],
+          "sleeve": [
+            0.318,
+            0.839,
+            0.041
+          ],
+          "jacket_length": [
+            0,
+            0.8,
+            0.12
+          ],
+          "shirt_length": [
+            0,
+            0.8,
+            0.12
+          ],
+          "torso": [
+            0,
+            1.06,
+            0.137
+          ],
+          "thigh": [
+            0.094,
+            0.76,
+            0.1
+          ],
+          "inseam": [
+            0.094,
+            0.08,
+            0.08
+          ],
+          "dress_length": [
+            0,
+            0.12,
+            0.2
+          ]
         }
       },
       "supportedOptions": {
@@ -273,7 +549,15 @@
           "waistband",
           "trouser_cuff"
         ],
-        "bodyModel": "masculine"
+        "bodyModel": "masculine",
+        "renders": {
+          "45": "/3d/renders/jacket-45.webp?v=fc1f1572870e",
+          "135": "/3d/renders/jacket-135.webp?v=846d9b56a574",
+          "front": "/3d/renders/jacket-front.webp?v=5fc370870480",
+          "side": "/3d/renders/jacket-side.webp?v=96305a07ca3e",
+          "back": "/3d/renders/jacket-back.webp?v=aa6ed83fc028",
+          "right": "/3d/renders/jacket-right.webp?v=6b0be7291041"
+        }
       },
       "textureSetVersion": "ambientcg-cc0-1",
       "license": {
@@ -294,15 +578,15 @@
       "files": [
         {
           "lod": "high",
-          "url": "/3d/suit.glb",
-          "bytes": 1395064,
-          "sha256": "b348606884474567df9b78e5fcc5b1d7016e2982003e3462a10868aaff56c127"
+          "url": "/3d/suit.glb?v=8afe4c96ba36",
+          "bytes": 438628,
+          "sha256": "8afe4c96ba36f540cbc6256ceda7a8a1f854e4f3afa9b6217fdc0316662f96fd"
         },
         {
           "lod": "low",
-          "url": "/3d/suit-low.glb",
-          "bytes": 688756,
-          "sha256": "bd14e26902cd79a52360360738efc74a675bc64b464c6313dc120212faeaf140"
+          "url": "/3d/suit-low.glb?v=89710ef54360",
+          "bytes": 255196,
+          "sha256": "89710ef54360c5781e6c5e4d72a4015aafdb2f9080ae6eb26306ccbb7d575aed"
         }
       ],
       "bodyCompat": {
@@ -320,6 +604,73 @@
           "waist": 856,
           "hip": 998,
           "shoulder": 430
+        },
+        "zoneAnchors": {
+          "neck": [
+            0,
+            1.52,
+            0.075
+          ],
+          "chest": [
+            0,
+            1.32,
+            0.157
+          ],
+          "bust": [
+            0,
+            1.32,
+            0.157
+          ],
+          "waist": [
+            0,
+            1.1,
+            0.135
+          ],
+          "hip": [
+            0,
+            0.96,
+            0.143
+          ],
+          "shoulders": [
+            0.195,
+            1.45,
+            0.02
+          ],
+          "sleeve": [
+            0.318,
+            0.839,
+            0.041
+          ],
+          "jacket_length": [
+            0,
+            0.8,
+            0.12
+          ],
+          "shirt_length": [
+            0,
+            0.8,
+            0.12
+          ],
+          "torso": [
+            0,
+            1.06,
+            0.137
+          ],
+          "thigh": [
+            0.094,
+            0.76,
+            0.1
+          ],
+          "inseam": [
+            0.094,
+            0.08,
+            0.08
+          ],
+          "dress_length": [
+            0,
+            0.12,
+            0.2
+          ]
         }
       },
       "supportedOptions": {
@@ -372,7 +723,15 @@
           "shirt_base",
           "shirt_base_collar"
         ],
-        "bodyModel": "masculine"
+        "bodyModel": "masculine",
+        "renders": {
+          "45": "/3d/renders/trousers-45.webp?v=84002c61aa25",
+          "135": "/3d/renders/trousers-135.webp?v=e9f4507aad99",
+          "front": "/3d/renders/trousers-front.webp?v=cb445ee53f43",
+          "side": "/3d/renders/trousers-side.webp?v=7d27ae27060d",
+          "back": "/3d/renders/trousers-back.webp?v=8e03f7f82867",
+          "right": "/3d/renders/trousers-right.webp?v=11e01c8ec1f7"
+        }
       },
       "textureSetVersion": "ambientcg-cc0-1",
       "license": {
@@ -393,15 +752,15 @@
       "files": [
         {
           "lod": "high",
-          "url": "/3d/shirt.glb",
-          "bytes": 832968,
-          "sha256": "37e20e6453c9fbffba8a1b76582bc4220f1127d35629485e82f562307d1abb70"
+          "url": "/3d/shirt.glb?v=d59170c21364",
+          "bytes": 272660,
+          "sha256": "d59170c21364fca2c8398bdfbb76ff976c3fbec7a13a58236ca70df2bdd86d32"
         },
         {
           "lod": "low",
-          "url": "/3d/shirt-low.glb",
-          "bytes": 425956,
-          "sha256": "ea38e812bf6ea1442e386e82e4f290343d54121d550980cb26c1e9d226dc788e"
+          "url": "/3d/shirt-low.glb?v=6b127e549e39",
+          "bytes": 162724,
+          "sha256": "6b127e549e39d162c7844648f51f32ef56a0247238049105e2cc1f8bd829fabc"
         }
       ],
       "bodyCompat": {
@@ -419,6 +778,73 @@
           "waist": 856,
           "hip": 998,
           "shoulder": 430
+        },
+        "zoneAnchors": {
+          "neck": [
+            0,
+            1.52,
+            0.075
+          ],
+          "chest": [
+            0,
+            1.32,
+            0.157
+          ],
+          "bust": [
+            0,
+            1.32,
+            0.157
+          ],
+          "waist": [
+            0,
+            1.1,
+            0.135
+          ],
+          "hip": [
+            0,
+            0.96,
+            0.143
+          ],
+          "shoulders": [
+            0.195,
+            1.45,
+            0.02
+          ],
+          "sleeve": [
+            0.318,
+            0.839,
+            0.041
+          ],
+          "jacket_length": [
+            0,
+            0.8,
+            0.12
+          ],
+          "shirt_length": [
+            0,
+            0.8,
+            0.12
+          ],
+          "torso": [
+            0,
+            1.06,
+            0.137
+          ],
+          "thigh": [
+            0.094,
+            0.76,
+            0.1
+          ],
+          "inseam": [
+            0.094,
+            0.08,
+            0.08
+          ],
+          "dress_length": [
+            0,
+            0.12,
+            0.2
+          ]
         }
       },
       "supportedOptions": {
@@ -445,7 +871,15 @@
           "leg_wide"
         ],
         "baseHidden": [],
-        "bodyModel": "masculine"
+        "bodyModel": "masculine",
+        "renders": {
+          "45": "/3d/renders/shirt-45.webp?v=7de126b9a031",
+          "135": "/3d/renders/shirt-135.webp?v=e9179c845713",
+          "front": "/3d/renders/shirt-front.webp?v=e5b42bfa8683",
+          "side": "/3d/renders/shirt-side.webp?v=c1c89b01ac69",
+          "back": "/3d/renders/shirt-back.webp?v=291f9ad8a611",
+          "right": "/3d/renders/shirt-right.webp?v=96f0d89b8ac7"
+        }
       },
       "textureSetVersion": "ambientcg-cc0-1",
       "license": {
@@ -466,15 +900,15 @@
       "files": [
         {
           "lod": "high",
-          "url": "/3d/dress.glb",
-          "bytes": 1668580,
-          "sha256": "ecc1b161c92734ad0a7a6595926d8f8bcb4f212cf9ec00ca8f607cfe6ecf2d51"
+          "url": "/3d/dress.glb?v=0b668cc07821",
+          "bytes": 463832,
+          "sha256": "0b668cc07821bffb2214827486e3cd4a18f3a66de8e11f66679f3fea0c83a009"
         },
         {
           "lod": "low",
-          "url": "/3d/dress-low.glb",
-          "bytes": 767616,
-          "sha256": "774f1db7c03e7ae7695c52efe8a5a2aa236f9f5af086eb4ce28f0a87031a1f4f"
+          "url": "/3d/dress-low.glb?v=76aaeaf563db",
+          "bytes": 237528,
+          "sha256": "76aaeaf563db8de83dbe1c8200c62b02e3748ea6b13b0861656253aac1905670"
         }
       ],
       "bodyCompat": {
@@ -492,6 +926,73 @@
           "waist": 737,
           "hip": 1014,
           "shoulder": 370
+        },
+        "zoneAnchors": {
+          "neck": [
+            0,
+            1.42,
+            0.067
+          ],
+          "chest": [
+            0,
+            1.22,
+            0.175
+          ],
+          "bust": [
+            0,
+            1.22,
+            0.175
+          ],
+          "waist": [
+            0,
+            1.04,
+            0.123
+          ],
+          "hip": [
+            0,
+            0.88,
+            0.143
+          ],
+          "shoulders": [
+            0.165,
+            1.355,
+            0.02
+          ],
+          "sleeve": [
+            0.291,
+            0.786,
+            0.041
+          ],
+          "jacket_length": [
+            0,
+            0.76,
+            0.115
+          ],
+          "shirt_length": [
+            0,
+            0.76,
+            0.115
+          ],
+          "torso": [
+            0,
+            1,
+            0.126
+          ],
+          "thigh": [
+            0.089,
+            0.7,
+            0.1
+          ],
+          "inseam": [
+            0.089,
+            0.08,
+            0.08
+          ],
+          "dress_length": [
+            0,
+            0.12,
+            0.2
+          ]
         }
       },
       "supportedOptions": {
@@ -516,7 +1017,15 @@
           "length_floor"
         ],
         "baseHidden": [],
-        "bodyModel": "feminine"
+        "bodyModel": "feminine",
+        "renders": {
+          "45": "/3d/renders/dress-45.webp?v=ae5f92106c7d",
+          "135": "/3d/renders/dress-135.webp?v=1c111fd1dee7",
+          "front": "/3d/renders/dress-front.webp?v=e22d18a1fc48",
+          "side": "/3d/renders/dress-side.webp?v=9ccfb18020ec",
+          "back": "/3d/renders/dress-back.webp?v=7be26d0e2c85",
+          "right": "/3d/renders/dress-right.webp?v=a034291c807f"
+        }
       },
       "textureSetVersion": "ambientcg-cc0-1",
       "license": {
@@ -537,15 +1046,15 @@
       "files": [
         {
           "lod": "high",
-          "url": "/3d/dress.glb",
-          "bytes": 1668580,
-          "sha256": "ecc1b161c92734ad0a7a6595926d8f8bcb4f212cf9ec00ca8f607cfe6ecf2d51"
+          "url": "/3d/dress.glb?v=0b668cc07821",
+          "bytes": 463832,
+          "sha256": "0b668cc07821bffb2214827486e3cd4a18f3a66de8e11f66679f3fea0c83a009"
         },
         {
           "lod": "low",
-          "url": "/3d/dress-low.glb",
-          "bytes": 767616,
-          "sha256": "774f1db7c03e7ae7695c52efe8a5a2aa236f9f5af086eb4ce28f0a87031a1f4f"
+          "url": "/3d/dress-low.glb?v=76aaeaf563db",
+          "bytes": 237528,
+          "sha256": "76aaeaf563db8de83dbe1c8200c62b02e3748ea6b13b0861656253aac1905670"
         }
       ],
       "bodyCompat": {
@@ -563,6 +1072,73 @@
           "waist": 737,
           "hip": 1014,
           "shoulder": 370
+        },
+        "zoneAnchors": {
+          "neck": [
+            0,
+            1.42,
+            0.067
+          ],
+          "chest": [
+            0,
+            1.22,
+            0.175
+          ],
+          "bust": [
+            0,
+            1.22,
+            0.175
+          ],
+          "waist": [
+            0,
+            1.04,
+            0.123
+          ],
+          "hip": [
+            0,
+            0.88,
+            0.143
+          ],
+          "shoulders": [
+            0.165,
+            1.355,
+            0.02
+          ],
+          "sleeve": [
+            0.291,
+            0.786,
+            0.041
+          ],
+          "jacket_length": [
+            0,
+            0.76,
+            0.115
+          ],
+          "shirt_length": [
+            0,
+            0.76,
+            0.115
+          ],
+          "torso": [
+            0,
+            1,
+            0.126
+          ],
+          "thigh": [
+            0.089,
+            0.7,
+            0.1
+          ],
+          "inseam": [
+            0.089,
+            0.08,
+            0.08
+          ],
+          "dress_length": [
+            0,
+            0.12,
+            0.2
+          ]
         }
       },
       "supportedOptions": {
@@ -587,7 +1163,15 @@
           "length_floor"
         ],
         "baseHidden": [],
-        "bodyModel": "feminine"
+        "bodyModel": "feminine",
+        "renders": {
+          "45": "/3d/renders/gown-45.webp?v=a79776ce5141",
+          "135": "/3d/renders/gown-135.webp?v=ce0d23682a5c",
+          "front": "/3d/renders/gown-front.webp?v=3ae1a6b44557",
+          "side": "/3d/renders/gown-side.webp?v=33c209e62b7c",
+          "back": "/3d/renders/gown-back.webp?v=4a5819ccf4c9",
+          "right": "/3d/renders/gown-right.webp?v=c32e361cefe9"
+        }
       },
       "textureSetVersion": "ambientcg-cc0-1",
       "license": {

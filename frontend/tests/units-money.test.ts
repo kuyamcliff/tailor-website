@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { convertAll, formatLength, fromMM, toMM, validPrecision } from "@/lib/units";
 import { formatMoney, toMinor } from "@/lib/money";
-import { formatDate, formatDateTime, formatDay, formatTime } from "@/lib/format";
+import { formatDate, formatDateTime, formatDay, formatTime, zonedTimeToIso } from "@/lib/format";
 import { safeNext } from "@/lib/safe-next";
 import { fieldError } from "@/features/measurements/measurement-form";
 
@@ -77,5 +77,26 @@ describe("safeNext", () => {
     expect(safeNext("https://evil.example", "/account")).toBe("/account");
     expect(safeNext("/\\evil.example", "/account")).toBe("/account");
     expect(safeNext(null, "/account")).toBe("/account");
+  });
+});
+
+describe("keyFrom", () => {
+  it("makes URL and option keys from names", async () => {
+    const { keyFrom } = await import("@/lib/keys");
+    expect(keyFrom("Boubou brodé", "-")).toBe("boubou-brode");
+    expect(keyFrom("  Sleeve length (cm) ", "_")).toBe("sleeve_length_cm");
+    expect(keyFrom("Kaba & Ngondo!", "-")).toBe("kaba-ngondo");
+    expect(keyFrom("a".repeat(39) + " b", "-")).toBe("a".repeat(39));
+  });
+});
+
+describe("zonedTimeToIso", () => {
+  it("reads times in the atelier's time zone, not the browser's", () => {
+    expect(zonedTimeToIso("2026-10-08", "14:30", "Africa/Douala")).toBe("2026-10-08T13:30:00.000Z");
+    expect(zonedTimeToIso("2026-10-08", "09:00", "UTC")).toBe("2026-10-08T09:00:00.000Z");
+    // Paris is UTC+2 in summer and UTC+1 in winter.
+    expect(zonedTimeToIso("2026-07-01", "10:00", "Europe/Paris")).toBe("2026-07-01T08:00:00.000Z");
+    expect(zonedTimeToIso("2026-12-01", "10:00", "Europe/Paris")).toBe("2026-12-01T09:00:00.000Z");
+    expect(zonedTimeToIso("2026-12-01", "", "UTC")).toBeNull();
   });
 });

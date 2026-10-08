@@ -7,6 +7,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowDown, ArrowUp, X } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
 import { humanize } from "@/lib/format";
+import { keyFrom } from "@/lib/keys";
 import { exponentOf, toMinor } from "@/lib/money";
 import type { Fabric, GarmentType, Product } from "@/lib/types";
 import { useConfig } from "@/components/providers/config";
@@ -73,7 +74,126 @@ export function OwnerProducts() {
           ]}
         />
       </Suspense>
+      <Categories />
     </>
+  );
+}
+
+type CategoryRow = { id?: string; slug: string; name: string; sortOrder: number };
+
+// Categories group products in the shop filters. Renaming keeps the address (slug) so existing
+// links keep working; a new category gets its address from its name.
+function Categories() {
+  const qc = useQueryClient();
+  const toast = useToast();
+  const q = useQuery({ queryKey: ["owner", "categories"], queryFn: () => api<CategoryRow[]>("/owner/categories") });
+  const [edits, setEdits] = useState<Record<string, CategoryRow>>({});
+  const [name, setName] = useState("");
+  const [busy, setBusy] = useState(false);
+  const rows = (q.data ?? []).map((c) => edits[c.slug] ?? c);
+  async function save(c: CategoryRow, done: string) {
+    setBusy(true);
+    try {
+      await api("/owner/categories", { body: { slug: c.slug, name: c.name.trim(), sortOrder: c.sortOrder } });
+      await qc.invalidateQueries({ queryKey: ["owner", "categories"] });
+      setEdits((e) => {
+        const n = { ...e };
+        delete n[c.slug];
+        return n;
+      });
+      toast(done);
+      return true;
+    } catch (e) {
+      toast(e instanceof ApiError ? (Object.values(e.fields)[0] ?? e.message) : "Please try again.", "error");
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <section className="stack-sm" aria-labelledby="cat-h" style={{ marginTop: 32 }}>
+      <h2 id="cat-h" className={styles.h2}>
+        Categories
+      </h2>
+      <div className="table-wrap">
+        <table className="table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Address</th>
+              <th>Order</th>
+              <th>
+                <span className="visually-hidden">Save</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((c) => {
+              const set = (patch: Partial<CategoryRow>) => setEdits((e) => ({ ...e, [c.slug]: { ...c, ...patch } }));
+              return (
+                <tr key={c.slug}>
+                  <td>
+                    <input
+                      className="input"
+                      aria-label={`${c.name} name`}
+                      value={c.name}
+                      onChange={(e) => set({ name: e.target.value })}
+                    />
+                  </td>
+                  <td className="small muted">/shop?category={c.slug}</td>
+                  <td>
+                    <input
+                      className="input tabular"
+                      aria-label={`${c.name} order`}
+                      inputMode="numeric"
+                      value={String(c.sortOrder)}
+                      onChange={(e) => set({ sortOrder: Number(e.target.value) || 0 })}
+                      style={{ width: 80 }}
+                    />
+                  </td>
+                  <td>
+                    <button
+                      className="btn btn-sm"
+                      disabled={busy || !edits[c.slug]}
+                      onClick={() => save(c, `${c.name} saved.`)}
+                    >
+                      Save
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <form
+        className="row-wrap"
+        onSubmit={async (e) => {
+          e.preventDefault();
+          const n = name.trim();
+          const slug = keyFrom(n, "-");
+          if (!slug) return;
+          if (rows.some((r) => r.slug === slug)) {
+            toast("A category with this name already exists.", "error");
+            return;
+          }
+          const sortOrder = (rows.at(-1)?.sortOrder ?? 0) + 10;
+          if (await save({ slug, name: n, sortOrder }, `${n} added.`)) setName("");
+        }}
+      >
+        <input
+          className="input"
+          aria-label="New category name"
+          placeholder="New category"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          style={{ maxWidth: 260 }}
+        />
+        <button className="btn btn-sm" disabled={busy || !name.trim()}>
+          Add category
+        </button>
+      </form>
+    </section>
   );
 }
 

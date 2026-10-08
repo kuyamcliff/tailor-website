@@ -7,6 +7,7 @@ import { api, ApiError } from "@/lib/api";
 import { formatDate, formatDateTime, humanize, paymentLabels } from "@/lib/format";
 import { exponentOf, toMinor } from "@/lib/money";
 import type { Order } from "@/lib/types";
+import { useSession } from "@/components/providers/session";
 import { useToast } from "@/components/providers/toast";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Price } from "@/components/ui/price";
@@ -123,6 +124,7 @@ type Resp = {
 };
 
 export function OwnerOrderDetail({ id }: { id: string }) {
+  const { user } = useSession();
   const qc = useQueryClient();
   const toast = useToast();
   const q = useQuery({ queryKey: ["owner", "order", id], queryFn: () => api<Resp>(`/owner/orders/${id}`) });
@@ -174,6 +176,14 @@ export function OwnerOrderDetail({ id }: { id: string }) {
           <>
             <StatusBadge status={o.status} label={statusLabels[o.status]} />
             <StatusBadge status={o.paymentStatus} label={paymentLabels[o.paymentStatus]} />
+            {o.customerId && user?.permissions.includes("appointments.write") ? (
+              <Link
+                className="btn btn-sm"
+                href={`/owner/appointments?book=1&customer=${o.customerId}&order=${o.id}&type=${o.kind === "bespoke" ? "fitting" : "pickup"}`}
+              >
+                {o.kind === "bespoke" ? "Book a fitting" : "Book a pickup"}
+              </Link>
+            ) : null}
           </>
         }
       />

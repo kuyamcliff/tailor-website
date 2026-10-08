@@ -3,9 +3,20 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Component, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { RotateCcw, RotateCw } from "lucide-react";
+import {
+  Maximize,
+  Minimize,
+  Minus,
+  Plus,
+  RefreshCw,
+  Rotate3d,
+  RotateCcw,
+  RotateCw,
+  SlidersHorizontal,
+  X,
+} from "lucide-react";
 import { api, ApiError } from "@/lib/api";
 import { humanize } from "@/lib/format";
 import { useHydrated } from "@/lib/client-hooks";
@@ -23,7 +34,17 @@ import { useToast } from "@/components/providers/toast";
 import { Price } from "@/components/ui/price";
 import { FabricSwatch } from "@/components/ui/fabric-swatch";
 import { MeasurementForm, measurePayload, type MeasureState } from "@/features/measurements/measurement-form";
-import type { Quality, ViewAngle } from "./viewer";
+import type { FitMarker, RenderStats, ViewAngle } from "./viewer";
+import {
+  qualityLabel,
+  qualityOrder,
+  qualitySettings,
+  readDeviceInfo,
+  startingQuality,
+  stepQuality,
+  ZOOM,
+  type Quality,
+} from "./quality";
 import styles from "./studio.module.css";
 
 // three.js only loads on this page, after the panel is interactive.
@@ -35,12 +56,16 @@ const Viewer = dynamic(() => import("./viewer").then((m) => m.Viewer), {
 type Selections = Record<string, string | number>;
 type BaseMm = { height: number; chest: number; waist: number; hip: number; shoulder: number };
 
-const views: { key: ViewAngle; label: string }[] = [
-  { key: "front", label: "Front" },
-  { key: "45", label: "45°" },
-  { key: "side", label: "Side" },
-  { key: "back", label: "Back" },
+// Angles go round the figure: its left side faces the camera at "side", its right at "right".
+const views: { key: ViewAngle; label: string; name: string }[] = [
+  { key: "front", label: "Front", name: "Front view" },
+  { key: "45", label: "45°", name: "45 degree view" },
+  { key: "side", label: "Left", name: "Left side view" },
+  { key: "135", label: "135°", name: "135 degree view" },
+  { key: "back", label: "Back", name: "Back view" },
+  { key: "right", label: "Right", name: "Right side view" },
 ];
+const TURN = Math.PI / 8;
 
 const fitLabel: Record<string, string> = {
   good: "Good fit",
@@ -110,19 +135,60 @@ export function Studio({ garments }: { garments: GarmentType[] }) {
   const [name, setName] = useState("");
   const [saving, setSaving] = useState(false);
   const [quality, setQuality] = useState<Quality>("high");
+  const [autoQuality, setAutoQuality] = useState(true);
+  const [antialias, setAntialias] = useState(true);
   const [webgl, setWebgl] = useState<boolean | null>(null);
+  const [viewerFailed, setViewerFailed] = useState(false);
+  const [viewerKey, setViewerKey] = useState(0);
   const [reducedMotion, setReducedMotion] = useState(false);
+  const [zoom, setZoom] = useState(ZOOM.initial);
+  const [resetKey, setResetKey] = useState(0);
+  const [autoRotate, setAutoRotate] = useState(false);
+  const [showFit, setShowFit] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
+  const [canFullscreen, setCanFullscreen] = useState(false);
+  const [textureFailed, setTextureFailed] = useState(false);
+  const [stats, setStats] = useState<RenderStats | null>(null);
+  const stage = useRef<HTMLElement>(null);
   const loadedDesign = useRef<string | null>(null);
+  // Renderer diagnostics are for staff and development only (?diagnostics=1).
+  const diagnostics =
+    sp.get("diagnostics") === "1" && (process.env.NODE_ENV !== "production" || Boolean(user?.isStaff));
+  const diagnosticsParam = sp.get("diagnostics") === "1" ? "&diagnostics=1" : "";
 
   useEffect(() => {
     // Device capability checks happen once on the client.
     import("./viewer").then((m) => setWebgl(m.webglAvailable()));
-    const coarse = window.matchMedia("(pointer: coarse)").matches;
-    const mem = (navigator as Navigator & { deviceMemory?: number }).deviceMemory;
+    const start = startingQuality(readDeviceInfo());
     // eslint-disable-next-line react-hooks/set-state-in-effect -- read device capabilities once
-    setQuality(coarse || (mem !== undefined && mem <= 4) ? "low" : "high");
+    setQuality(start);
+    setAntialias(start === "ultra" || start === "high");
     setReducedMotion(window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+    setCanFullscreen(Boolean(document.fullscreenEnabled));
+    const onFs = () => setFullscreen(document.fullscreenElement === stage.current);
+    document.addEventListener("fullscreenchange", onFs);
+    return () => document.removeEventListener("fullscreenchange", onFs);
   }, []);
+
+  const onQualityStep = useCallback(
+    (dir: "up" | "down") => {
+      if (autoQuality) setQuality((q) => stepQuality(q, dir));
+    },
+    [autoQuality],
+  );
+  const reset = useCallback(() => {
+    setView("front");
+    setTurn(0);
+    setZoom(ZOOM.initial);
+    setAutoRotate(false);
+    setResetKey((k) => k + 1);
+  }, []);
+  const toggleFullscreen = useCallback(() => {
+    if (document.fullscreenElement) void document.exitFullscreen();
+    else void stage.current?.requestFullscreen();
+  }, []);
+  const zoomBy = (d: number) => setZoom((z) => Math.max(ZOOM.min, Math.min(ZOOM.max, z + d)));
 
   const studio = useQuery({
     queryKey: ["studio", garmentKey],
@@ -212,7 +278,8 @@ export function Studio({ garments }: { garments: GarmentType[] }) {
     (asset?.supportedOptions.bodyModel as "masculine" | "feminine" | undefined) ??
     (cfg?.garment.bodyModelHint === "feminine" ? "feminine" : "masculine");
   const body = cfg?.bodyAssets.find((b) => b.supportedOptions.bodyModel === bodyModel) ?? null;
-  const fileFor = (a: typeof asset) => a?.files.find((f) => f.lod === quality)?.url ?? a?.files[0]?.url ?? null;
+  const lod = qualitySettings[quality].lod;
+  const fileFor = (a: typeof asset) => a?.files.find((f) => f.lod === lod)?.url ?? a?.files[0]?.url ?? null;
 
   const config = useMemo(() => {
     if (!cfg) return null;
@@ -306,6 +373,21 @@ export function Studio({ garments }: { garments: GarmentType[] }) {
   }, [asset, snap]);
 
   const visibility = useMemo(() => (cfg ? visibilityFor(cfg, selections) : {}), [cfg, selections]);
+
+  // Fit results pinned to the figure, at the anchor points the body asset declares for each zone.
+  const fitMarkers = useMemo<FitMarker[] | null>(() => {
+    if (!showFit || !snap) return null;
+    const anchors = (body?.bodyCompat.zoneAnchors ?? asset?.bodyCompat.zoneAnchors) as
+      Record<string, [number, number, number]> | undefined;
+    if (!anchors) return null;
+    return snap.fit.zones.flatMap((z) => {
+      const anchor = anchors[z.zone];
+      if (z.state === "insufficient_data" || !anchor) return [];
+      return [{ zone: z.zone, label: `${z.label}: ${fitLabel[z.state] ?? humanize(z.state)}`, state: z.state, anchor }];
+    });
+  }, [showFit, snap, body, asset]);
+  const canPinFit = Boolean(body?.bodyCompat.zoneAnchors ?? asset?.bodyCompat.zoneAnchors);
+  const renders = asset?.supportedOptions.renders;
   const fabricLook = useMemo(
     () => (fabric && color ? { pbr: fabric.pbr, colorHex: color.hex } : null),
     [fabric, color],
@@ -332,7 +414,7 @@ export function Studio({ garments }: { garments: GarmentType[] }) {
       loadedDesign.current = r.id;
       setDesignId(r.id);
       setDesignVersion(r.version);
-      window.history.replaceState(null, "", `/studio?garment=${garmentKey}&design=${r.id}`);
+      window.history.replaceState(null, "", `/studio?garment=${garmentKey}&design=${r.id}${diagnosticsParam}`);
       return r.id;
     } catch (e) {
       toast(e instanceof ApiError ? e.message : "We could not save your design. Please try again.", "error");
@@ -340,7 +422,7 @@ export function Studio({ garments }: { garments: GarmentType[] }) {
     } finally {
       setSaving(false);
     }
-  }, [config, name, cfg, designId, designVersion, garmentKey, toast]);
+  }, [config, name, cfg, designId, designVersion, garmentKey, toast, diagnosticsParam]);
 
   if (!hydrated) return <div className={styles.shell} />;
 
@@ -350,28 +432,68 @@ export function Studio({ garments }: { garments: GarmentType[] }) {
 
   return (
     <div className={styles.shell}>
-      <section className={styles.stage} aria-label="3D preview">
-        {webgl === false ? (
-          <div className={styles.fallback}>
-            <p>
-              Your browser cannot show the 3D preview. You can still choose every option and send your design for a
-              quote.
-            </p>
-          </div>
-        ) : cfg && body && asset ? (
-          <Viewer
-            bodyUrl={fileFor(body)}
-            garmentUrl={fileFor(asset)}
-            visibility={visibility}
-            morphs={morphs}
-            heightScale={heightScale}
-            fabric={fabricLook}
+      <section
+        ref={stage}
+        className={styles.stage}
+        aria-label="3D preview"
+        tabIndex={0}
+        aria-describedby="studio-keys"
+        onKeyDown={(e) => {
+          if (e.target !== e.currentTarget) return;
+          const k = e.key;
+          if (k === "ArrowLeft") setTurn((t) => t - TURN);
+          else if (k === "ArrowRight") setTurn((t) => t + TURN);
+          else if (k === "ArrowUp" || k === "+" || k === "=") zoomBy(-ZOOM.step);
+          else if (k === "ArrowDown" || k === "-") zoomBy(ZOOM.step);
+          else if (k === "0" || k === "Home") reset();
+          else return;
+          e.preventDefault();
+        }}
+      >
+        <p id="studio-keys" className="visually-hidden">
+          Use the left and right arrow keys to turn the figure, up and down to zoom, and Home to reset the view.
+        </p>
+        {webgl === false || viewerFailed ? (
+          <StaticPreview
+            renders={renders}
             view={view}
-            turn={turn}
-            quality={quality}
-            reducedMotion={reducedMotion}
-            label={label}
+            garment={cfg?.garment.name ?? "garment"}
+            reason={viewerFailed ? "The 3D preview could not load." : "Your browser cannot show the 3D preview."}
+            onRetry={
+              viewerFailed && webgl
+                ? () => {
+                    setViewerFailed(false);
+                    setViewerKey((k) => k + 1);
+                  }
+                : undefined
+            }
           />
+        ) : cfg && body && asset ? (
+          <ViewerBoundary key={viewerKey} onError={() => setViewerFailed(true)}>
+            <Viewer
+              bodyUrl={fileFor(body)}
+              garmentUrl={fileFor(asset)}
+              visibility={visibility}
+              morphs={morphs}
+              heightScale={heightScale}
+              fabric={fabricLook}
+              view={view}
+              turn={turn}
+              zoom={zoom}
+              resetKey={resetKey}
+              autoRotate={autoRotate}
+              quality={quality}
+              antialias={antialias}
+              reducedMotion={reducedMotion}
+              fitMarkers={fitMarkers}
+              label={label}
+              onQualityStep={onQualityStep}
+              onZoomChange={setZoom}
+              onTextureError={() => setTextureFailed(true)}
+              onStats={diagnostics ? setStats : undefined}
+              onReset={reset}
+            />
+          </ViewerBoundary>
         ) : cfg && !asset ? (
           <div className={styles.fallback}>
             <p>A 3D model for this garment is not available yet. Choose your options and we will send a quote.</p>
@@ -381,55 +503,126 @@ export function Studio({ garments }: { garments: GarmentType[] }) {
         )}
         <div className={styles.controls}>
           <div className={styles.views} role="group" aria-label="View angle">
-            {views.map((v) => (
+            {views
+              .filter((v) => (webgl !== false && !viewerFailed ? true : Boolean(renders?.[v.key])))
+              .map((v) => (
+                <button
+                  key={v.key}
+                  type="button"
+                  aria-label={v.name}
+                  aria-pressed={view === v.key && turn === 0}
+                  onClick={() => {
+                    setTurn(0);
+                    setView(v.key);
+                  }}
+                >
+                  {v.label}
+                </button>
+              ))}
+          </div>
+          {webgl !== false && !viewerFailed ? (
+            <div className={styles.tools} role="group" aria-label="Camera">
               <button
-                key={v.key}
                 type="button"
-                aria-pressed={view === v.key && turn === 0}
-                onClick={() => {
-                  setTurn(0);
-                  setView(v.key);
-                }}
+                className="icon-btn"
+                aria-label="Turn left"
+                onClick={() => setTurn((t) => t - TURN)}
               >
-                {v.label}
+                <RotateCcw size={18} aria-hidden />
               </button>
-            ))}
-          </div>
-          <div className="row">
-            <button
-              type="button"
-              className="icon-btn"
-              aria-label="Turn left"
-              onClick={() => setTurn((t) => t - Math.PI / 8)}
-            >
-              <RotateCcw size={18} aria-hidden />
-            </button>
-            <button
-              type="button"
-              className="icon-btn"
-              aria-label="Turn right"
-              onClick={() => setTurn((t) => t + Math.PI / 8)}
-            >
-              <RotateCw size={18} aria-hidden />
-            </button>
-            <label className={styles.quality}>
-              <input
-                type="checkbox"
-                checked={quality === "low"}
-                onChange={(e) => setQuality(e.target.checked ? "low" : "high")}
-              />
-              Lighter model
-            </label>
-          </div>
+              <button
+                type="button"
+                className="icon-btn"
+                aria-label="Turn right"
+                onClick={() => setTurn((t) => t + TURN)}
+              >
+                <RotateCw size={18} aria-hidden />
+              </button>
+              <button
+                type="button"
+                className="icon-btn"
+                aria-label="Zoom in"
+                disabled={zoom <= ZOOM.min}
+                onClick={() => zoomBy(-ZOOM.step)}
+              >
+                <Plus size={18} aria-hidden />
+              </button>
+              <button
+                type="button"
+                className="icon-btn"
+                aria-label="Zoom out"
+                disabled={zoom >= ZOOM.max}
+                onClick={() => zoomBy(ZOOM.step)}
+              >
+                <Minus size={18} aria-hidden />
+              </button>
+              <button type="button" className="icon-btn" aria-label="Reset view" onClick={reset}>
+                <RefreshCw size={18} aria-hidden />
+              </button>
+              <button
+                type="button"
+                className={styles.toggle}
+                aria-pressed={autoRotate}
+                onClick={() => setAutoRotate((a) => !a)}
+              >
+                <Rotate3d size={18} aria-hidden />
+                <span className={styles.toggleText}>Turn slowly</span>
+              </button>
+              {canFullscreen ? (
+                <button
+                  type="button"
+                  className="icon-btn"
+                  aria-label={fullscreen ? "Leave full screen" : "Full screen"}
+                  aria-pressed={fullscreen}
+                  onClick={toggleFullscreen}
+                >
+                  {fullscreen ? <Minimize size={18} aria-hidden /> : <Maximize size={18} aria-hidden />}
+                </button>
+              ) : null}
+            </div>
+          ) : null}
         </div>
         {asset && !asset.productionQuality ? (
           <p className={styles.standin}>
             Simplified preview model. Your garment is cut from your own pattern and its drape and details will differ.
           </p>
         ) : null}
+        {textureFailed ? (
+          <p className={styles.textureNote} role="status">
+            The fabric texture did not load, so the preview shows its plain colour.
+          </p>
+        ) : null}
+        {diagnostics && stats ? (
+          <dl className={styles.diagnostics} aria-label="Renderer diagnostics">
+            <dt>Level</dt>
+            <dd>
+              {qualityLabel[quality]}
+              {autoQuality ? " (auto)" : ""}
+            </dd>
+            <dt>Frame</dt>
+            <dd>
+              {stats.frameMs} ms, {stats.fps} fps
+            </dd>
+            <dt>Draw calls</dt>
+            <dd>{stats.calls}</dd>
+            <dt>Triangles</dt>
+            <dd>{stats.triangles}</dd>
+            <dt>GPU objects</dt>
+            <dd>
+              {stats.geometries} geometries, {stats.textures} textures
+            </dd>
+          </dl>
+        ) : null}
       </section>
 
-      <aside className={styles.panel} aria-label="Design options">
+      <aside
+        className={styles.panel}
+        aria-label="Design options"
+        data-open={sheetOpen}
+        onKeyDown={(e) => {
+          if (e.key === "Escape" && sheetOpen) setSheetOpen(false);
+        }}
+      >
         <header className={styles.panelHead}>
           <label className="visually-hidden" htmlFor="studio-garment">
             Garment
@@ -443,7 +636,7 @@ export function Studio({ garments }: { garments: GarmentType[] }) {
               setDesignId(null);
               setDesignVersion(null);
               setGarmentKey(e.target.value);
-              router.replace(`/studio?garment=${e.target.value}`, { scroll: false });
+              router.replace(`/studio?garment=${e.target.value}${diagnosticsParam}`, { scroll: false });
             }}
           >
             {designable.map((g) => (
@@ -462,6 +655,16 @@ export function Studio({ garments }: { garments: GarmentType[] }) {
               <span className="tiny muted">Calculating</span>
             )}
           </div>
+          <button
+            type="button"
+            className={styles.sheetToggle}
+            aria-expanded={sheetOpen}
+            aria-controls="studio-options"
+            onClick={() => setSheetOpen((o) => !o)}
+          >
+            {sheetOpen ? <X size={18} aria-hidden /> : <SlidersHorizontal size={18} aria-hidden />}
+            <span className={styles.sheetToggleText}>{sheetOpen ? "Close" : "Options"}</span>
+          </button>
         </header>
 
         {studio.isError ? (
@@ -474,7 +677,7 @@ export function Studio({ garments }: { garments: GarmentType[] }) {
           </p>
         ) : null}
 
-        <div className={styles.sections}>
+        <div className={styles.sections} id="studio-options">
           <PanelSection title="Fabric">
             <ul className={styles.fabricList} aria-label="Fabrics">
               {suitable.map((f) => (
@@ -671,6 +874,39 @@ export function Studio({ garments }: { garments: GarmentType[] }) {
             ) : null}
           </PanelSection>
 
+          <PanelSection title="Preview">
+            <label className="field">
+              <span className="label">Detail</span>
+              <select
+                className="select"
+                value={autoQuality ? "auto" : quality}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (v === "auto") {
+                    setAutoQuality(true);
+                    setQuality(startingQuality(readDeviceInfo()));
+                  } else {
+                    setAutoQuality(false);
+                    setQuality(v as Quality);
+                  }
+                }}
+              >
+                <option value="auto">Automatic ({qualityLabel[quality].toLowerCase()})</option>
+                {[...qualityOrder].reverse().map((q) => (
+                  <option key={q} value={q}>
+                    {qualityLabel[q]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {canPinFit ? (
+              <label className={styles.value}>
+                <input type="checkbox" checked={showFit} onChange={(e) => setShowFit(e.target.checked)} />
+                <span>Show the fit on the figure</span>
+              </label>
+            ) : null}
+          </PanelSection>
+
           <PanelSection title="Fit estimate">
             {snap ? (
               <>
@@ -703,24 +939,26 @@ export function Studio({ garments }: { garments: GarmentType[] }) {
         </div>
 
         <footer className={styles.panelFoot}>
-          {snap?.warnings.length ? (
-            <ul className={styles.warnings}>
-              {snap.warnings.map((w) => (
-                <li key={w}>{w}</li>
-              ))}
-            </ul>
-          ) : null}
-          <label className="visually-hidden" htmlFor="design-name">
-            Design name
-          </label>
-          <input
-            id="design-name"
-            className="input"
-            placeholder={`${cfg?.garment.name ?? "My"} design`}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            maxLength={80}
-          />
+          <div className={styles.footExtra}>
+            {snap?.warnings.length ? (
+              <ul className={styles.warnings}>
+                {snap.warnings.map((w) => (
+                  <li key={w}>{w}</li>
+                ))}
+              </ul>
+            ) : null}
+            <label className="visually-hidden" htmlFor="design-name">
+              Design name
+            </label>
+            <input
+              id="design-name"
+              className="input"
+              placeholder={`${cfg?.garment.name ?? "My"} design`}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              maxLength={80}
+            />
+          </div>
           <div className={styles.actions}>
             <button
               type="button"
@@ -749,7 +987,7 @@ export function Studio({ garments }: { garments: GarmentType[] }) {
               Request a quote
             </button>
           </div>
-          <p className="tiny muted" style={{ margin: 0 }}>
+          <p className={`tiny muted ${styles.footExtra}`} style={{ margin: 0 }}>
             No payment now. Your tailor reviews the design and sends a quote.
           </p>
         </footer>
@@ -765,4 +1003,57 @@ function PanelSection({ title, children }: { title: string; children: React.Reac
       <div className={styles.sectionBody}>{children}</div>
     </details>
   );
+}
+
+// StaticPreview stands in for the 3D view when WebGL is missing or the model fails to load. It shows
+// pre-rendered angles of the garment's model when the asset has them, and never an unrelated image.
+function StaticPreview({
+  renders,
+  view,
+  garment,
+  reason,
+  onRetry,
+}: {
+  renders: Record<string, string> | undefined;
+  view: ViewAngle;
+  garment: string;
+  reason: string;
+  onRetry?: () => void;
+}) {
+  const src = renders?.[view] ?? renders?.front;
+  const angle = views.find((v) => v.key === (renders?.[view] ? view : "front"))?.name.toLowerCase();
+  return (
+    <div className={styles.fallback}>
+      {src ? (
+        // eslint-disable-next-line @next/next/no-img-element -- renders are plain files from the asset pipeline
+        <img className={styles.render} src={src} alt={`${garment} preview, ${angle}`} />
+      ) : null}
+      <div className={styles.fallbackNote}>
+        <p>
+          {reason}{" "}
+          {src
+            ? "These pictures show the standard model. Your options and measurements are still saved with the design."
+            : "You can still choose every option and send your design for a quote."}
+        </p>
+        {onRetry ? (
+          <button type="button" className="btn" onClick={onRetry}>
+            Try again
+          </button>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+class ViewerBoundary extends Component<{ children: ReactNode; onError: () => void }, { failed: boolean }> {
+  override state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  override componentDidCatch() {
+    this.props.onError();
+  }
+  override render() {
+    return this.state.failed ? null : this.props.children;
+  }
 }

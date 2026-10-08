@@ -1,0 +1,86 @@
+name: End-to-end
+
+# Runs on demand for now. Switch the trigger to push and pull_request (or add this job to ci.yml)
+# once the suite passes against a production build; see IMPLEMENTATION_STATUS.md.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  # The full stack in development mode (payment simulator, seed-dev data), the site as a production
+  # build, and every Playwright scenario including the 3D studio on software WebGL.
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: atelier
+          POSTGRES_PASSWORD: atelier
+          POSTGRES_DB: atelier_e2e
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U atelier" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      APP_ENV: development
+      DATABASE_URL: postgres://atelier:atelier@localhost:5432/atelier_e2e?sslmode=disable
+      PUBLIC_SITE_URL: http://localhost:3000
+      PUBLIC_API_URL: http://localhost:8080
+      ALLOWED_ORIGINS: http://localhost:3000
+      STORAGE_DRIVER: local
+      EMAIL_PROVIDER: log
+      SMS_PROVIDER: log
+      PAYMENTS_DEV_SIMULATOR: "true"
+      RATE_LIMIT_MULTIPLIER: "50"
+      BACKEND_URL: http://localhost:8080
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Start the API
+        working-directory: backend
+        run: |
+          export STORAGE_LOCAL_DIR="$RUNNER_TEMP/storage"
+          go build -o "$RUNNER_TEMP/api" ./cmd/api
+          "$RUNNER_TEMP/api" migrate
+          "$RUNNER_TEMP/api" seed
+          "$RUNNER_TEMP/api" seed-dev
+          nohup "$RUNNER_TEMP/api" serve > "$RUNNER_TEMP/api.log" 2>&1 &
+          for i in $(seq 1 30); do curl -sf http://localhost:8080/healthz && break; sleep 1; done
+      - name: Build and start the site
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+          nohup npm run start > "$RUNNER_TEMP/web.log" 2>&1 &
+          for i in $(seq 1 60); do curl -sf -o /dev/null http://localhost:3000/ && break; sleep 1; done
+      - name: Install Chromium
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+      - name: End-to-end tests
+        working-directory: frontend
+        env:
+          CI: "true"
+        run: npm run test:e2e
+      - name: Keep screenshots, traces and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-results
+          path: |
+            frontend/playwright-report
+            frontend/test-results
+            ${{ runner.temp }}/api.log
+            ${{ runner.temp }}/web.log
+          retention-days: 14
+

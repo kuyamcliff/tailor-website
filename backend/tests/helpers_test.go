@@ -102,6 +102,7 @@ func seedTestCatalog(ctx context.Context, pool *pgxpool.Pool) error {
 		`INSERT INTO products (slug, name, visibility, price_minor, category_id) VALUES ('test-shirt','Test shirt','published',30000,(SELECT id FROM product_categories WHERE slug='shirts'))`,
 		`INSERT INTO product_variants (product_id, sku, size_label, stock_qty) SELECT id, 'test-shirt-40', '40', 2 FROM products WHERE slug='test-shirt'`,
 		`INSERT INTO product_variants (product_id, sku, size_label, stock_qty) SELECT id, 'test-shirt-42', '42', 1 FROM products WHERE slug='test-shirt'`,
+		`INSERT INTO product_variants (product_id, sku, size_label, stock_qty) SELECT id, 'test-shirt-44', '44', 20 FROM products WHERE slug='test-shirt'`,
 		`UPDATE feature_flags SET enabled=true WHERE key IN ('online_payments','payments_mtn','payments_orange')`,
 	}
 	for _, s := range stmts {
@@ -200,25 +201,37 @@ func (c *client) signIn(identifier, password string) {
 
 func ownerClient(t *testing.T) *client {
 	t.Helper()
-	email := "owner-" + uuid.NewString()[:8] + "@atelier.test"
-	_, err := shared.pool.Exec(context.Background(), `INSERT INTO users (email, password_hash, full_name, role) VALUES ($1, $2, 'Test Owner', 'owner')`,
-		email, mustHash(t, "owner-password-123"))
+	return staffClient(t, "owner")
+}
+
+// staffClient signs in a new staff member with the given role.
+func staffClient(t *testing.T, role string) *client {
+	t.Helper()
+	email := role + "-" + uuid.NewString()[:8] + "@atelier.test"
+	_, err := shared.pool.Exec(context.Background(), `INSERT INTO users (email, password_hash, full_name, role) VALUES ($1, $2, $3, $4)`,
+		email, mustHash(t, "staff-password-123"), "Test "+role, role)
 	if err != nil {
 		t.Fatal(err)
 	}
 	c := newClient(t)
-	c.signIn(email, "owner-password-123")
+	c.signIn(email, "staff-password-123")
 	return c
 }
 
 func (c *client) upload(purpose string, img []byte, name string) resp {
+	c.t.Helper()
+	return c.uploadTo("/uploads?purpose="+purpose, img, name)
+}
+
+// uploadTo posts one file as multipart form data to an API path.
+func (c *client) uploadTo(path string, img []byte, name string) resp {
 	c.t.Helper()
 	var buf bytes.Buffer
 	mw := multipart.NewWriter(&buf)
 	fw, _ := mw.CreateFormFile("file", name)
 	fw.Write(img)
 	mw.Close()
-	req, _ := http.NewRequest("POST", shared.srv.URL+"/api/v1/uploads?purpose="+purpose, &buf)
+	req, _ := http.NewRequest("POST", shared.srv.URL+"/api/v1"+path, &buf)
 	req.Header.Set("Content-Type", mw.FormDataContentType())
 	req.Header.Set("X-Guest-Token", c.guest)
 	if c.csrf != "" {

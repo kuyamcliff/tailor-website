@@ -687,6 +687,42 @@ button.link:focus-visible {
   color: var(--text-soft);
 }
 
+/* File pickers share the outlined button style. */
+input[type="file"] {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  font: inherit;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+input[type="file"]::file-selector-button {
+  appearance: none;
+  margin-right: 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--line-strong);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+input[type="file"]:hover::file-selector-button {
+  border-color: var(--gold);
+}
+input[type="file"]:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+/* Native checkboxes and radios outside .check (for example in tables) use the accent too. */
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--gold);
+}
+
 .check input {
   width: 20px;
   height: 20px;

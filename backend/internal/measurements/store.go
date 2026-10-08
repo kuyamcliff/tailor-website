@@ -386,6 +386,7 @@ func (h Handler) DeleteProfile(w http.ResponseWriter, r *http.Request) error {
 }
 
 type versionInput struct {
+	Source  string             `json:"source"` // customers may mark a version as "estimated" (from photos)
 	Garment string             `json:"garment"`
 	Unit    string             `json:"unit"`
 	Height  *float64           `json:"height"`
@@ -457,6 +458,9 @@ func (h Handler) addVersion(ctx context.Context, r *http.Request, profileID uuid
 			v.HeightMM = prev.HeightMM
 		}
 		v.Flags = ReviewFlags(v.ValuesMM, v.HeightMM)
+	}
+	if !verified && in.Source == "estimated" {
+		source = "estimated"
 	}
 	var newID uuid.UUID
 	err = db.InTx(ctx, h.Pool, func(tx pgx.Tx) error {

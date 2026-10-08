@@ -9,9 +9,14 @@ import { ProductCard } from "@/features/shop/product-card";
 import { Reveal } from "@/components/ui/reveal";
 import { FabricSwatch } from "@/components/ui/fabric-swatch";
 import { StudioPreview } from "@/features/home/studio-preview";
+import assetManifest from "@/public/3d/manifest.json";
 import { SocialIcon, whatsappLink } from "@/components/brand/brand-icon";
 import styles from "./home.module.css";
 import { SampleTag } from "@/components/ui/sample-tag";
+
+// Still renders of the studio's suit model, with content-hashed URLs from the asset manifest.
+const suitRenders: Record<string, string> =
+  assetManifest.assets.find((a) => a.assetKey === "suit-standin")?.supportedOptions.renders ?? {};
 
 export const revalidate = 60;
 
@@ -115,7 +120,7 @@ export default async function HomePage() {
               </div>
             </Reveal>
             <Reveal delay={100}>
-              <StudioPreview />
+              <StudioPreview renders={suitRenders} />
             </Reveal>
           </div>
         </section>

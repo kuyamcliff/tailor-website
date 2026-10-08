@@ -19,9 +19,15 @@ Do not market the studio as an accurate fitting tool until production models are
 - Two levels of detail per asset: `high` (desktop, under 4 MB) and `low` (phones, under 1.5 MB).
 - Extensions are checked on upload against an allow-list (material extensions such as sheen and
   clearcoat, texture transform, mesh quantization, Draco, meshopt, Basis textures). Unknown
-  extensions are rejected. The studio currently loads models without Draco, meshopt or Basis
-  decoders, so do not use those compressions until the decoders are added to
-  `frontend/features/studio/viewer.tsx` and served from this site.
+  extensions are rejected.
+- Compress geometry with **Meshopt** (`EXT_meshopt_compression` with `KHR_mesh_quantization`, as
+  the stand-ins do) or **Draco**, and textures with **KTX2/Basis** (`KHR_texture_basisu`). The
+  studio decodes all three. The Draco and Basis decoders are copied from three.js into
+  `public/3d/decoders/<three revision>/` by `scripts/copy-decoders.mjs` before every dev server
+  and build, so nothing loads from a third-party CDN. Meshopt typically cuts a model to a third
+  of its size; check shape keys still look right after quantization.
+- Fabric texture maps can be KTX2 files (upload them in Owner > 3D assets and use the returned URL
+  in the fabric's material settings); the studio picks the KTX2 loader from the `.ktx2` extension.
 - UVs on fabric parts in **metres** (1 UV unit = 1 m of cloth), so a texture's `repeat` value in the
   fabric settings means tiles per metre on every garment.
 - Materials: name the main cloth material `fabric`. The studio replaces it with the chosen fabric
@@ -54,6 +60,23 @@ Garment-specific shape keys, driven by options:
 | Jackets, suits | `lapel_width` | Lapel width option (cm), relative to the default |
 | Dresses, gowns | `length_midi`, `length_floor` | Length option |
 
+## Fit zone anchors
+
+`bodyCompat.zoneAnchors` on a body asset maps each fit rule zone (`chest`, `bust`, `waist`, `hip`,
+`shoulders`, `sleeve`, `neck`, `jacket_length`, `shirt_length`, `torso`, `thigh`, `inseam`,
+`dress_length`) to a point `[x, y, z]` in metres on the unmorphed figure. With "Show the fit on the
+figure" ticked, the studio pins each zone's estimate (Good, Too tight and so on) at that point.
+Zones without an anchor are listed in the panel only. Points sit just in front of the surface;
+pins on the far side fade out as the figure turns.
+
+## Still renders
+
+`supportedOptions.renders` maps view keys (`front`, `45`, `side`, `135`, `back`, `right`) to
+images of the garment on its body with default options. The studio shows them when WebGL is
+unavailable or the model fails to load, and the home page uses the suit's. Upload WebP, PNG or
+JPEG renders in Owner > 3D assets with each new version. For the stand-ins,
+`scripts/render-previews.mjs` captures them from the running studio.
+
 ## Part names
 
 Options show and hide nodes by name (configured per option value in Owner > Garments). The
@@ -71,6 +94,21 @@ stand-ins use these names; production models should keep them so no option needs
   `sleeve_none` (empty node), `sleeve_cap`, `sleeve_long`, `skirt_a_line`, `skirt_pencil`,
   `skirt_ballgown`.
 - **Bodies**: a single node per body is enough (`mannequin`); it must carry the four body shape keys.
+
+## Quality levels
+
+The studio starts at one of four levels (Highest, High, Medium, Light) from what the device reports
+(memory, cores, pointer, screen width, GPU name, Save-Data) and adjusts while the figure moves: a run
+of slow frames steps down, several fast runs step back up, with a cap on changes so it never
+flickers. Levels set the pixel ratio, which model file loads (`high` or `low`), contact shadow
+resolution, texture filtering, normal maps and the rim light. The scene renders only when something
+changes, and the pixel ratio drops while the customer drags or pinches. Customers can pick a level
+under Preview > Detail. Staff can add `?diagnostics=1` to `/studio` to see frame time, draw calls,
+triangles and GPU object counts.
+
+Models that stop being shown stay cached (up to four) so switching back is instant; older ones are
+disposed of and their GPU memory released. `e2e/studio.spec.ts` switches garments and fabrics 50
+times and fails if GPU geometry grows past four times the starting count.
 
 ## Publishing a new version
 
@@ -91,5 +129,6 @@ with the atelier's records.
 cd frontend
 npm run assets:build                 # writes public/3d/*.glb and public/3d/manifest.json
 cd ../backend && go run ./cmd/api seed   # registers manifest entries (never replaces a published version)
-cd ../frontend && node scripts/render-previews.mjs   # home page preview frames (needs the app running)
+cd ../frontend && node scripts/render-previews.mjs   # still renders for every garment (needs the app and API running)
+cd ../backend && go run ./cmd/api seed   # again, to record the render URLs
 ```

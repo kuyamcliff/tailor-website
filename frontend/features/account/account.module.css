@@ -43,10 +43,11 @@
 }
 @media (max-width: 860px) {
   .shell {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .nav {
     position: static;
+    min-width: 0;
   }
   .nav ul {
     display: flex;

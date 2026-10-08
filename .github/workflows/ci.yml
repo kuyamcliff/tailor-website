@@ -46,6 +46,8 @@ jobs:
         run: go test ./tests/ -count=1
       - name: Build
         run: go build -o /tmp/api ./cmd/api
+      - name: Lint the OpenAPI description
+        run: npx --yes @redocly/cli@2.0.8 lint openapi/openapi.yaml
 
   frontend:
     runs-on: ubuntu-latest
