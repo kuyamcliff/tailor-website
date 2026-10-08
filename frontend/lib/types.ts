@@ -14,9 +14,6 @@ export type DeliveryZone = {
 export type Business = {
   name: string;
   tagline: string;
-  legalName?: string;
-  registrationNumber?: string;
-  taxId?: string;
   logoUrl: string;
   phone: string;
   whatsapp: string;

@@ -199,7 +199,7 @@ export function SignUpForm() {
         <span>Send me occasional news about new fabrics and collections.</span>
       </label>
       <p className="small muted">
-        You must be 18 or older. By creating an account you agree to our{" "}
+        By creating an account you agree to our{" "}
         <Link className="link" href="/policies/terms">
           terms
         </Link>{" "}

@@ -64,7 +64,7 @@ instances, set it to false and run `api migrate` as a release step before rollin
 ## 4. After the first deploy
 
 1. Sign in as the owner, add staff in Owner > Staff, and change the bootstrap password.
-2. Owner > Settings: business, legal name, RCCM, NIU, address, hours, tax, delivery, appointment
+2. Owner > Settings: business, address, hours, tax, delivery, appointment
    rules and order stages.
 3. Owner > Pages and policies: review every policy (see the legal review note in
    `IMPLEMENTATION_STATUS.md`).

@@ -1,8 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { existsSync } from "node:fs";
-import path from "node:path";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Clock, MapPin } from "lucide-react";
 import { serverApiOr } from "@/lib/server";
 import { getConfig, getContent } from "@/lib/server-data";
 import { block } from "@/lib/content";
@@ -37,8 +35,6 @@ export default async function HomePage() {
   const processBlock = block(content, "home.process");
   const services = block(content, "services");
   const b = config.business;
-  // The preview shows pre-rendered frames of the studio model; skip it until they have been generated.
-  const hasRenders = existsSync(path.join(process.cwd(), "public", "3d", "renders", "suit-front.webp"));
 
   return (
     <>
@@ -123,11 +119,9 @@ export default async function HomePage() {
                 </Link>
               </div>
             </Reveal>
-            {hasRenders ? (
-              <Reveal delay={100}>
-                <StudioPreview renders={suitRenders} />
-              </Reveal>
-            ) : null}
+            <Reveal delay={100}>
+              <StudioPreview renders={suitRenders} />
+            </Reveal>
           </div>
         </section>
       ) : null}
@@ -308,6 +302,35 @@ export default async function HomePage() {
                 </a>
               ) : null}
             </div>
+          </div>
+        </section>
+      ) : null}
+
+      {/* 11. Location and contact */}
+      {b.address.line1 || b.phone ? (
+        <section className="section-tight">
+          <div className={`container ${styles.visit}`}>
+            <div>
+              <span className="eyebrow">Visit</span>
+              <h2 className="display-3" style={{ marginTop: 12 }}>
+                {b.name || "The atelier"}
+              </h2>
+            </div>
+            {b.address.line1 ? (
+              <p className={styles.visitLine}>
+                <MapPin size={18} aria-hidden />
+                <span>{[b.address.line1, b.address.line2, b.address.city].filter(Boolean).join(", ")}</span>
+              </p>
+            ) : null}
+            {b.openingHours?.length ? (
+              <p className={styles.visitLine}>
+                <Clock size={18} aria-hidden />
+                <span>{b.openingHours.map((h) => `${h.days} ${h.hours}`).join(" · ")}</span>
+              </p>
+            ) : null}
+            <Link href="/contact" className="text-link">
+              Directions and contact <ArrowRight size={16} aria-hidden />
+            </Link>
           </div>
         </section>
       ) : null}

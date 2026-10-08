@@ -73,13 +73,6 @@ export function OrderDocument({ id, kind }: { id: string; kind: keyof typeof tit
             <p className={styles.brand}>{b.name || "Atelier"}</p>
             <p>{[b.address.line1, b.address.line2, b.address.city, b.address.country].filter(Boolean).join(", ")}</p>
             <p>{[b.phone, b.email].filter(Boolean).join(" · ")}</p>
-            {b.legalName || b.registrationNumber || b.taxId ? (
-              <p>
-                {[b.legalName, b.registrationNumber && `RCCM ${b.registrationNumber}`, b.taxId && `NIU ${b.taxId}`]
-                  .filter(Boolean)
-                  .join(" · ")}
-              </p>
-            ) : null}
           </div>
           <div className={styles.meta}>
             <h1>{titles[kind]}</h1>

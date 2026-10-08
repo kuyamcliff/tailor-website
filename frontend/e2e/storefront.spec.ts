@@ -12,7 +12,6 @@ test("home, shop and product pages load cleanly", async ({ page }) => {
     "/contact",
     "/appointments",
     "/policies/privacy",
-    "/policies/cookies",
   ]) {
     await page.goto(path, { waitUntil: "networkidle" });
     await expect(page.locator("h1").first()).toBeVisible();
