@@ -280,6 +280,42 @@ p {
   margin-top: var(--space-6);
 }
 
+.stack-xs {
+  display: grid;
+  gap: 2px;
+}
+
+.list-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--line);
+}
+
+.list-rows > li {
+  border-bottom: 1px solid var(--line);
+}
+
+.list-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 4px;
+  color: inherit;
+  text-decoration: none;
+  min-height: 44px;
+}
+
+a.list-row:hover {
+  background: var(--surface);
+}
+
+a.list-row:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: -2px;
+}
+
 .row {
   display: flex;
   align-items: center;

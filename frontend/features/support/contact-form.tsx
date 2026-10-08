@@ -5,6 +5,8 @@ import { useRef, useState } from "react";
 import { api, ApiError, newIdempotencyKey } from "@/lib/api";
 import { Field } from "@/components/ui/field";
 import { useSession } from "@/components/providers/session";
+import { ImageUploader, uploadedIds, uploadsPending, type UploadItem } from "@/components/ui/image-uploader";
+import { rememberLink, tokenFor } from "@/lib/links";
 
 const categories = [
   ["general", "General question"],
@@ -16,7 +18,7 @@ const categories = [
   ["other", "Something else"],
 ] as const;
 
-export function ContactForm({ orderId, defaultCategory = "general" }: { orderId?: string; defaultCategory?: string }) {
+export function ContactForm({ orderId, defaultCategory = "general", attachments = true }: { orderId?: string; defaultCategory?: string; attachments?: boolean }) {
   const { user } = useSession();
   const key = useRef(newIdempotencyKey());
   const [form, setForm] = useState({ subject: "", category: defaultCategory, message: "", name: "", phone: "", email: "", preferredContact: "whatsapp" });
@@ -24,6 +26,7 @@ export function ContactForm({ orderId, defaultCategory = "general" }: { orderId?
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState<{ id: string; number: string; accessToken: string } | null>(null);
   const [error, setError] = useState("");
+  const [files, setFiles] = useState<UploadItem[]>([]);
 
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
@@ -39,10 +42,13 @@ export function ContactForm({ orderId, defaultCategory = "general" }: { orderId?
           category: form.category,
           message: form.message,
           orderId,
+          attachments: uploadedIds(files),
           contact: user?.customerId ? undefined : { name: form.name, phone: form.phone, email: form.email || null, preferredContact: form.preferredContact },
         },
         idempotencyKey: key.current,
+        accessToken: orderId ? tokenFor("order", orderId) || undefined : undefined,
       });
+      rememberLink({ kind: "support", id: r.id, number: r.number, token: r.accessToken });
       setDone(r);
     } catch (err) {
       if (err instanceof ApiError) {
@@ -117,7 +123,10 @@ export function ContactForm({ orderId, defaultCategory = "general" }: { orderId?
       <Field label="Message" error={errors.message}>
         {(p) => <textarea {...p} className="textarea" value={form.message} onChange={set("message")} maxLength={5000} required />}
       </Field>
-      <button className="btn btn-primary" disabled={busy} type="submit">
+      {attachments ? (
+        <ImageUploader purpose="support" items={files} onChange={setFiles} max={4} label="Attach photos (optional)" hint="JPEG, PNG or WebP up to 15 MB" />
+      ) : null}
+      <button className="btn btn-primary" disabled={busy || uploadsPending(files)} type="submit">
         {busy ? <span className="spinner" aria-hidden /> : null} Send message
       </button>
     </form>

@@ -12,7 +12,8 @@ import { useSession } from "@/components/providers/session";
 import { Field } from "@/components/ui/field";
 import { Price } from "@/components/ui/price";
 import { rememberLink } from "@/lib/links";
-import type { Product } from "@/lib/types";
+import { useHydrated } from "@/lib/client-hooks";
+import type { Product, SavedAddress } from "@/lib/types";
 import styles from "./checkout.module.css";
 
 const KEY = "atelier.checkoutKey";
@@ -36,7 +37,7 @@ export function CheckoutForm() {
   const cfg = useConfig();
   const { user } = useSession();
   const { lines, clear, setQuantity, remove } = useCart();
-  const [ready, setReady] = useState(false);
+  const ready = useHydrated();
   const zones = cfg.business.delivery;
   const [zoneKey, setZoneKey] = useState(zones[0]?.key ?? "pickup");
   const zone = zones.find((z) => z.key === zoneKey);
@@ -48,10 +49,22 @@ export function CheckoutForm() {
   const [busy, setBusy] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => setReady(true), []);
   useEffect(() => {
+    // Prefill once the session loads; the customer can still edit every field.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (user) setContact((c) => ({ ...c, name: c.name || user.name, email: c.email || user.email }));
   }, [user]);
+  const [saved, setSaved] = useState<SavedAddress[]>([]);
+  useEffect(() => {
+    if (!user?.customerId) return;
+    api<SavedAddress[]>("/me/addresses")
+      .then((list) => {
+        setSaved(list);
+        const d = list.find((a) => a.isDefault);
+        if (d) setAddress((a) => (a.line1 ? a : { recipient: d.recipient, phone: d.phone, line1: d.line1, line2: d.line2, city: d.city, region: d.region, notes: d.notes }));
+      })
+      .catch(() => setSaved([]));
+  }, [user?.customerId]);
 
   const subtotal = cartSubtotal(lines);
   const delivery = zone?.feeMinor ?? 0;
@@ -186,6 +199,29 @@ export function CheckoutForm() {
             ))}
           </div>
           {err("fulfillment.zoneKey") ? <p className="error small">{err("fulfillment.zoneKey")}</p> : null}
+          {zone && zone.method !== "pickup" && saved.length > 1 ? (
+            <Field label="Saved address" className="span-2">
+              {(p) => (
+                <select
+                  {...p}
+                  className="select"
+                  style={{ marginTop: 16 }}
+                  defaultValue=""
+                  onChange={(e) => {
+                    const d = saved.find((a) => a.id === e.target.value);
+                    if (d) setAddress({ recipient: d.recipient, phone: d.phone, line1: d.line1, line2: d.line2, city: d.city, region: d.region, notes: d.notes });
+                  }}
+                >
+                  <option value="">Choose a saved address</option>
+                  {saved.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.label || a.recipient}: {a.line1}, {a.city}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </Field>
+          ) : null}
           {zone && zone.method !== "pickup" ? (
             <div className="form-grid cols-2" style={{ marginTop: 16 }}>
               <Field label="Recipient" error={err("fulfillment.address.recipient")}>

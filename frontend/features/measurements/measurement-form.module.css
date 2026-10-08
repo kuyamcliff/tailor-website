@@ -1,0 +1,32 @@
+.units {
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
+  gap: 20px 24px;
+}
+.item {
+  display: grid;
+  gap: 6px;
+  align-content: start;
+}
+.label {
+  font-weight: 600;
+  font-size: 0.9375rem;
+}
+.how summary {
+  cursor: pointer;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+.how p {
+  margin: 6px 0 0;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+.item :global(.error) {
+  color: var(--danger);
+}

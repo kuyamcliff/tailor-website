@@ -1,5 +1,6 @@
 "use client";
 
+import { useHydrated } from "@/lib/client-hooks";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -22,11 +23,6 @@ export const navItems = [
   { href: "/contact", label: "Contact" },
 ];
 
-function useHydrated() {
-  const [h, setH] = useState(false);
-  useEffect(() => setH(true), []);
-  return h;
-}
 
 export function Header() {
   const cfg = useConfig();
@@ -37,8 +33,13 @@ export function Header() {
   const setCartOpen = useCart((s) => s.setOpen);
   const wishCount = useSaved((s) => s.wishlist.length);
   const { user } = useSession();
-  const [menu, setMenu] = useState(false);
-  const [search, setSearch] = useState(false);
+  // Overlays remember the path they were opened on, so navigating closes them without an effect.
+  const [menuAt, setMenuAt] = useState<string | null>(null);
+  const [searchAt, setSearchAt] = useState<string | null>(null);
+  const menu = menuAt === pathname;
+  const search = searchAt === pathname;
+  const setMenu = (open: boolean) => setMenuAt(open ? pathname : null);
+  const setSearch = (open: boolean) => setSearchAt(open ? pathname : null);
   const [q, setQ] = useState("");
   const [scrolled, setScrolled] = useState(false);
 
@@ -49,10 +50,6 @@ export function Header() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  useEffect(() => {
-    setMenu(false);
-    setSearch(false);
-  }, [pathname]);
 
   const count = hydrated ? cartCount(lines) : 0;
   const accountHref = user ? (user.isStaff ? "/owner" : "/account") : "/account/sign-in";

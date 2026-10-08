@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { CalendarCheck2, MapPin } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
-import { accessTokenFromUrl } from "@/lib/links";
+import { useAccessToken, useUrlFlag } from "@/lib/client-hooks";
 import type { Appointment } from "@/lib/types";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { useConfig } from "@/components/providers/config";
@@ -16,15 +16,11 @@ type Resp = { appointment: Appointment; timezone: string; cancelNoticeHours: num
 export function ManageAppointment({ id }: { id: string }) {
   const cfg = useConfig();
   const toast = useToast();
-  const [token, setToken] = useState<string | null>(null);
-  const [booked, setBooked] = useState(false);
+  const token = useAccessToken("appointment", id);
+  const booked = useUrlFlag("booked");
   const [mode, setMode] = useState<"view" | "reschedule">("view");
   const [slot, setSlot] = useState("");
   const [busy, setBusy] = useState(false);
-  useEffect(() => {
-    setBooked(new URL(window.location.href).searchParams.get("booked") === "1");
-    setToken(accessTokenFromUrl("appointment", id));
-  }, [id]);
   const q = useQuery({ queryKey: ["appt", id, token], enabled: token !== null, queryFn: () => api<Resp>(`/appointments/${id}`, { accessToken: token || undefined }) });
   const a = q.data?.appointment;
   const tz = q.data?.timezone ?? cfg.business.timezone;

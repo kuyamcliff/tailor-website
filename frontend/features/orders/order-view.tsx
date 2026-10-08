@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { CalendarDays, CheckCircle2, FileText, MessageCircle, Package, Ruler } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
-import { accessTokenFromUrl } from "@/lib/links";
+import { useAccessToken, useNow, useUrlFlag } from "@/lib/client-hooks";
 import { formatDate, formatDateTime, humanize, paymentLabels } from "@/lib/format";
 import type { Order } from "@/lib/types";
 import { Price } from "@/components/ui/price";
@@ -21,12 +21,9 @@ const deliveryLabels: Record<string, string> = {
 
 export function OrderView({ id }: { id: string }) {
   const cfg = useConfig();
-  const [token, setToken] = useState<string | null>(null);
-  const [placed, setPlaced] = useState(false);
-  useEffect(() => {
-    setPlaced(new URL(window.location.href).searchParams.get("placed") === "1");
-    setToken(accessTokenFromUrl("order", id));
-  }, [id]);
+  const token = useAccessToken("order", id);
+  const placed = useUrlFlag("placed");
+  const now = useNow();
   const q = useQuery({
     queryKey: ["order", id, token],
     enabled: token !== null,
@@ -68,7 +65,7 @@ export function OrderView({ id }: { id: string }) {
   const o = q.data!.order;
   const due = o.status === "cancelled" || o.status === "refunded" ? 0 : Math.max(0, o.depositRequiredMinor - o.amountPaidMinor) || o.balanceMinor;
   const tokenQuery = token ? `?token=${token}` : "";
-  const recentPayment = o.payments.find((p) => p.status === "succeeded" && p.succeededAt && Date.now() - new Date(p.succeededAt).getTime() < 30 * 60 * 1000);
+  const recentPayment = o.payments.find((p) => p.status === "succeeded" && p.succeededAt && now - new Date(p.succeededAt).getTime() < 30 * 60 * 1000);
 
   return (
     <div className="container section-tight">
@@ -251,7 +248,7 @@ export function OrderView({ id }: { id: string }) {
                 </Link>
               ) : null}
             </div>
-            <Link href={`/support/new?order=${o.id}`} className="text-link">
+            <Link href={`/support?order=${o.id}`} className="text-link">
               <MessageCircle size={15} aria-hidden /> Get help with this order
             </Link>
           </section>

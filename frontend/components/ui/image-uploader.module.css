@@ -1,0 +1,90 @@
+.grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: 10px;
+}
+.item {
+  position: relative;
+  aspect-ratio: 1;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  overflow: hidden;
+}
+.thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.item[data-status="uploading"] .thumb {
+  opacity: 0.55;
+}
+.progress {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  width: calc(100% - 16px);
+  height: 4px;
+  appearance: none;
+  border: 0;
+  background: rgb(0 0 0 / 0.5);
+}
+.progress::-webkit-progress-bar {
+  background: rgb(0 0 0 / 0.5);
+}
+.progress::-webkit-progress-value {
+  background: var(--gold);
+}
+.progress::-moz-progress-bar {
+  background: var(--gold);
+}
+.error {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: 6px;
+  padding: 8px;
+  text-align: center;
+  font-size: 0.75rem;
+  background: rgb(11 11 12 / 0.86);
+  color: var(--text);
+}
+.remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  background: rgb(11 11 12 / 0.8);
+  color: var(--text);
+  cursor: pointer;
+}
+.remove:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+.drop {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 16px;
+  border: 1px dashed var(--line-strong, var(--line));
+  color: var(--text);
+  cursor: pointer;
+}
+.drop:hover {
+  border-color: var(--gold);
+}
+.drop:focus-within {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}

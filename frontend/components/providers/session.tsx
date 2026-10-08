@@ -38,6 +38,8 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   }, [apply]);
 
   useEffect(() => {
+    // Load the session from the API once on mount (external system sync).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void refresh();
   }, [refresh]);
 

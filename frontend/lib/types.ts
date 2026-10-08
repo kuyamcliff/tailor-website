@@ -558,3 +558,17 @@ export type SupportThread = {
 };
 
 export type ContentBlocks = Record<string, unknown>;
+
+export type SavedAddress = {
+  id: string;
+  label: string;
+  recipient: string;
+  phone: string;
+  line1: string;
+  line2: string;
+  city: string;
+  region: string;
+  country: string;
+  notes: string;
+  isDefault: boolean;
+};

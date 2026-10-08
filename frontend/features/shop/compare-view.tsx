@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useHydrated } from "@/lib/client-hooks";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
@@ -14,9 +15,8 @@ import styles from "./compare.module.css";
 // Comparison of products (and of saved designs). On narrow screens the table scrolls sideways with
 // the attribute column pinned, so every column stays readable.
 export function CompareView() {
-  const [ready, setReady] = useState(false);
+  const ready = useHydrated();
   const { compare, toggleCompare, clearCompare } = useSaved();
-  useEffect(() => setReady(true), []);
   const productIds = compare.filter((c) => c.type === "product").map((c) => c.id);
   const designIds = compare.filter((c) => c.type === "design").map((c) => c.id);
   const products = useQuery({

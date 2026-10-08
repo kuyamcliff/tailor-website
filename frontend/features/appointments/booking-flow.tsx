@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useNow } from "@/lib/client-hooks";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -34,7 +35,8 @@ export function BookingFlow({ initialType, orderId, requestId }: { initialType?:
   const { user } = useSession();
   const [type, setType] = useState(appointmentTypes.some((t) => t.key === initialType) ? initialType! : "consultation");
   const [weekOffset, setWeekOffset] = useState(0);
-  const from = useMemo(() => ymd(new Date(Date.now() + weekOffset * 14 * 86400000), tz), [weekOffset, tz]);
+  const now = useNow();
+  const from = useMemo(() => ymd(new Date(now + weekOffset * 14 * 86400000), tz), [now, weekOffset, tz]);
   const slots = useQuery({ queryKey: ["slots", type, from], queryFn: () => api<Slots>(`/appointments/slots?type=${type}&from=${from}`), refetchInterval: 60000 });
   const [day, setDay] = useState<string | null>(null);
   const [slot, setSlot] = useState<string | null>(null);

@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Printer } from "lucide-react";
 import { api } from "@/lib/api";
-import { accessTokenFromUrl } from "@/lib/links";
+import { useAccessToken } from "@/lib/client-hooks";
 import { formatDate, humanize } from "@/lib/format";
 import { formatMoney } from "@/lib/money";
 import { fromMM } from "@/lib/units";
@@ -19,8 +19,7 @@ const titles = { summary: "Order summary", invoice: "Invoice", receipt: "Receipt
 export function OrderDocument({ id, kind }: { id: string; kind: keyof typeof titles }) {
   const cfg = useConfig();
   const b = cfg.business;
-  const [token, setToken] = useState<string | null>(null);
-  useEffect(() => setToken(accessTokenFromUrl("order", id)), [id]);
+  const token = useAccessToken("order", id);
   const order = useQuery({
     queryKey: ["order", id, token],
     enabled: token !== null,

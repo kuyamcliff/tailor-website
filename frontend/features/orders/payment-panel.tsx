@@ -20,20 +20,18 @@ export function PaymentPanel({ order, accessToken, online, onSettled }: { order:
   const cfg = useConfig();
   const methods = useQuery({ queryKey: ["payment-methods"], queryFn: () => api<Methods>("/payments/methods"), enabled: online });
   const inflight = order.payments.find((p) => active(p.status));
-  const [provider, setProvider] = useState("");
+  const [chosen, setProvider] = useState("");
   const [msisdn, setMsisdn] = useState(order.contact.phone?.replace(/^237/, "") ?? "");
   const [paymentId, setPaymentId] = useState<string | null>(inflight?.id ?? null);
   const [payment, setPayment] = useState<Payment | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const provider = chosen || methods.data?.methods[0]?.provider || "";
   const keyRef = useRef(newIdempotencyKey());
   const depositDue = order.depositRequiredMinor > order.amountPaidMinor && order.depositRequiredMinor < order.totalMinor;
   const [purpose, setPurpose] = useState<"deposit" | "balance" | "full">(depositDue ? "deposit" : order.amountPaidMinor > 0 ? "balance" : "full");
   const amount = purpose === "deposit" ? order.depositRequiredMinor - order.amountPaidMinor : order.totalMinor - order.amountPaidMinor;
 
-  useEffect(() => {
-    if (!provider && methods.data?.methods[0]) setProvider(methods.data.methods[0].provider);
-  }, [methods.data, provider]);
 
   // Poll the payment while it is in flight. The server re-checks with the provider on each read.
   useEffect(() => {

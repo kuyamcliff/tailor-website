@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { useAccessToken, useUrlFlag } from "@/lib/client-hooks";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { CheckCircle2 } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
-import { accessTokenFromUrl, rememberLink } from "@/lib/links";
+import { rememberLink } from "@/lib/links";
+
 import { formatDate, humanize, requestLabels } from "@/lib/format";
 import type { RequestView } from "@/lib/types";
 import { Price } from "@/components/ui/price";
@@ -15,14 +17,10 @@ import { formatLength } from "@/lib/units";
 
 export function RequestStatus({ id }: { id: string }) {
   const toast = useToast();
-  const [token, setToken] = useState<string | null>(null);
-  const [submitted, setSubmitted] = useState(false);
+  const token = useAccessToken("request", id);
+  const submitted = useUrlFlag("submitted");
   const [reply, setReply] = useState("");
   const [busy, setBusy] = useState(false);
-  useEffect(() => {
-    setSubmitted(new URL(window.location.href).searchParams.get("submitted") === "1");
-    setToken(accessTokenFromUrl("request", id));
-  }, [id]);
   const q = useQuery({
     queryKey: ["request", id, token],
     enabled: token !== null,

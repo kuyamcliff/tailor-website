@@ -1,15 +1,15 @@
 "use client";
 
 import Image from "next/image";
+import { useHydrated } from "@/lib/client-hooks";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { useSaved } from "@/stores/saved";
 
 export function WishlistView() {
-  const [ready, setReady] = useState(false);
+  const ready = useHydrated();
   const { wishlist, toggleWish } = useSaved();
-  useEffect(() => setReady(true), []);
   if (!ready) return <div className="skeleton" style={{ height: 240 }} />;
   if (!wishlist.length)
     return (

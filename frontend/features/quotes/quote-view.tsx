@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { useAccessToken } from "@/lib/client-hooks";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { CalendarClock } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
-import { accessTokenFromUrl, rememberLink } from "@/lib/links";
+import { rememberLink } from "@/lib/links";
+
 import { formatDate, humanize } from "@/lib/format";
 import type { Quote } from "@/lib/types";
 import { Price } from "@/components/ui/price";
@@ -29,12 +31,11 @@ const statusText: Record<Quote["status"], string> = {
 export function QuoteView({ id }: { id: string }) {
   const router = useRouter();
   const toast = useToast();
-  const [token, setToken] = useState<string | null>(null);
+  const token = useAccessToken("quote", id);
   const [dialog, setDialog] = useState<null | "decline" | "changes">(null);
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  useEffect(() => setToken(accessTokenFromUrl("quote", id)), [id]);
   const q = useQuery({
     queryKey: ["quote", id, token],
     enabled: token !== null,

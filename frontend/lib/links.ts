@@ -6,8 +6,11 @@
 export type SavedLink = { kind: "order" | "request" | "quote" | "appointment" | "support"; id: string; number: string; token: string; createdAt: number };
 
 const KEY = "atelier.links";
+// In-memory copy so links keep working in this tab even when storage is unavailable.
+const memory = new Map<string, string>();
 
 export function rememberLink(link: Omit<SavedLink, "createdAt">) {
+  memory.set(`${link.kind}:${link.id}`, link.token);
   try {
     const all = savedLinks().filter((l) => !(l.kind === link.kind && l.id === link.id));
     all.unshift({ ...link, createdAt: Date.now() });
@@ -26,7 +29,7 @@ export function savedLinks(): SavedLink[] {
 }
 
 export function tokenFor(kind: SavedLink["kind"], id: string): string {
-  return savedLinks().find((l) => l.kind === kind && l.id === id)?.token ?? "";
+  return memory.get(`${kind}:${id}`) ?? savedLinks().find((l) => l.kind === kind && l.id === id)?.token ?? "";
 }
 
 // accessTokenFromUrl reads ?token= and remembers it, then removes it from the address bar so it is
