@@ -156,3 +156,33 @@ export function uploadImage(
     xhr.send(form);
   });
 }
+
+export type AssetUpload = { file: { lod: string; url: string; bytes: number; sha256: string }; info: { nodes: string[]; morphTargets: string[]; meshes: number; materials: number } | null };
+
+// uploadAssetFile sends a GLB or KTX2 file to the staff asset store (content-addressed, validated server-side).
+export function uploadAssetFile(file: File, onProgress?: (fraction: number) => void): Promise<AssetUpload> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", "/api/v1/owner/assets/files");
+    xhr.withCredentials = true;
+    if (csrfToken) xhr.setRequestHeader("X-CSRF-Token", csrfToken);
+    xhr.upload.onprogress = (e) => e.lengthComputable && onProgress?.(e.loaded / e.total);
+    xhr.onload = () => {
+      let data: unknown = null;
+      try {
+        data = JSON.parse(xhr.responseText);
+      } catch {
+        data = null;
+      }
+      if (xhr.status >= 200 && xhr.status < 300) resolve(data as AssetUpload);
+      else {
+        const err = (data as { error?: { code?: string; message?: string; fields?: Record<string, string> } } | null)?.error;
+        reject(new ApiError(xhr.status, err?.code ?? "upload_failed", err?.fields?.file ?? err?.message ?? "The upload failed.", err?.fields ?? {}));
+      }
+    };
+    xhr.onerror = () => reject(new ApiError(0, "network", "The upload was interrupted."));
+    const form = new FormData();
+    form.append("file", file);
+    xhr.send(form);
+  });
+}

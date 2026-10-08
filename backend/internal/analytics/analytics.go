@@ -111,7 +111,8 @@ func (h Handler) Metrics(w http.ResponseWriter, r *http.Request) error {
 		{"revenueCollected", `SELECT coalesce(sum(amount_minor - refunded_minor),0)::float8 FROM payments WHERE succeeded_at >= $1 AND NOT simulated`},
 		{"depositsCollected", `SELECT coalesce(sum(amount_minor),0)::float8 FROM payments WHERE succeeded_at >= $1 AND purpose='deposit' AND NOT simulated`},
 		{"outstandingBalances", `SELECT coalesce(sum(total_minor - amount_paid_minor + amount_refunded_minor),0)::float8 FROM orders
-			WHERE status NOT IN ('cancelled','refunded','completed') AND total_minor > amount_paid_minor - amount_refunded_minor`},
+			WHERE status NOT IN ('cancelled','refunded','completed') AND total_minor > amount_paid_minor - amount_refunded_minor
+			AND $1::timestamptz IS NOT NULL`}, // balances are current, not limited to the period
 		{"appointmentsBooked", `SELECT count(*)::float8 FROM appointments WHERE created_at >= $1`},
 		{"consultationsFollowedByOrder", `SELECT count(DISTINCT a.customer_id)::float8 FROM appointments a WHERE a.created_at >= $1
 			AND a.type IN ('consultation','video_consultation') AND a.status='completed'

@@ -411,7 +411,7 @@ function Payments({ order: o, busy, run }: { order: Order; busy: boolean; run: R
                       <button className="link small" disabled={busy} onClick={() => run(() => api(`/owner/payments/${p.id}/recheck`, { method: "POST", body: {} }), "Checked with the provider.")}>
                         Check again
                       </button>
-                    ) : p.status === "succeeded" || p.status === "partially_refunded" ? (
+                    ) : (p.status === "succeeded" || p.status === "partially_refunded") && !p.simulated ? (
                       <button className="link small" onClick={() => setRefundFor(refundFor === p.id ? null : p.id)}>
                         Refund
                       </button>

@@ -56,7 +56,7 @@
 .dl {
   margin: 0;
   display: grid;
-  grid-template-columns: 140px minmax(0, 1fr);
+  grid-template-columns: minmax(140px, max-content) minmax(0, 1fr);
   gap: 8px 16px;
 }
 .dl dt {
@@ -89,4 +89,16 @@
   .side {
     position: static;
   }
+}
+.side > section {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+.side > section > * {
+  margin: 0;
+}
+.side > section > button,
+.side > section > a.btn {
+  justify-self: start;
 }

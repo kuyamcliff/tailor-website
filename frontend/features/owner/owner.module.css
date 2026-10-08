@@ -5,6 +5,7 @@
   display: grid;
   grid-template-columns: 228px minmax(0, 1fr);
   min-height: 100dvh;
+  background: linear-gradient(to right, var(--bg-raised) 228px, transparent 228px);
 }
 .nav {
   position: sticky;

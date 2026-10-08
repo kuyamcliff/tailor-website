@@ -20,7 +20,7 @@ const accepted = ["image/jpeg", "image/png", "image/webp"];
 const maxBytes = 15 * 1024 * 1024;
 
 type Props = {
-  purpose: "reference" | "support" | "body_photo";
+  purpose: "reference" | "support" | "body_photo" | "product" | "portfolio" | "fabric" | "content";
   items: UploadItem[];
   onChange: (update: (items: UploadItem[]) => UploadItem[]) => void;
   max?: number;

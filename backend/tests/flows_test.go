@@ -450,3 +450,20 @@ func TestSupportAndPrivacy(t *testing.T) {
 	expect(t, acc.do("POST", "/me/delete-account", map[string]any{"password": "a-long-enough-password"}), 204)
 	expect(t, acc.do("GET", "/me/profile", nil), 401)
 }
+
+// TestOwnerReports checks the dashboard and analytics endpoints answer for every period.
+func TestOwnerReports(t *testing.T) {
+	owner := ownerClient(t)
+	expect(t, owner.do("GET", "/owner/dashboard", nil), 200)
+	for _, p := range []string{"30", "90", "365"} {
+		r := owner.do("GET", "/owner/analytics?period="+p, nil)
+		expect(t, r, 200)
+		var out struct {
+			Values map[string]float64 `json:"values"`
+		}
+		r.json(t, &out)
+		if _, ok := out.Values["outstandingBalances"]; !ok {
+			t.Fatalf("analytics missing outstandingBalances: %s", r.body)
+		}
+	}
+}
