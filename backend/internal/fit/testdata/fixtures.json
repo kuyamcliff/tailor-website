@@ -1,0 +1,288 @@
+{
+  "rules": [
+    {
+      "zone": "chest",
+      "label": "Chest",
+      "measurementKey": "chest",
+      "kind": "circumference",
+      "easeSlimMm": 60,
+      "easeRegularMm": 100,
+      "easeRelaxedMm": 140,
+      "toleranceMm": 15,
+      "stretchPct": 0
+    },
+    {
+      "zone": "waist",
+      "label": "Waist",
+      "measurementKey": "waist",
+      "kind": "circumference",
+      "easeSlimMm": 40,
+      "easeRegularMm": 80,
+      "easeRelaxedMm": 120,
+      "toleranceMm": 15,
+      "stretchPct": 0
+    },
+    {
+      "zone": "sleeve",
+      "label": "Sleeves",
+      "measurementKey": "sleeve_length",
+      "kind": "length",
+      "easeSlimMm": 0,
+      "easeRegularMm": 0,
+      "easeRelaxedMm": 0,
+      "toleranceMm": 8,
+      "stretchPct": 0
+    },
+    {
+      "zone": "jacket_length",
+      "label": "Jacket length",
+      "measurementKey": "jacket_length",
+      "kind": "length",
+      "easeSlimMm": 0,
+      "easeRegularMm": 0,
+      "easeRelaxedMm": 0,
+      "toleranceMm": 10,
+      "stretchPct": 0
+    }
+  ],
+  "cases": [
+    {
+      "name": "made to measure regular is good",
+      "input": {
+        "body": {
+          "chest": 1000,
+          "waist": 860,
+          "sleeve_length": 640,
+          "jacket_length": 760
+        },
+        "fitPreference": "regular",
+        "baseline": null,
+        "adjustments": {},
+        "estimated": false,
+        "flaggedKeys": []
+      },
+      "expect": {
+        "overall": "good",
+        "zones": {
+          "chest": [
+            "good",
+            0
+          ],
+          "waist": [
+            "good",
+            0
+          ],
+          "sleeve": [
+            "good",
+            0
+          ],
+          "jacket_length": [
+            "good",
+            0
+          ]
+        }
+      }
+    },
+    {
+      "name": "short jacket option and short sleeves",
+      "input": {
+        "body": {
+          "chest": 1000,
+          "waist": 860,
+          "sleeve_length": 640,
+          "jacket_length": 760
+        },
+        "fitPreference": "regular",
+        "baseline": null,
+        "adjustments": {
+          "jacket_length": -20,
+          "sleeve": -15
+        },
+        "estimated": false,
+        "flaggedKeys": []
+      },
+      "expect": {
+        "overall": "close",
+        "zones": {
+          "chest": [
+            "good",
+            0
+          ],
+          "sleeve": [
+            "close",
+            -15,
+            "1.5 cm short"
+          ],
+          "jacket_length": [
+            "close",
+            -20,
+            "2.0 cm short"
+          ]
+        }
+      }
+    },
+    {
+      "name": "standard size baseline compared to body",
+      "input": {
+        "body": {
+          "chest": 1040,
+          "waist": 900,
+          "sleeve_length": 650,
+          "jacket_length": 760
+        },
+        "fitPreference": "regular",
+        "baseline": {
+          "chest": 1120,
+          "waist": 1020,
+          "sleeve": 650,
+          "jacket_length": 780
+        },
+        "adjustments": {},
+        "estimated": false,
+        "flaggedKeys": []
+      },
+      "expect": {
+        "overall": "loose",
+        "zones": {
+          "chest": [
+            "close",
+            -20,
+            "Slightly tight"
+          ],
+          "waist": [
+            "loose",
+            40,
+            "Loose by 4.0 cm"
+          ],
+          "sleeve": [
+            "good",
+            0
+          ],
+          "jacket_length": [
+            "close",
+            20,
+            "2.0 cm long"
+          ]
+        }
+      }
+    },
+    {
+      "name": "missing measurement is insufficient data",
+      "input": {
+        "body": {
+          "chest": 1000
+        },
+        "fitPreference": "slim",
+        "baseline": null,
+        "adjustments": {},
+        "estimated": false,
+        "flaggedKeys": []
+      },
+      "expect": {
+        "overall": "insufficient_data",
+        "zones": {
+          "chest": [
+            "good",
+            0
+          ],
+          "waist": [
+            "insufficient_data",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "name": "estimated measurements need verification",
+      "input": {
+        "body": {
+          "chest": 1000,
+          "waist": 860,
+          "sleeve_length": 640,
+          "jacket_length": 760
+        },
+        "fitPreference": "regular",
+        "baseline": null,
+        "adjustments": {},
+        "estimated": true,
+        "flaggedKeys": []
+      },
+      "expect": {
+        "overall": "verify",
+        "zones": {
+          "chest": [
+            "verify",
+            0
+          ]
+        }
+      }
+    },
+    {
+      "name": "flagged measurement needs verification",
+      "input": {
+        "body": {
+          "chest": 1000,
+          "waist": 860,
+          "sleeve_length": 640,
+          "jacket_length": 760
+        },
+        "fitPreference": "regular",
+        "baseline": null,
+        "adjustments": {},
+        "estimated": false,
+        "flaggedKeys": [
+          "waist"
+        ]
+      },
+      "expect": {
+        "overall": "verify",
+        "zones": {
+          "chest": [
+            "good",
+            0
+          ],
+          "waist": [
+            "verify",
+            0
+          ]
+        }
+      }
+    }
+  ],
+  "stretchCase": {
+    "rules": [
+      {
+        "zone": "hip",
+        "label": "Hip",
+        "measurementKey": "hip",
+        "kind": "circumference",
+        "easeSlimMm": 0,
+        "easeRegularMm": 20,
+        "easeRelaxedMm": 60,
+        "toleranceMm": 10,
+        "stretchPct": 5
+      }
+    ],
+    "input": {
+      "body": {
+        "hip": 1000
+      },
+      "fitPreference": "regular",
+      "baseline": {
+        "hip": 950
+      },
+      "adjustments": {},
+      "estimated": false,
+      "flaggedKeys": []
+    },
+    "expect": {
+      "overall": "close",
+      "zones": {
+        "hip": [
+          "close",
+          -20
+        ]
+      }
+    }
+  }
+}
