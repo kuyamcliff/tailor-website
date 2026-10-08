@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ImagePlus, RotateCcw, X } from "lucide-react";
+import { ArrowDown, ArrowUp, ImagePlus, RotateCcw, X } from "lucide-react";
 import { api, ApiError, uploadImage, type UploadResult } from "@/lib/api";
 import styles from "./image-uploader.module.css";
 
@@ -26,10 +26,14 @@ type Props = {
   max?: number;
   label?: string;
   hint?: string;
+  // List layout shows each image with extra fields (renderDetail) and optional reordering.
+  layout?: "grid" | "list";
+  reorderable?: boolean;
+  renderDetail?: (item: UploadItem, index: number) => React.ReactNode;
 };
 
 // ImageUploader uploads each selected image immediately with progress, retry and removal.
-export function ImageUploader({ purpose, items, onChange, max = 6, label = "Add photos", hint }: Props) {
+export function ImageUploader({ purpose, items, onChange, max = 6, label = "Add photos", hint, layout = "grid", reorderable = false, renderDetail }: Props) {
   const input = useRef<HTMLInputElement>(null);
   const controllers = useRef(new Map<string, AbortController>());
   const [notice, setNotice] = useState("");
@@ -96,9 +100,57 @@ export function ImageUploader({ purpose, items, onChange, max = 6, label = "Add 
     start(fresh);
   }
 
+  function move(index: number, by: number) {
+    onChange((list) => {
+      const next = [...list];
+      const [it] = next.splice(index, 1);
+      if (it) next.splice(Math.max(0, Math.min(next.length, index + by)), 0, it);
+      return next;
+    });
+  }
+
   return (
     <div className="stack-sm">
-      {items.length ? (
+      {items.length && layout === "list" ? (
+        <ol className={styles.list} aria-label="Selected images">
+          {items.map((i, idx) => (
+            <li key={i.key} className={styles.listItem}>
+              <div className={styles.item} data-status={i.status}>
+                {/* eslint-disable-next-line @next/next/no-img-element -- local object URL preview */}
+                <img src={i.preview} alt="" className={styles.thumb} />
+                {i.status === "uploading" ? <progress className={styles.progress} value={i.progress} max={1} aria-label={`Uploading ${i.name}`} /> : null}
+              </div>
+              <div className={styles.detail}>
+                {i.status === "error" ? (
+                  <p className="small" role="alert" style={{ color: "var(--danger)", margin: 0 }}>
+                    {i.error}{" "}
+                    <button type="button" className="btn btn-sm" onClick={() => retry(i)}>
+                      <RotateCcw size={14} aria-hidden /> Retry
+                    </button>
+                  </p>
+                ) : null}
+                {renderDetail?.(i, idx)}
+              </div>
+              <div className={styles.actions}>
+                {reorderable ? (
+                  <>
+                    <button type="button" className="icon-btn" onClick={() => move(idx, -1)} disabled={idx === 0} aria-label={`Move ${i.name} up`}>
+                      <ArrowUp size={16} aria-hidden />
+                    </button>
+                    <button type="button" className="icon-btn" onClick={() => move(idx, 1)} disabled={idx === items.length - 1} aria-label={`Move ${i.name} down`}>
+                      <ArrowDown size={16} aria-hidden />
+                    </button>
+                  </>
+                ) : null}
+                <button type="button" className="icon-btn" onClick={() => remove(i)} aria-label={`Remove ${i.name}`}>
+                  <X size={16} aria-hidden />
+                </button>
+              </div>
+            </li>
+          ))}
+        </ol>
+      ) : null}
+      {items.length && layout === "grid" ? (
         <ul className={styles.grid} aria-label="Selected images">
           {items.map((i) => (
             <li key={i.key} className={styles.item} data-status={i.status}>

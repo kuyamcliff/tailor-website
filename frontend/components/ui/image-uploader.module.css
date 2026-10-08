@@ -88,3 +88,42 @@
   outline: 2px solid var(--gold);
   outline-offset: 2px;
 }
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+.listItem {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr) auto;
+  gap: 16px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  align-items: start;
+}
+.listItem .item {
+  width: 96px;
+}
+.detail {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+.actions {
+  display: flex;
+  gap: 4px;
+}
+@media (max-width: 560px) {
+  .listItem {
+    grid-template-columns: 72px minmax(0, 1fr);
+  }
+  .listItem .item {
+    width: 72px;
+  }
+  .actions {
+    grid-column: 1 / -1;
+    justify-content: flex-end;
+  }
+}
