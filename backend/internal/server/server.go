@@ -15,6 +15,7 @@ import (
 	"github.com/kuyamcliff/tailor-website/backend/internal/audit"
 	"github.com/kuyamcliff/tailor-website/backend/internal/auth"
 	"github.com/kuyamcliff/tailor-website/backend/internal/auth/authapi"
+	"github.com/kuyamcliff/tailor-website/backend/internal/bodyestimate"
 	"github.com/kuyamcliff/tailor-website/backend/internal/catalog"
 	"github.com/kuyamcliff/tailor-website/backend/internal/config"
 	"github.com/kuyamcliff/tailor-website/backend/internal/customers"
@@ -42,6 +43,7 @@ type App struct {
 	Payments      *payments.Service
 	Notifications *notifications.Service
 	Uploads       *uploads.Service
+	BodyEstimate  *bodyestimate.Handler
 }
 
 type H = httpx.Handler
@@ -60,6 +62,7 @@ func New(ctx context.Context, cfg config.Config, pool *pgxpool.Pool, log *slog.L
 	notif := notifications.NewService(pool, cfg, log)
 	up := &uploads.Service{Pool: pool, Store: store, Settings: st, Log: log}
 	refs := references.Handler{Pool: pool, Store: store, Settings: st, Provider: references.New(cfg)}
+	bodyH := &bodyestimate.Handler{Pool: pool, Uploads: up, Settings: st, Provider: bodyestimate.New(cfg)}
 
 	authH := authapi.Handler{Pool: pool, Sessions: sessions, Settings: st}
 	settingsH := settings.Handler{Svc: st}
@@ -82,6 +85,9 @@ func New(ctx context.Context, cfg config.Config, pool *pgxpool.Pool, log *slog.L
 
 	blocker := func(ctx context.Context, key string) string {
 		if reason := pay.FlagBlocker(ctx, key); reason != "" {
+			return reason
+		}
+		if reason := bodyH.Blocker(ctx, key); reason != "" {
 			return reason
 		}
 		return refs.Blocker(ctx, key)
@@ -226,6 +232,8 @@ func New(ctx context.Context, cfg config.Config, pool *pgxpool.Pool, log *slog.L
 			r.Method(http.MethodDelete, "/measurement-profiles/{id}", H(measH.DeleteProfile))
 			r.Method(http.MethodGet, "/measurement-profiles/{id}/versions", H(measH.ProfileVersions))
 			r.Method(http.MethodPost, "/measurement-profiles/{id}/versions", H(measH.AddVersion))
+			r.Method(http.MethodGet, "/measurement-estimates", H(bodyH.Status))
+			r.With(limiter.Limit("estimate", 6, time.Hour)).Method(http.MethodPost, "/measurement-estimates", H(bodyH.Estimate))
 			r.Method(http.MethodGet, "/orders", H(ordH.MyOrders))
 			r.Method(http.MethodGet, "/requests", H(qH.MyRequests))
 			r.Method(http.MethodGet, "/appointments", H(apptH.MyAppointments))
@@ -338,7 +346,7 @@ func New(ctx context.Context, cfg config.Config, pool *pgxpool.Pool, log *slog.L
 		})
 	})
 
-	return &App{Router: r, Pool: pool, Log: log, Payments: pay, Notifications: notif, Uploads: up}, nil
+	return &App{Router: r, Pool: pool, Log: log, Payments: pay, Notifications: notif, Uploads: up, BodyEstimate: bodyH}, nil
 }
 
 // StartBackground runs periodic jobs until ctx is cancelled. Each job is safe to run on several
