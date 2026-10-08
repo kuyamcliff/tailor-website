@@ -1,0 +1,84 @@
+.layout {
+  display: grid;
+  gap: 32px;
+}
+
+@media (min-width: 1000px) {
+  .layout {
+    grid-template-columns: 1fr 380px;
+    gap: 48px;
+    align-items: start;
+  }
+
+  .side {
+    position: sticky;
+    top: calc(var(--header-h) + 24px);
+  }
+}
+
+.fieldset {
+  border: 0;
+  margin: 0;
+  display: grid;
+  gap: 16px;
+}
+
+.fieldset:not(.side) {
+  padding: 0;
+}
+
+.fieldset legend {
+  margin-bottom: 16px;
+  float: left;
+  width: 100%;
+}
+
+.dayNav {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 4px;
+}
+
+.days {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 4px 2px;
+  scrollbar-width: thin;
+}
+
+.day {
+  flex: none;
+  display: grid;
+  gap: 2px;
+  min-width: 84px;
+  padding: 10px 8px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--bg-raised);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.day[aria-pressed="true"] {
+  border-color: var(--gold);
+  background: var(--gold-soft);
+}
+
+.day:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.slots {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+  gap: 8px;
+}
+
+.slot {
+  align-items: center;
+  min-height: 48px;
+  padding: 10px;
+}

@@ -181,6 +181,7 @@ func New(ctx context.Context, cfg config.Config, pool *pgxpool.Pool, log *slog.L
 		// Orders and payments
 		r.With(limiter.Limit("submit", 20, 10*time.Minute)).Method(http.MethodPost, "/checkout", H(ordH.Checkout))
 		r.Method(http.MethodGet, "/orders/{id}", H(ordH.CustomerGet))
+		r.Method(http.MethodGet, "/orders/{id}/measurements", H(ordH.CustomerMeasurements))
 		r.Method(http.MethodGet, "/payments/methods", H(pay.Methods))
 		r.With(limiter.Limit("payments", 20, 10*time.Minute)).Method(http.MethodPost, "/payments/intent", H(pay.Intent))
 		r.Method(http.MethodGet, "/payments/{id}", H(pay.Get))

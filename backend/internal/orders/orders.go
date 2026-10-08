@@ -18,6 +18,7 @@ import (
 	"github.com/kuyamcliff/tailor-website/backend/internal/access"
 	"github.com/kuyamcliff/tailor-website/backend/internal/audit"
 	"github.com/kuyamcliff/tailor-website/backend/internal/customers"
+	"github.com/kuyamcliff/tailor-website/backend/internal/measurements"
 	"github.com/kuyamcliff/tailor-website/backend/internal/notifications"
 	"github.com/kuyamcliff/tailor-website/backend/internal/platform/db"
 	"github.com/kuyamcliff/tailor-website/backend/internal/platform/httpx"
@@ -1084,4 +1085,36 @@ func (h Handler) OwnerAddFitting(w http.ResponseWriter, r *http.Request) error {
 		w.WriteHeader(http.StatusNoContent)
 		return nil
 	})
+}
+
+// CustomerMeasurements returns the measurement snapshot an order was made with (account or token access).
+func (h Handler) CustomerMeasurements(w http.ResponseWriter, r *http.Request) error {
+	ctx := r.Context()
+	id, err := httpx.PathUUID(r, "id")
+	if err != nil {
+		return err
+	}
+	var customerID uuid.UUID
+	var hash []byte
+	var mv *uuid.UUID
+	if err := h.Pool.QueryRow(ctx, `SELECT customer_id, access_token_hash, measurement_version_id FROM orders WHERE id=$1`, id).Scan(&customerID, &hash, &mv); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return httpx.NotFound("We could not find this order.")
+		}
+		return err
+	}
+	if !access.Customer(r, customerID, hash) || mv == nil {
+		return httpx.NotFound("No measurements are attached to this order.")
+	}
+	v, err := measurements.GetVersion(ctx, h.Pool, *mv)
+	if err != nil {
+		return err
+	}
+	fields, err := measurements.Fields(ctx, h.Pool, "")
+	if err != nil {
+		return err
+	}
+	w.Header().Set("Cache-Control", "no-store")
+	httpx.JSON(w, http.StatusOK, map[string]any{"version": v, "fields": fields})
+	return nil
 }
