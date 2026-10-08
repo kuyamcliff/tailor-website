@@ -44,6 +44,9 @@
 }
 .views {
   display: flex;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
   border: 1px solid var(--line-strong);
   background: rgb(11 11 12 / 0.75);
 }
@@ -66,13 +69,138 @@
   outline: 2px solid var(--gold);
   outline-offset: 2px;
 }
-.quality {
+.tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+.tools :global(.icon-btn) {
+  background: rgb(11 11 12 / 0.75);
+}
+.tools :global(.icon-btn:disabled) {
+  opacity: 0.4;
+}
+.toggle {
+  appearance: none;
+  border: 1px solid var(--line-strong);
+  background: rgb(11 11 12 / 0.75);
+  color: var(--text-soft);
+  font: inherit;
+  font-size: 0.8125rem;
+  padding: 0 12px;
+  min-height: 40px;
+  cursor: pointer;
+}
+.toggle[aria-pressed="true"] {
+  border-color: var(--gold);
+  color: var(--text);
+}
+.toggle:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+.stage:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: -2px;
+}
+.stage:fullscreen {
+  width: 100vw;
+  height: 100vh;
+}
+.textureNote {
+  position: absolute;
+  top: 44px;
+  left: 16px;
+  right: 16px;
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--warning);
+}
+.diagnostics {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 2px 10px;
+  margin: 0;
+  padding: 8px 10px;
+  font:
+    0.6875rem/1.4 ui-monospace,
+    monospace;
+  background: rgb(11 11 12 / 0.85);
+  border: 1px solid var(--line);
+}
+.diagnostics dt {
+  color: var(--text-muted);
+}
+.diagnostics dd {
+  margin: 0;
+}
+.fallback:has(.render) {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 48px 16px 76px;
+}
+.render {
+  flex: 0 1 auto;
+  min-height: 0;
+  max-width: 100%;
+  object-fit: contain;
+}
+.fallbackNote {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+}
+.fallbackNote p {
+  margin: 0;
+  max-width: 44ch;
+}
+/* Fit pins are drawn by the 3D view as plain DOM next to the canvas. */
+.stage :global(.fit-pin-wrap) {
+  pointer-events: none;
+}
+.stage :global(.fit-pin) {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  margin-left: 6px;
+  white-space: nowrap;
+  font-size: 0.6875rem;
+  color: var(--text);
+  transform: translate(-5px, -50%); /* the dot sits on the anchor point */
+  transition: opacity 0.2s;
+}
+.stage :global(.fit-pin-dot) {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 1px solid #0b0b0c;
+  background: var(--text-faint);
+}
+.stage :global(.fit-pin-label) {
+  padding: 2px 6px;
+  background: rgb(11 11 12 / 0.8);
+}
+.stage :global(.fit-pin[data-state="good"] .fit-pin-dot) {
+  background: var(--success);
+}
+.stage :global(.fit-pin[data-state="close"] .fit-pin-dot),
+.stage :global(.fit-pin[data-state="verify"] .fit-pin-dot) {
+  background: var(--warning);
+}
+.stage :global(.fit-pin[data-state="tight"] .fit-pin-dot),
+.stage :global(.fit-pin[data-state="loose"] .fit-pin-dot) {
+  background: var(--danger);
+}
+@media (prefers-reduced-motion: reduce) {
+  .stage :global(.fit-pin) {
+    transition: none;
+  }
 }
 .standin {
   position: absolute;
@@ -267,29 +395,95 @@
   font-size: 0.8125rem;
   color: var(--warning);
 }
+.sheetToggle {
+  display: none;
+}
+.footExtra {
+  display: grid;
+  gap: 10px;
+}
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+/* Below 900px the options become a bottom sheet over the viewport: collapsed it shows the garment,
+   price and actions; opened it scrolls the full option list. */
 @media (max-width: 900px) {
   .shell {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: 58dvh auto;
+    --sheet-h: 132px;
+    display: block;
     height: auto;
+    min-height: 0;
   }
   .stage {
-    height: 62dvh;
+    height: calc(100dvh - var(--header-h, 64px) - var(--sheet-h));
+    min-height: 360px;
   }
   .panel {
-    display: block;
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    max-height: calc(100dvh - var(--header-h, 64px) - 48px);
     border-left: 0;
+    border-top: 1px solid var(--line-strong);
   }
-  .sections {
-    overflow: visible;
+  .panelHead {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: 12px;
+    padding: 10px 14px;
+  }
+  .priceValue {
+    font-size: 1.125rem;
+  }
+  .sheetToggle {
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 44px;
+    padding: 0 12px;
+    border: 1px solid var(--line-strong);
+    background: none;
+    color: var(--text);
+    font: inherit;
+    font-size: 0.8125rem;
+    cursor: pointer;
+  }
+  .sheetToggle:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
+  }
+  .panel[data-open="false"] .sections,
+  .panel[data-open="false"] .footExtra {
+    display: none;
+  }
+  .panel[data-open="true"] .sections {
+    overflow-y: auto;
   }
   .fabricList {
     grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
   }
   .panelFoot {
-    position: sticky;
-    bottom: 0;
-    background: var(--bg-raised);
+    padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+  }
+}
+@media (max-width: 420px) {
+  .panelHead {
+    gap: 8px;
+  }
+  .sheetToggle {
+    width: 44px;
+    justify-content: center;
+    padding: 0;
+  }
+  .sheetToggleText {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 }
 @media (max-width: 560px) {
@@ -298,13 +492,37 @@
     right: 10px;
     bottom: 10px;
   }
+  /* Camera tools stack down the right edge so the figure stays visible. */
+  .tools {
+    position: absolute;
+    right: 0;
+    bottom: 54px;
+    flex-direction: column;
+  }
+  .toggle {
+    justify-content: center;
+    width: 44px;
+    padding: 0;
+  }
+  .toggleText {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
   .views button {
     padding: 8px 10px;
   }
-  .quality {
-    display: none;
-  }
   .standin {
     font-size: 0.6875rem;
+    right: 64px;
+  }
+  .diagnostics {
+    top: auto;
+    bottom: 64px;
+    left: 10px;
+    right: auto;
   }
 }

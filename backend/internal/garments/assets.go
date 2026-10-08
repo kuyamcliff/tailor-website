@@ -124,7 +124,7 @@ func (h AssetsHandler) List(w http.ResponseWriter, r *http.Request) error {
 	return rows.Err()
 }
 
-// UploadFile accepts a GLB or KTX2 file, validates it and stores it, returning a file descriptor
+// UploadFile accepts a GLB, KTX2 or still render image, validates it and stores it, returning a file descriptor
 // with size and checksum for inclusion in a manifest. Only staff with assets.write reach this.
 func (h AssetsHandler) UploadFile(w http.ResponseWriter, r *http.Request) error {
 	r.Body = http.MaxBytesReader(w, r.Body, uploads.MaxAssetBytes+1<<20)
@@ -158,7 +158,17 @@ func (h AssetsHandler) UploadFile(w http.ResponseWriter, r *http.Request) error 
 	case bytes.HasPrefix(data, []byte{0xAB, 'K', 'T', 'X', ' ', '2', '0', 0xBB, '\r', '\n', 0x1A, '\n'}):
 		ext, mime = ".ktx2", "image/ktx2"
 	default:
-		return httpx.Validation(map[string]string{"file": "Upload a GLB model or a KTX2 texture."})
+		// Still renders of a model (front, 45 degrees and so on), shown when WebGL is unavailable.
+		// They go through the same validation and metadata stripping as every other image.
+		img, err := uploads.ProcessImage(data)
+		if err != nil {
+			return httpx.Validation(map[string]string{"file": "Upload a GLB model, a KTX2 texture or a JPEG, PNG or WebP render."})
+		}
+		data, mime = img.Main, img.MIME
+		ext = ".jpg"
+		if mime == "image/png" {
+			ext = ".png"
+		}
 	}
 	sum := sha256.Sum256(data)
 	digest := hex.EncodeToString(sum[:])
@@ -175,11 +185,14 @@ func (h AssetsHandler) UploadFile(w http.ResponseWriter, r *http.Request) error 
 	return nil
 }
 
+var assetMIME = map[string]string{"glb": "model/gltf-binary", "ktx2": "image/ktx2", "jpg": "image/jpeg", "png": "image/png"}
+
 // ServeFile serves content-addressed asset files with immutable caching.
 func (h AssetsHandler) ServeFile(w http.ResponseWriter, r *http.Request) error {
 	name := chi.URLParam(r, "name")
 	digest, ext, ok := strings.Cut(name, ".")
-	if !ok || len(digest) != 64 || (ext != "glb" && ext != "ktx2") {
+	mime, known := assetMIME[ext]
+	if !ok || len(digest) != 64 || !known {
 		return httpx.NotFound("Asset not found.")
 	}
 	if _, err := hex.DecodeString(digest); err != nil {
@@ -193,10 +206,6 @@ func (h AssetsHandler) ServeFile(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 	defer obj.Close()
-	mime := "model/gltf-binary"
-	if ext == "ktx2" {
-		mime = "image/ktx2"
-	}
 	w.Header().Set("Content-Type", mime)
 	w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
 	w.Header().Set("Cross-Origin-Resource-Policy", "cross-origin")

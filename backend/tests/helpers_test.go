@@ -213,12 +213,18 @@ func ownerClient(t *testing.T) *client {
 
 func (c *client) upload(purpose string, img []byte, name string) resp {
 	c.t.Helper()
+	return c.uploadTo("/uploads?purpose="+purpose, img, name)
+}
+
+// uploadTo posts one file as multipart form data to an API path.
+func (c *client) uploadTo(path string, img []byte, name string) resp {
+	c.t.Helper()
 	var buf bytes.Buffer
 	mw := multipart.NewWriter(&buf)
 	fw, _ := mw.CreateFormFile("file", name)
 	fw.Write(img)
 	mw.Close()
-	req, _ := http.NewRequest("POST", shared.srv.URL+"/api/v1/uploads?purpose="+purpose, &buf)
+	req, _ := http.NewRequest("POST", shared.srv.URL+"/api/v1"+path, &buf)
 	req.Header.Set("Content-Type", mw.FormDataContentType())
 	req.Header.Set("X-Guest-Token", c.guest)
 	if c.csrf != "" {
