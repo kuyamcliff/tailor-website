@@ -1,0 +1,22 @@
+# Dependencies and builds
+node_modules/
+frontend/.next/
+frontend/out/
+frontend/test-results/
+frontend/playwright-report/
+frontend/blob-report/
+frontend/tsconfig.tsbuildinfo
+backend/bin/
+coverage/
+
+# Local data and secrets
+backend/data/
+.env
+.env.*
+!.env.example
+*.local
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/

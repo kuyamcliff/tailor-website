@@ -1,0 +1,12 @@
+.wrap {
+  min-height: calc(100dvh - 240px);
+  display: grid;
+  place-items: center;
+  padding: clamp(32px, 6vw, 96px) 16px;
+}
+.card {
+  width: min(100%, 440px);
+  padding: clamp(24px, 4vw, 40px);
+  background: var(--surface);
+  border: 1px solid var(--line);
+}

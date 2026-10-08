@@ -1,0 +1,176 @@
+.wrap {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: clamp(24px, 5vw, 72px);
+  align-items: start;
+}
+.head {
+  position: sticky;
+  top: 96px;
+  display: grid;
+  gap: 10px;
+}
+.progressText {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+.progress {
+  height: 2px;
+  background: var(--line);
+}
+.progress span {
+  display: block;
+  height: 100%;
+  background: var(--gold);
+  transition: width 0.25s ease;
+}
+.stepList {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 2px;
+}
+.stepList button {
+  all: unset;
+  display: block;
+  padding: 6px 0;
+  font-size: 0.875rem;
+  color: var(--text-soft);
+  cursor: pointer;
+}
+.stepList button:disabled {
+  color: var(--text-faint);
+  cursor: default;
+}
+.stepList button[aria-current="step"] {
+  color: var(--gold);
+}
+.stepList button:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+.body {
+  display: grid;
+  gap: 24px;
+  max-width: 820px;
+  min-width: 0;
+}
+.body h1:focus {
+  outline: none;
+}
+.fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 10px;
+}
+.options {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
+  gap: 10px;
+}
+.fabrics {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 16px;
+}
+.fabric {
+  display: grid;
+  gap: 4px;
+  cursor: pointer;
+}
+.swatch {
+  position: relative;
+  aspect-ratio: 1;
+  border: 1px solid var(--line);
+  margin-bottom: 6px;
+}
+.fabric:has(input:checked) .swatch {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+}
+.fabric:has(input:focus-visible) .swatch {
+  outline: 2px solid var(--text);
+  outline-offset: 3px;
+}
+.fabricName {
+  font-weight: 600;
+  font-size: 0.9375rem;
+}
+.color {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px 6px 6px;
+  border: 1px solid var(--line);
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+.color span {
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--line-strong);
+}
+.color:has(input:checked) {
+  border-color: var(--gold);
+}
+.color:has(input:focus-visible) {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+.review {
+  margin: 0;
+  border-top: 1px solid var(--line-strong);
+}
+.reviewRow {
+  display: grid;
+  grid-template-columns: 160px minmax(0, 1fr) auto;
+  gap: 16px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+}
+.reviewRow dt {
+  color: var(--text-muted);
+}
+.reviewRow dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+@media (max-width: 860px) {
+  .wrap {
+    grid-template-columns: 1fr;
+  }
+  .head {
+    position: static;
+  }
+  .stepList {
+    display: none;
+  }
+  .reviewRow {
+    grid-template-columns: 1fr auto;
+  }
+  .reviewRow dt {
+    grid-column: 1 / -1;
+  }
+}
+.submit {
+  display: grid;
+  justify-items: end;
+  gap: 8px;
+  text-align: right;
+}

@@ -1,0 +1,163 @@
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  height: var(--header-h);
+  background: rgba(11, 11, 12, 0.86);
+  border-bottom: 1px solid transparent;
+  transition:
+    border-color var(--dur) var(--ease),
+    background var(--dur) var(--ease);
+}
+
+.scrolled {
+  background: rgba(11, 11, 12, 0.96);
+  border-bottom-color: var(--line);
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 100%;
+  gap: 16px;
+}
+
+.nav {
+  display: none;
+  gap: 4px;
+}
+
+.navLink {
+  position: relative;
+  padding: 10px 12px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-soft);
+  transition: color var(--dur-fast) var(--ease);
+}
+
+.navLink::after {
+  content: "";
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 4px;
+  height: 1px;
+  background: var(--gold);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--dur) var(--ease);
+}
+
+.navLink:hover,
+.navLink[aria-current="page"] {
+  color: var(--text);
+}
+
+.navLink:hover::after,
+.navLink[aria-current="page"]::after {
+  transform: scaleX(1);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-right: -10px;
+}
+
+.desktopOnly {
+  display: none !important;
+}
+
+.count {
+  position: absolute;
+  top: 6px;
+  right: 4px;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: 9px;
+  background: var(--gold);
+  color: var(--on-gold);
+  font-size: 0.66rem;
+  font-weight: 700;
+  line-height: 17px;
+  text-align: center;
+}
+
+.signedIn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--gold);
+}
+
+@media (min-width: 1100px) {
+  .nav {
+    display: flex;
+  }
+
+  .menuBtn {
+    display: none !important;
+  }
+
+  .desktopOnly {
+    display: inline-grid !important;
+  }
+}
+
+.mobileNav {
+  display: flex;
+  flex-direction: column;
+  margin-top: 8px;
+}
+
+.mobileLink {
+  padding: 14px 0;
+  font-family: var(--font-display);
+  font-size: 2rem;
+  line-height: 1.1;
+  border-bottom: 1px solid var(--line);
+  color: var(--text-soft);
+}
+
+.mobileLink[aria-current="page"] {
+  color: var(--gold-strong);
+}
+
+.mobileExtra {
+  display: grid;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.mobileLinks {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 16px;
+  margin: 12px 0;
+  font-size: 0.95rem;
+  color: var(--text-muted);
+}
+
+.mobileLinks a {
+  padding: 10px 0;
+}
+
+/* Very narrow phones (320px): tighten the icons and the gap so nothing scrolls sideways. */
+@media (max-width: 359px) {
+  .bar {
+    gap: 8px;
+  }
+  .actions :global(.icon-btn) {
+    width: 40px;
+    min-width: 40px;
+  }
+}

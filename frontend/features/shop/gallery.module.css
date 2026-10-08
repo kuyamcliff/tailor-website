@@ -1,0 +1,44 @@
+.gallery {
+  display: grid;
+  gap: 12px;
+}
+
+.main {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.img {
+  object-fit: cover;
+  animation: fade 400ms var(--ease);
+}
+
+.thumbs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+}
+
+.thumb {
+  position: relative;
+  flex: none;
+  width: 72px;
+  aspect-ratio: 4 / 5;
+  padding: 0;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  opacity: 0.7;
+}
+
+.thumb[aria-pressed="true"] {
+  opacity: 1;
+  border-color: var(--gold);
+}
+
+@keyframes fade {
+  from {
+    opacity: 0.4;
+  }
+}

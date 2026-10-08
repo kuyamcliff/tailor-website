@@ -1,0 +1,67 @@
+.frame {
+  position: relative;
+  border: 1px solid var(--line);
+  background: radial-gradient(120% 90% at 50% 30%, #2a2a2e 0%, #141416 55%, #0e0e10 100%);
+}
+
+.stage {
+  position: relative;
+  aspect-ratio: 4 / 5;
+}
+
+@media (min-width: 960px) {
+  .stage {
+    aspect-ratio: 1;
+  }
+}
+
+.render {
+  object-fit: contain;
+  opacity: 0;
+  transition: opacity 600ms var(--ease);
+}
+
+.active {
+  opacity: 1;
+}
+
+.bar {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border-top: 1px solid var(--line);
+  background: rgba(11, 11, 12, 0.6);
+}
+
+.views {
+  display: flex;
+  gap: 2px;
+}
+
+.view {
+  min-width: 52px;
+  min-height: 40px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+
+.view[aria-pressed="true"] {
+  background: var(--gold-soft);
+  color: var(--gold-strong);
+}
+
+.overlayLink {
+  position: absolute;
+  inset: 0 0 56px 0;
+  z-index: 1;
+}

@@ -1,0 +1,54 @@
+.panel {
+  max-width: 460px;
+}
+
+.price {
+  font-size: 1.35rem;
+}
+
+.fieldset {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.sizes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 8px;
+}
+
+.sizeChoice {
+  min-height: 52px;
+  padding: 10px 12px;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.sizeChoice:disabled {
+  opacity: 0.4;
+  text-decoration: line-through;
+  cursor: not-allowed;
+}
+
+.extras {
+  display: grid;
+  gap: 12px;
+  padding-top: 8px;
+  color: var(--text-soft);
+}
+
+.extras p {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.extras svg {
+  flex: none;
+  margin-top: 4px;
+  color: var(--gold);
+}

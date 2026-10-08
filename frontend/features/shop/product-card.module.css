@@ -1,0 +1,104 @@
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.media {
+  position: relative;
+  display: block;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.img {
+  object-fit: cover;
+  transition:
+    transform 900ms var(--ease-out),
+    opacity var(--dur-slow) var(--ease);
+}
+
+.alt {
+  opacity: 0;
+}
+
+@media (hover: hover) {
+  .card:hover .img {
+    transform: scale(1.03);
+  }
+
+  .card:hover .alt {
+    opacity: 1;
+  }
+}
+
+.noImage {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.flag {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  background: rgba(11, 11, 12, 0.8);
+}
+
+.tools {
+  position: absolute;
+  right: 6px;
+  top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tools :global(.icon-btn) {
+  background: rgba(11, 11, 12, 0.72);
+  width: 40px;
+  height: 40px;
+}
+
+@media (hover: hover) {
+  .tools :global(.icon-btn):not([aria-pressed="true"]) {
+    opacity: 0;
+    transition: opacity var(--dur) var(--ease);
+  }
+
+  .card:hover .tools :global(.icon-btn),
+  .card:focus-within .tools :global(.icon-btn) {
+    opacity: 1;
+  }
+}
+
+.body {
+  display: grid;
+  gap: 2px;
+  padding-top: 14px;
+}
+
+.name {
+  font-family: var(--font-display);
+  font-size: 1.28rem;
+  line-height: 1.2;
+}
+
+.meta {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.price {
+  margin-top: 4px;
+  font-size: 0.95rem;
+  color: var(--text-soft);
+}

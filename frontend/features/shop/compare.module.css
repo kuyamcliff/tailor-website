@@ -1,0 +1,54 @@
+.wrap {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+}
+
+.table {
+  border-collapse: collapse;
+  min-width: 100%;
+}
+
+.table th,
+.table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+  min-width: 180px;
+  font-size: 0.92rem;
+}
+
+.table tbody th {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  min-width: 130px;
+  background: var(--bg-raised);
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.table thead th:first-child {
+  position: sticky;
+  left: 0;
+  background: var(--bg-raised);
+  z-index: 1;
+}
+
+.head {
+  display: grid;
+  gap: 8px;
+  font-size: 1.15rem;
+  font-weight: 500;
+}
+
+.thumb {
+  position: relative;
+  display: block;
+  width: 120px;
+  aspect-ratio: 4 / 5;
+  background: var(--surface);
+}
