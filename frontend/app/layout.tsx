@@ -7,6 +7,7 @@ import "@/styles/globals.css";
 import { AppProviders } from "@/components/providers/app-providers";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
+import { SiteOnly } from "@/components/layout/site-only";
 import { CartDrawer } from "@/components/layout/cart-drawer";
 import { WebVitals } from "@/components/layout/web-vitals";
 import { businessName, getConfig, getContent, siteUrl } from "@/lib/server-data";
@@ -71,13 +72,19 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         </a>
         <AppProviders config={config} content={content}>
           <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
-            <Header />
+            <SiteOnly>
+              <Header />
+            </SiteOnly>
             <main id="main" style={{ flex: 1 }}>
               {children}
             </main>
-            <Footer config={config} content={content} />
+            <SiteOnly>
+              <Footer config={config} content={content} />
+            </SiteOnly>
           </div>
-          <CartDrawer />
+          <SiteOnly>
+            <CartDrawer />
+          </SiteOnly>
           <WebVitals />
         </AppProviders>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
