@@ -102,6 +102,7 @@ func seedTestCatalog(ctx context.Context, pool *pgxpool.Pool) error {
 		`INSERT INTO products (slug, name, visibility, price_minor, category_id) VALUES ('test-shirt','Test shirt','published',30000,(SELECT id FROM product_categories WHERE slug='shirts'))`,
 		`INSERT INTO product_variants (product_id, sku, size_label, stock_qty) SELECT id, 'test-shirt-40', '40', 2 FROM products WHERE slug='test-shirt'`,
 		`INSERT INTO product_variants (product_id, sku, size_label, stock_qty) SELECT id, 'test-shirt-42', '42', 1 FROM products WHERE slug='test-shirt'`,
+		`INSERT INTO product_variants (product_id, sku, size_label, stock_qty) SELECT id, 'test-shirt-44', '44', 20 FROM products WHERE slug='test-shirt'`,
 		`UPDATE feature_flags SET enabled=true WHERE key IN ('online_payments','payments_mtn','payments_orange')`,
 	}
 	for _, s := range stmts {

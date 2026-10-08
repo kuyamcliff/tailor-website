@@ -82,7 +82,7 @@ accounts are approved; the adapters keep those details in `backend/internal/paym
 `PAYMENTS_DEV_SIMULATOR=true` replaces both providers with a simulator (refused when
 `APP_ENV=production`). The phone number's last four digits pick the outcome: `0001` success,
 `0002` pending, `0003` failed, `0004` provider unavailable, `0005` duplicate callback, `0006` no
-callback (resolved by reconciliation), `0007` cancelled. Simulated payments carry
+callback (resolved by reconciliation), `0007` cancelled, `0008` expired (the provider reports a timeout). Simulated payments carry
 `simulated: true`, are labelled "Test" in every screen and document, and are excluded from revenue.
 
 ## Security notes

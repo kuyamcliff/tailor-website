@@ -19,6 +19,7 @@ import (
 	"path"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -193,8 +194,10 @@ func sanitizeName(n string) string {
 		}
 	}
 	s := b.String()
-	if len(s) > 120 {
-		s = s[:120]
+	// Cut at a character boundary so a long accented name stays valid UTF-8.
+	for len(s) > 120 {
+		_, size := utf8.DecodeLastRuneInString(s)
+		s = s[:len(s)-size]
 	}
 	return s
 }

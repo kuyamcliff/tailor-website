@@ -278,8 +278,7 @@ func (h Handler) OwnerReviseQuote(w http.ResponseWriter, r *http.Request) error 
 		if in.Version != version {
 			return httpx.Conflict("stale_version", "This quote was changed elsewhere. Reload to see the latest revision.")
 		}
-		switch status {
-		case "accepted", "declined", "withdrawn":
+		if !canDo(status, actRevise) {
 			return httpx.Conflict("quote_closed", "This quote can no longer be revised. Create a new quote instead.")
 		}
 		if in.MeasurementVersionID == nil || in.DesignVersionID == nil {
@@ -333,8 +332,7 @@ func (h Handler) OwnerSendQuote(w http.ResponseWriter, r *http.Request) error {
 			Scan(&status, &number, &customerID, &reqID, &revID, &expires, &total, &currency); err != nil {
 			return err
 		}
-		switch status {
-		case "accepted", "declined", "withdrawn":
+		if !canDo(status, actSend) {
 			return httpx.Conflict("quote_closed", "This quote can no longer be sent.")
 		}
 		if expires.Before(time.Now()) {
@@ -396,7 +394,7 @@ func (h Handler) OwnerWithdrawQuote(w http.ResponseWriter, r *http.Request) erro
 		if err := tx.QueryRow(ctx, `SELECT status FROM quotes WHERE id=$1 FOR UPDATE`, id).Scan(&status); err != nil {
 			return err
 		}
-		if status == "accepted" || status == "withdrawn" {
+		if !canDo(status, actWithdraw) {
 			return httpx.Conflict("quote_closed", "This quote cannot be withdrawn.")
 		}
 		if _, err := tx.Exec(ctx, `UPDATE quotes SET status='withdrawn', version=version+1 WHERE id=$1`, id); err != nil {
@@ -517,7 +515,7 @@ func (h Handler) lockForDecision(ctx context.Context, tx pgx.Tx, r *http.Request
 		return nil, httpx.Conflict("revision_changed", "This quote has been updated by the atelier. Please review the latest version.")
 	}
 	return &Quote{ID: q.ID, Number: q.Number, RequestID: q.RequestID, CustomerID: q.CustomerID, Status: q.Status, accessHash: q.accessHash,
-		AcceptedRevisionID: q.AcceptedRevisionID, Expired: q.Status == "sent" && expires.Before(time.Now())}, nil
+		AcceptedRevisionID: q.AcceptedRevisionID, Expired: isExpired(q.Status, expires, time.Now())}, nil
 }
 
 var errExpired = httpx.Conflict("quote_expired", "This quote has expired. Contact the atelier and we will send you an updated quote.")
@@ -555,7 +553,7 @@ func (h Handler) Accept(w http.ResponseWriter, r *http.Request) error {
 			expired = true
 			return nil
 		}
-		if q.Status != "sent" {
+		if !canDo(q.Status, actAccept) {
 			return httpx.Conflict("quote_not_open", "This quote is no longer open for acceptance.")
 		}
 		rev, err := scanRevision(tx.QueryRow(ctx, `SELECT `+revisionCols+` FROM quote_revisions WHERE id=$1`, in.RevisionID))
@@ -670,7 +668,11 @@ func (h Handler) decide(w http.ResponseWriter, r *http.Request, newStatus, event
 			expired = true
 			return audit.Status(ctx, tx, "quote", id, "sent", "expired", "", true)
 		}
-		if q.Status != "sent" && !(q.Status == "expired" && newStatus == "changes_requested") {
+		act := actDecline
+		if newStatus == "changes_requested" {
+			act = actRequestChanges
+		}
+		if !canDo(q.Status, act) {
 			return httpx.Conflict("quote_not_open", "This quote is no longer open.")
 		}
 		if _, err := tx.Exec(ctx, `UPDATE quotes SET status=$2, decision_note=$3, decided_at=now(), version=version+1 WHERE id=$1`, id, newStatus, in.Note); err != nil {

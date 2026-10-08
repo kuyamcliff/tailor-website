@@ -45,7 +45,7 @@ them as "Sample photo" and explains them in the footer until the owner replaces 
 With `PAYMENTS_DEV_SIMULATOR=true`, checkout uses a payment simulator. The last four digits of the
 phone number choose the outcome: `0001` success, `0002` stays pending, `0003` fails, `0004`
 provider unavailable, `0005` duplicate callback, `0006` no callback (found by reconciliation),
-`0007` cancelled. Simulated payments are labelled as tests everywhere and never count as revenue.
+`0007` cancelled, `0008` expired on the phone. Simulated payments are labelled as tests everywhere and never count as revenue.
 
 ## Commands
 
