@@ -687,6 +687,12 @@ button.link:focus-visible {
   color: var(--text-soft);
 }
 
+/* Native checkboxes and radios outside .check (for example in tables) use the accent too. */
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--gold);
+}
+
 .check input {
   width: 20px;
   height: 20px;

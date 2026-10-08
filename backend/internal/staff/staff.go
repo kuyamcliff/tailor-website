@@ -34,6 +34,31 @@ type Member struct {
 	CreatedAt   time.Time  `json:"createdAt"`
 }
 
+// Team lists active staff by name only, for assignment pickers (support threads, appointments).
+// Any signed-in staff member may read it; it exposes no emails, roles or login details.
+func (h Handler) Team(w http.ResponseWriter, r *http.Request) error {
+	rows, err := h.Pool.Query(r.Context(), `SELECT u.id, u.full_name FROM users u JOIN roles ro ON ro.key=u.role
+		WHERE ro.is_staff AND u.status='active' AND u.deleted_at IS NULL ORDER BY u.full_name`)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	type person struct {
+		ID   uuid.UUID `json:"id"`
+		Name string    `json:"name"`
+	}
+	out := []person{}
+	for rows.Next() {
+		var p person
+		if err := rows.Scan(&p.ID, &p.Name); err != nil {
+			return err
+		}
+		out = append(out, p)
+	}
+	httpx.JSON(w, http.StatusOK, out)
+	return rows.Err()
+}
+
 func (h Handler) List(w http.ResponseWriter, r *http.Request) error {
 	rows, err := h.Pool.Query(r.Context(), `SELECT u.id, u.full_name, u.email, u.role, ro.name, u.status, u.last_login_at, u.created_at
 		FROM users u JOIN roles ro ON ro.key=u.role WHERE ro.is_staff AND u.deleted_at IS NULL ORDER BY u.created_at`)

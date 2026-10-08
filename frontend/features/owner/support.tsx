@@ -86,6 +86,10 @@ export function OwnerSupportThread({ id }: { id: string }) {
   const toast = useToast();
   const { user } = useSession();
   const q = useQuery({ queryKey: ["owner", "support", id], queryFn: () => api<SupportThread>(`/owner/support/${id}`) });
+  const team = useQuery({
+    queryKey: ["owner", "team"],
+    queryFn: () => api<{ id: string; name: string }[]>("/owner/team"),
+  });
   const [body, setBody] = useState("");
   const [internal, setInternal] = useState(false);
   const [files, setFiles] = useState<UploadItem[]>([]);
@@ -241,10 +245,36 @@ export function OwnerSupportThread({ id }: { id: string }) {
                     ))}
                   </select>
                 </label>
-                <p className="small" style={{ margin: 0 }}>
-                  {t.assigneeName ? `Assigned to ${t.assigneeName}` : "Not assigned"}
-                </p>
-                {t.assignedTo === user?.id ? (
+                {team.data && team.data.length > 1 ? (
+                  <label className="field">
+                    <span className="label">Assigned to</span>
+                    <select
+                      className="select"
+                      value={t.assignedTo ?? ""}
+                      disabled={busy}
+                      onChange={(e) =>
+                        e.target.value
+                          ? patch(
+                              { assignedTo: e.target.value },
+                              `Assigned to ${team.data?.find((m) => m.id === e.target.value)?.name ?? "them"}.`,
+                            )
+                          : patch({ unassign: true }, "Unassigned.")
+                      }
+                    >
+                      <option value="">Nobody</option>
+                      {team.data.map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.id === user?.id ? `${m.name} (you)` : m.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                ) : (
+                  <p className="small" style={{ margin: 0 }}>
+                    {t.assigneeName ? `Assigned to ${t.assigneeName}` : "Not assigned"}
+                  </p>
+                )}
+                {team.data && team.data.length > 1 ? null : t.assignedTo === user?.id ? (
                   <button
                     className="btn btn-sm"
                     disabled={busy}

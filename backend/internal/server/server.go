@@ -239,6 +239,7 @@ func New(ctx context.Context, cfg config.Config, pool *pgxpool.Pool, log *slog.L
 			r.Use(auth.RequireStaff)
 			perm := auth.RequirePermission
 			r.Method(http.MethodGet, "/dashboard", H(anaH.Dashboard))
+			r.Method(http.MethodGet, "/team", H(staffH.Team))
 			r.With(perm("analytics.read")).Method(http.MethodGet, "/analytics", H(anaH.Metrics))
 			r.With(perm("audit.read")).Method(http.MethodGet, "/audit", H(auditH.List))
 			r.Method(http.MethodGet, "/notifications", H(notifH.List))
