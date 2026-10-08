@@ -1,0 +1,29 @@
+.panel {
+  display: grid;
+  gap: 16px;
+  border-color: rgba(194, 161, 101, 0.4);
+}
+
+.method {
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+}
+
+.waiting {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+}
+
+.phoneIcon {
+  flex: none;
+  color: var(--gold);
+  animation: pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.45;
+  }
+}

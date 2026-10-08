@@ -1,0 +1,99 @@
+.track {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 4px;
+}
+
+.stage {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.stage::before {
+  content: "";
+  position: absolute;
+  top: 11px;
+  left: -50%;
+  right: 50%;
+  height: 1px;
+  background: var(--line-strong);
+}
+
+.stage:first-child::before {
+  display: none;
+}
+
+.done::before {
+  background: var(--gold);
+}
+
+.marker {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 23px;
+  height: 23px;
+  border-radius: 50%;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--on-gold);
+}
+
+.done .marker {
+  background: var(--gold);
+  border-color: var(--gold);
+}
+
+.current .marker {
+  box-shadow: 0 0 0 4px var(--gold-soft);
+}
+
+.label {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  line-height: 1.2;
+}
+
+.done .label {
+  color: var(--text-soft);
+}
+
+@media (max-width: 520px) {
+  .label {
+    font-size: 0.64rem;
+  }
+}
+
+.history {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 14px;
+}
+
+.history li {
+  display: grid;
+  grid-template-columns: 14px 1fr;
+  gap: 12px;
+}
+
+.dot {
+  width: 9px;
+  height: 9px;
+  margin-top: 8px;
+  border-radius: 50%;
+  background: var(--gold);
+}
+
+.history li + li .dot {
+  background: var(--line-strong);
+}

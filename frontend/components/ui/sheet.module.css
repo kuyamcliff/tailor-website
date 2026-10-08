@@ -1,0 +1,144 @@
+.sheet {
+  position: fixed;
+  margin: 0;
+  padding: 0;
+  max-width: none;
+  max-height: none;
+  border: 0;
+  background: var(--bg-raised);
+  color: var(--text);
+}
+
+.sheet::backdrop {
+  background: rgba(5, 5, 6, 0.72);
+  backdrop-filter: blur(2px);
+}
+
+.sheet[open] {
+  animation: fade var(--dur) var(--ease-out);
+}
+
+.right,
+.left {
+  top: 0;
+  bottom: 0;
+  height: 100dvh;
+  width: min(100vw, 460px);
+  border-left: 1px solid var(--line);
+}
+
+.right {
+  left: auto;
+  right: 0;
+}
+
+.left {
+  left: 0;
+  right: auto;
+  border-left: 0;
+  border-right: 1px solid var(--line);
+}
+
+.right[open] {
+  animation: from-right var(--dur-slow) var(--ease-out);
+}
+
+.left[open] {
+  animation: from-left var(--dur-slow) var(--ease-out);
+}
+
+.lg.right,
+.lg.left {
+  width: min(100vw, 720px);
+}
+
+.bottom {
+  left: 0;
+  right: 0;
+  top: auto;
+  bottom: 0;
+  width: 100vw;
+  max-height: 88dvh;
+  border-top: 1px solid var(--line-strong);
+  border-radius: 12px 12px 0 0;
+}
+
+.bottom[open] {
+  animation: from-bottom var(--dur-slow) var(--ease-out);
+}
+
+.center {
+  inset: 0;
+  margin: auto;
+  width: min(calc(100vw - 32px), 560px);
+  max-height: calc(100dvh - 48px);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-lg);
+}
+
+.center.lg {
+  width: min(calc(100vw - 32px), 880px);
+}
+
+.inner {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-height: inherit;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 12px 12px 24px;
+  border-bottom: 1px solid var(--line);
+  flex: none;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+}
+
+.body {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 24px;
+}
+
+.footer {
+  flex: none;
+  padding: 16px 24px calc(16px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--line);
+  background: var(--bg-raised);
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes from-right {
+  from {
+    transform: translateX(32px);
+    opacity: 0;
+  }
+}
+
+@keyframes from-left {
+  from {
+    transform: translateX(-32px);
+    opacity: 0;
+  }
+}
+
+@keyframes from-bottom {
+  from {
+    transform: translateY(40px);
+    opacity: 0;
+  }
+}

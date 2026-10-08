@@ -1,0 +1,135 @@
+.footer {
+  margin-top: auto;
+  border-top: 1px solid var(--line);
+  background: var(--bg-raised);
+  padding-top: clamp(48px, 3rem + 2vw, 88px);
+}
+
+.grid {
+  display: grid;
+  gap: 40px 32px;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+  .grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (min-width: 1024px) {
+  .grid {
+    grid-template-columns: 1.4fr 1fr 1fr 0.8fr;
+  }
+}
+
+.name {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  margin-bottom: 10px;
+}
+
+.brand p + p {
+  max-width: 34ch;
+}
+
+.heading {
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 18px;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+  font-size: 0.93rem;
+  color: var(--text-soft);
+}
+
+.iconLine {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.iconLine svg {
+  flex: none;
+  margin-top: 4px;
+  color: var(--text-muted);
+}
+
+.hours {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  max-width: 280px;
+}
+
+.plain {
+  transition: color var(--dur-fast) var(--ease);
+}
+
+.plain:hover {
+  color: var(--gold-strong);
+}
+
+.social {
+  list-style: none;
+  padding: 0;
+  margin: 20px 0 0 -10px;
+  display: flex;
+  gap: 2px;
+}
+
+.socialLink {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  color: var(--text-soft);
+  transition: color var(--dur-fast) var(--ease);
+}
+
+.socialLink:hover {
+  color: var(--gold-strong);
+}
+
+.bottom {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 24px;
+  margin-top: 56px;
+  padding-top: 22px;
+  padding-bottom: 28px;
+  border-top: 1px solid var(--line);
+}
+
+.legal {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 18px;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.legal a {
+  padding: 8px 0;
+}
+
+.legal a:hover {
+  color: var(--text);
+}
+
+.payments {
+  display: flex;
+  gap: 8px;
+}

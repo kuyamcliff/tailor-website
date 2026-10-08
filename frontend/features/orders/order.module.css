@@ -1,0 +1,121 @@
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.layout {
+  display: grid;
+  gap: 24px;
+}
+
+@media (min-width: 1000px) {
+  .layout {
+    grid-template-columns: 1.4fr 1fr;
+    gap: 32px;
+    align-items: start;
+  }
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  justify-content: space-between;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.list li:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.notes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 16px;
+}
+
+.notes > li {
+  padding-left: 14px;
+  border-left: 2px solid var(--gold);
+  display: grid;
+  gap: 4px;
+}
+
+.items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.items li {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.items li > span:first-child {
+  display: grid;
+}
+
+.itemName {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.totals {
+  margin: 16px 0 0;
+  display: grid;
+  gap: 6px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  font-size: 0.93rem;
+}
+
+.totals > div {
+  display: flex;
+  justify-content: space-between;
+}
+
+.totals dt {
+  color: var(--text-muted);
+}
+
+.totals dd {
+  margin: 0;
+}
+
+.total {
+  font-weight: 600;
+  font-size: 1.05rem;
+  padding-block: 6px;
+  border-block: 1px solid var(--line);
+}
+
+.total dt {
+  color: var(--text);
+}
+
+.docs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
