@@ -82,7 +82,7 @@ export function Header() {
             <Link
               href="/wishlist"
               className={`icon-btn ${styles.desktopOnly}`}
-              aria-label={`Wishlist${hydrated && wishCount ? `, ${wishCount} items` : ""}`}
+              aria-label={`Wishlist${hydrated && wishCount ? `, ${wishCount} ${wishCount === 1 ? "item" : "items"}` : ""}`}
             >
               <Heart size={20} aria-hidden />
               {hydrated && wishCount > 0 ? <span className={styles.count}>{wishCount}</span> : null}
@@ -90,7 +90,7 @@ export function Header() {
             <button
               className="icon-btn"
               onClick={() => setCartOpen(true)}
-              aria-label={`Bag${count ? `, ${count} items` : ", empty"}`}
+              aria-label={`Bag${count ? `, ${count} ${count === 1 ? "item" : "items"}` : ", empty"}`}
             >
               <ShoppingBag size={20} aria-hidden />
               {count > 0 ? <span className={styles.count}>{count}</span> : null}

@@ -22,6 +22,8 @@ test("home, shop and product pages load cleanly", async ({ page }) => {
 });
 
 test("guest checkout and a simulated MTN MoMo payment confirmed by the server", async ({ page }) => {
+  // The first visit to the order page can compile on a dev server; allow for it.
+  test.setTimeout(150_000);
   const t = trackErrors(page);
   // Use the first product that is in stock (earlier runs may have used up a size).
   await page.goto("/shop");
@@ -48,7 +50,7 @@ test("guest checkout and a simulated MTN MoMo payment confirmed by the server", 
   await page.getByLabel("Full name").fill("E2E Customer");
   await page.getByLabel("Phone", { exact: true }).fill("677000001");
   await page.getByRole("button", { name: "Place order" }).click();
-  await page.waitForURL(/\/orders\//);
+  await page.waitForURL(/\/orders\//, { timeout: 90_000 });
   await page.getByLabel("Mobile Money number").fill("677000001");
   await page.getByRole("button", { name: /^Pay/ }).click();
   // Suffix 0001 is the simulator's success scenario; the order only shows paid after server verification.
