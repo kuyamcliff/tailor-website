@@ -148,3 +148,14 @@
 .mobileLinks a {
   padding: 10px 0;
 }
+
+/* Very narrow phones (320px): tighten the icons and the gap so nothing scrolls sideways. */
+@media (max-width: 359px) {
+  .bar {
+    gap: 8px;
+  }
+  .actions :global(.icon-btn) {
+    width: 40px;
+    min-width: 40px;
+  }
+}

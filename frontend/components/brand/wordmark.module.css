@@ -23,3 +23,10 @@
   height: 36px;
   width: auto;
 }
+
+@media (max-width: 359px) {
+  .text {
+    font-size: 1.25rem;
+    letter-spacing: 0.02em;
+  }
+}
